@@ -1033,7 +1033,6 @@ Cogit class >> initializedInstanceForTests: optionsDictionaryOrArray [
 	coInterpreter := CurrentImageCoInterpreterFacade forCogit: cogit.
 	[cogit
 		setInterpreter: coInterpreter;
-		singleStep: true;
 		initializeCodeZoneFrom: 1024 upTo: coInterpreter memory size.
 	 cogit methodZone freeStart: (cogit methodZone freeStart roundUpTo: 1024)]
 		on: Notification
@@ -11500,7 +11499,7 @@ Cogit >> scanMethod [
 		- how many blocks it creates
 		- if it contans an unknown bytecode
 	 Answer the block count or on error a negative error code"
-	| latestContinuation nExts descriptor pc numBlocks distance targetPC framelessStackDelta |
+	| latestContinuation nExts descriptor pc numBlocks framelessStackDelta |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	needsFrame := false.
 	(primitiveIndex > 0
@@ -11524,14 +11523,14 @@ Cogit >> scanMethod [
 			  or: [self perform: descriptor needsFrameFunction with: framelessStackDelta])
 				ifTrue: [needsFrame := true]
 				ifFalse: [framelessStackDelta := framelessStackDelta + descriptor stackDelta]].
-		 descriptor isBranch ifTrue:
-			[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
+		 descriptor isBranch ifTrue: [ | distance targetPC |
+			distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
 			 targetPC := pc + descriptor numBytes + distance.
 			 (self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj)
 				ifTrue: [self initializeFixupAt: targetPC]
 				ifFalse: [latestContinuation := latestContinuation max: targetPC]].
-		 descriptor isBlockCreation ifTrue:
-			[numBlocks := numBlocks + 1.
+		 descriptor isBlockCreation ifTrue: [ | distance targetPC |
+			numBlocks := numBlocks + 1.
 			 distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
 			 targetPC := pc + descriptor numBytes + distance.
 			 latestContinuation := latestContinuation max: targetPC].
