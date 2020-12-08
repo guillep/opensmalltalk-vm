@@ -13072,7 +13072,7 @@ StackToRegisterMappingCogit >> scanMethod [
 		- what are the targets of any backward branches.
 		- how many blocks it creates
 	 Answer the block count or on error a negative error code"
-	| latestContinuation nExts descriptor pc numBlocks distance targetPC framelessStackDelta seenInstVarStore |
+	| latestContinuation nExts descriptor pc numBlocks framelessStackDelta seenInstVarStore |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	needsFrame := useTwoPaths := seenInstVarStore := false.
 	LowcodeVM ifTrue: [ hasNativeFrame := false ].
@@ -13117,8 +13117,8 @@ StackToRegisterMappingCogit >> scanMethod [
 										ifTrue: [useTwoPaths := true]
 										ifFalse: [seenInstVarStore := true]]]]].
 
-		 descriptor isBranch ifTrue:
-			[distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
+		 descriptor isBranch ifTrue:  [ | distance targetPC |
+			distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
 			 targetPC := pc + descriptor numBytes + distance.
 			 self maybeCountFixup: descriptor.
 			 (self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj)
@@ -13132,8 +13132,9 @@ StackToRegisterMappingCogit >> scanMethod [
 			pc: pc 
 			latestContinuation: latestContinuation.
 		
-		 descriptor isBlockCreation ifTrue:
-			[numBlocks := numBlocks + 1.
+		"Count the blocks and take as next possible continuation of the PC the bytecode after the block"
+		 descriptor isBlockCreation ifTrue: [ | distance targetPC |
+			numBlocks := numBlocks + 1.
 			 distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
 			 targetPC := pc + descriptor numBytes + distance.
 			 latestContinuation := latestContinuation max: targetPC.

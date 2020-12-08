@@ -27,7 +27,8 @@ Class {
 		'currentCallCleanUpSize',
 		'compilationPass',
 		'basicBlockArena',
-		'initialBasicBlock'
+		'initialBasicBlock',
+		'basicBlocks'
 	],
 	#classVars : [
 		'NeedsMergeFixupFlag',
@@ -282,107 +283,6 @@ BasicBlockCompiler class >> initializeBytecodeTableForSistaV1 [
 ]
 
 { #category : #'class initialization' }
-BasicBlockCompiler class >> initializeBytecodeTableForSqueakV3PlusClosures [
-	"StackToRegisterMappingCogit initializeBytecodeTableForSqueakV3PlusClosures"
-
-	numPushNilsFunction := #v3:Num:Push:Nils:.
-	pushNilSizeFunction := #v3PushNilSize:numInitialNils:.
-	FirstSpecialSelector := 176.
-	NumSpecialSelectors := 32.
-	self flag:
-'Special selector send class must be inlined to agree with the interpreter, which
- inlines class.  If class is sent to e.g. a general instance of ProtoObject then unless
- class is inlined there will be an MNU.  It must be that the Cointerpreter and Cogit
- have identical semantics.  We get away with not hardwiring the other special
- selectors either because in the Cointerpreter they are not inlined or because they
- are inlined only to instances of classes for which there will always be a method.'.
-	self generatorTableFrom: #(
-		(1    0   15 genPushReceiverVariableBytecode isInstVarRef needsFrameNever: 1)
-		(1  16   31 genPushTemporaryVariableBytecode needsFrameIfMod16GENumArgs: 1)
-		(1  32   63 genPushLiteralConstantBytecode needsFrameNever: 1)
-		(1  64   95 genPushLiteralVariableBytecode needsFrameNever: 1)
-		(1  96 103 genStoreAndPopReceiverVariableBytecode isInstVarRef is1ByteInstVarStore isMappedIfImmutability needsFrameIfImmutability: -1)
-		(1 104 111 genStoreAndPopTemporaryVariableBytecode)
-		(1 112 112 genPushReceiverBytecode needsFrameNever: 1)
-		(1 113 113 genPushConstantTrueBytecode needsFrameNever: 1)
-		(1 114 114 genPushConstantFalseBytecode needsFrameNever: 1)
-		(1 115 115 genPushConstantNilBytecode needsFrameNever: 1)
-		(1 116 119 genPushQuickIntegerConstantBytecode needsFrameNever: 1)
-		"method returns in blocks need a frame because of nonlocalReturn:through:"
-		(1 120 120 genReturnReceiver				return needsFrameIfInBlock: isMappedInBlock 0)
-		(1 121 121 genReturnTrue					return needsFrameIfInBlock: isMappedInBlock 0)
-		(1 122 122 genReturnFalse					return needsFrameIfInBlock: isMappedInBlock 0)
-		(1 123 123 genReturnNil					return needsFrameIfInBlock: isMappedInBlock 0)
-		(1 124 124 genReturnTopFromMethod		return needsFrameIfInBlock: isMappedInBlock -1)
-		(1 125 125 genReturnTopFromBlock		return needsFrameNever: -1)
-
-		(1 126 127 unknownBytecode)
-
-		(2 128 128 extendedPushBytecode isInstVarRef) "well, maybe inst var ref"
-		(2 129 129 extendedStoreBytecode isInstVarRef isMappedIfImmutability) "well, maybe inst var ref"
-		(2 130 130 extendedStoreAndPopBytecode isInstVarRef isMappedIfImmutability) "well, maybe inst var ref"
-		(2 131 131 genExtendedSendBytecode isMapped)
-		(3 132 132 doubleExtendedDoAnythingBytecode isMapped) "well, maybe inst var ref"
-		(2 133 133 genExtendedSuperBytecode isInstVarRef isMapped)
-		(2 134 134 genSecondExtendedSendBytecode isMapped)
-		(1 135 135 genPopStackBytecode needsFrameNever: -1)
-		(1 136 136 duplicateTopBytecode needsFrameNever: 1)
-
-		(1 137 137 genPushActiveContextBytecode)
-		(2 138 138 genPushNewArrayBytecode)),
-
-		((InitializationOptions at: #SpurObjectMemory ifAbsent: [false])
-			ifTrue: [#((3 139 139 genCallPrimitiveBytecode))]
-			ifFalse: [#((1 139 139 unknownBytecode))]),
-
-	   #(
-		(3 140 140 genPushRemoteTempLongBytecode)
-		(3 141 141 genStoreRemoteTempLongBytecode)
-		(3 142 142 genStoreAndPopRemoteTempLongBytecode)
-		(4 143 143 genPushClosureCopyCopiedValuesBytecode block v3:Block:Code:Size:)
-
-		(1 144 151 genShortUnconditionalJump			branch v3:ShortForward:Branch:Distance:)
-		(1 152 159 genShortJumpIfFalse					branch isBranchFalse isMapped "because of mustBeBoolean"
-															v3:ShortForward:Branch:Distance:)
-		(2 160 163 genLongUnconditionalBackwardJump	branch isMapped "because of interrupt check"
-															v3:Long:Branch:Distance:)
-		(2 164 167 genLongUnconditionalForwardJump		branch v3:Long:Branch:Distance:)
-		(2 168 171 genLongJumpIfTrue					branch isBranchTrue isMapped "because of mustBeBoolean"
-															v3:LongForward:Branch:Distance:)
-		(2 172 175 genLongJumpIfFalse					branch isBranchFalse isMapped "because of mustBeBoolean"
-															v3:LongForward:Branch:Distance:)
-
-		(1 176 176 genSpecialSelectorArithmetic isMapped AddRR)
-		(1 177 177 genSpecialSelectorArithmetic isMapped SubRR)
-		(1 178 178 genSpecialSelectorComparison isMapped JumpLess)
-		(1 179 179 genSpecialSelectorComparison isMapped JumpGreater)
-		(1 180 180 genSpecialSelectorComparison isMapped JumpLessOrEqual)
-		(1 181 181 genSpecialSelectorComparison isMapped JumpGreaterOrEqual)
-		(1 182 182 genSpecialSelectorComparison isMapped JumpZero)
-		(1 183 183 genSpecialSelectorComparison isMapped JumpNonZero)
-		(1 184 189 genSpecialSelectorSend isMapped)	 " #* #/ #\\ #@ #bitShift: //"
-		(1 190 190 genSpecialSelectorArithmetic isMapped AndRR)
-		(1 191 191 genSpecialSelectorArithmetic isMapped OrRR)
-		(1 192 197 genSpecialSelectorSend isMapped) "#at: #at:put: #size #next #nextPut: #atEnd"
-		(1 198 198 genSpecialSelectorEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
-		(1 199 199 genSpecialSelectorClass needsFrameIfStackGreaterThanOne: notMapped 0) "not mapped because it is directly inlined (for now)"
-		(1 200 200 genSpecialSelectorNotEqualsEquals needsFrameNever: notMapped -1) "not mapped because it is directly inlined (for now)"
-		(1 201 207 genSpecialSelectorSend isMapped) " #value #value: #do: #new #new: #x #y"
-		(1 208 223 genSendLiteralSelector0ArgsBytecode isMapped)
-		(1 224 239 genSendLiteralSelector1ArgBytecode isMapped)
-		(1 240 255 genSendLiteralSelector2ArgsBytecode isMapped))
-]
-
-{ #category : #'class initialization' }
-BasicBlockCompiler class >> initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid [
-	"StackToRegisterMappingCogit initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid"
-
-	super initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid.
-	numPushNilsFunction := #squeakV3orSistaV1:Num:Push:Nils:.
-	pushNilSizeFunction := #squeakV3orSistaV1PushNilSize:numInitialNils:
-]
-
-{ #category : #'class initialization' }
 BasicBlockCompiler class >> initializeSimStackConstants [
 	"The simulation stack is used to delay code generation until operands are consumed by
 	 some operation, thereby avoiding pushing operands to the real stack and enabling
@@ -562,6 +462,26 @@ BasicBlockCompiler class >> stackToRegisterMapping [
 	 and merge this status at control-flow joins."
 ]
 
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> Jump: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+
+	"Jump instructions close basic blocks.
+	A new block will contain all the subsequent instructions"
+	| jumpInstruction |
+	jumpInstruction := super Jump: jumpTarget.
+	self newBasicBlock.
+	^ jumpInstruction
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> addBasicBlock: aBasicBlock [ 
+	
+	^ basicBlocks add: aBasicBlock
+]
+
 { #category : #'compile abstract instructions' }
 BasicBlockCompiler >> addBlockStartAt: bytecodepc numArgs: numArgs numCopied: numCopied span: span [
 	"Add a blockStart for an embedded block.  For a binary tree walk block dispatch
@@ -684,6 +604,25 @@ BasicBlockCompiler >> allocateFloatRegNotConflictingWith: regMask [
 	reg = NoReg ifTrue: "No free register, choose one that does not conflict with regMask"
 		[reg := self freeAnyFloatRegNotConflictingWith: regMask].
 	^ reg
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
+
+	super allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes.
+	basicBlocks := OrderedCollection new.
+	self newBasicBlock.
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes ifFail: failBlock [
+
+	super
+		allocateOpcodes: numberOfAbstractOpcodes
+		bytecodes: numberOfBytecodes
+		ifFail: [ ^ failBlock value ].
+	basicBlocks := OrderedCollection new.
+	self newBasicBlock.
 ]
 
 { #category : #'simulation stack' }
@@ -956,7 +895,7 @@ BasicBlockCompiler >> compileAbstractInstructionsFrom: start through: end [
 	 nextOpcodeIndex := opcodeIndex.
 	 result := deadCode
 				ifTrue: [self mapDeadDescriptorIfNeeded: descriptor]
-				ifFalse: [self perform: descriptor generator].
+				ifFalse: [self generateIRForBytecodeDescriptor: descriptor].
 	 result = 0 ifTrue: [self assertExtsAreConsumed: descriptor].
 	 self traceDescriptor: descriptor; traceSimStack.
 	 self patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex.
@@ -1064,8 +1003,6 @@ BasicBlockCompiler >> compileCogMethod: selector [
 	self cCode: '' inSmalltalk:
 		[debugStackPointers := coInterpreter debugStackPointersFor: methodObj].
 	
-	basicBlockArena := self allocateBasicBlockArena.
-	initialBasicBlock := self newBasicBlock.
 	^super compileCogMethod: selector
 ]
 
@@ -1073,6 +1010,7 @@ BasicBlockCompiler >> compileCogMethod: selector [
 BasicBlockCompiler >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
 	regArgsHaveBeenPushed := false.
+	
 	^super compileEntireMethod
 ]
 
@@ -1163,6 +1101,12 @@ BasicBlockCompiler >> compileTwoPathFramelessInit [
 	"second path. The receiver is old"
 	useTwoPaths := false. "reset because it impacts inst var store compilation"
 	jumpOld jmpTarget: self Label
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> currentBasicBlock [
+	
+	^ basicBlocks last
 ]
 
 { #category : #'simulation only' }
@@ -1460,6 +1404,17 @@ BasicBlockCompiler >> freeAnyRegNotConflictingWith: regMask [
 	^reg
 ]
 
+{ #category : #'compile abstract instructions' }
+BasicBlockCompiler >> gen: opcode operand: operandOne [
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #abstractInstruction type: #'AbstractInstruction *'>
+	| abstractInstruction |
+	"opcodeIndex points to the next free slot in the instruction stream, that will be allocated by #gen:"
+	self currentBasicBlock lastInstructionIndex: opcodeIndex.
+	abstractInstruction := super gen: opcode operand: operandOne.
+	^ abstractInstruction
+]
+
 { #category : #'bytecode generators' }
 BasicBlockCompiler >> genBlockReturn [
 	"Return from block, assuming result already loaded into ReceiverResultReg."
@@ -1548,6 +1503,16 @@ BasicBlockCompiler >> genCmpArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsC
 		ifFalse: [ rcvrIsConstant
 			ifTrue: [ self genCmpConstant: (self ssValue: 1) constant R: argReg ]
 			ifFalse: [ self CmpR: argReg R: rcvrReg ] ].
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> genConditionalBranch: opcode operand: operandOne [
+	"Jump instructions close basic blocks.
+	A new block will contain all the subsequent instructions"
+	| jumpInstruction |
+	jumpInstruction := super genConditionalBranch: opcode operand: operandOne.
+	self newBasicBlock.
+	^ jumpInstruction
 ]
 
 { #category : #'bytecode generators' }
@@ -3104,37 +3069,28 @@ BasicBlockCompiler >> generateInstructionsAt: eventualAbsoluteAddress [
 
 	 Override to andd handling for null branches (branches to the immediately following
 	 instruction) occasioned by StackToRegisterMapping's following of jumps."
-	| absoluteAddress pcDependentIndex abstractInstruction fixup |
+	| absoluteAddress pcDependentIndex fixup |
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<var: #fixup type: #'BytecodeFixup *'>
 	absoluteAddress := eventualAbsoluteAddress.
 	pcDependentIndex := 0.
-	0 to: opcodeIndex - 1 do:
-		[:i|
+	
+	"Iterate all instructions, allocate space for them in the output machine code stream and generate machine code for those not PC dependent.
+	PC dependent instructions need that their targets are allocated before.
+	Thus only allocate space for PC dependent instructions"
+	self instructionsWithIndexDo: [ :abstractInstruction :i |
 		self maybeBreakGeneratingAt: absoluteAddress.
-		abstractInstruction := self abstractInstructionAt: i.
-		abstractInstruction isPCDependent
-			ifTrue:
-				[abstractInstruction sizePCDependentInstructionAt: absoluteAddress.
-				 (abstractInstruction isJump
-				  and: [(i + 1 < opcodeIndex
-				  		and: [abstractInstruction getJmpTarget == (self abstractInstructionAt: i + 1)])
-					or: [i + 2 < opcodeIndex
-						and: [abstractInstruction getJmpTarget == (self abstractInstructionAt: i + 2)
-						and: [(self abstractInstructionAt: i + 1) opcode = Nop]]]])
-					ifTrue:
-						[abstractInstruction
-							opcode: Nop;
-							concretizeAt: absoluteAddress]
-					ifFalse:
-						[fixup := self fixupAtIndex: pcDependentIndex.
-						 pcDependentIndex := pcDependentIndex + 1.
-						 fixup instructionIndex: i].
-				 absoluteAddress := absoluteAddress + abstractInstruction machineCodeSize]
-			ifFalse:
-				[absoluteAddress := abstractInstruction concretizeAt: absoluteAddress]].
-	0 to: pcDependentIndex - 1 do:
-		[:j|
+		abstractInstruction isPCDependent ifTrue: [
+			abstractInstruction sizePCDependentInstructionAt: absoluteAddress.
+			fixup := self fixupAtIndex: pcDependentIndex.
+			pcDependentIndex := pcDependentIndex + 1.
+			fixup instructionIndex: i.
+			absoluteAddress := absoluteAddress + abstractInstruction machineCodeSize]
+		ifFalse: [
+			absoluteAddress := abstractInstruction concretizeAt: absoluteAddress ] ].
+
+	"Iterate all pending PC dependent instructions and generate machine code for them."
+	0 to: pcDependentIndex - 1 do: [:j| | abstractInstruction |
 		fixup := self fixupAtIndex: j.
 		abstractInstruction := self abstractInstructionAt: fixup instructionIndex.
 		self maybeBreakGeneratingAt: abstractInstruction address.
@@ -3248,6 +3204,16 @@ BasicBlockCompiler >> generateTracingTrampolines [
 		[ceTraceLinkedSendTrampoline := self simulatedTrampolineFor: #ceShortCutTraceLinkedSend:.
 		 ceTraceBlockActivationTrampoline := self simulatedTrampolineFor: #ceShortCutTraceBlockActivation:.
 		 ceTraceStoreTrampoline := self simulatedTrampolineFor: #ceShortCutTraceStore:]
+]
+
+{ #category : #'as yet unclassified' }
+BasicBlockCompiler >> gtInspectorFreeListIn: composite [
+	<gtInspectorPresentationOrder: 0>
+	^ composite fastTree
+		title: 'Basic Blocks';
+		children: [ :aNode | aNode instructions ];
+		hasChildren: [ :aNode | aNode isKindOf: BasicBlock ];
+		display: [ :anObject | basicBlocks ]
 ]
 
 { #category : #'simulation stack' }
@@ -3374,6 +3340,28 @@ BasicBlockCompiler >> initializeFixupAt: targetPC [
 	| fixup |
 	fixup := self fixupAt: targetPC.
 	self initializeFixup: fixup
+]
+
+{ #category : #'generate machine code' }
+BasicBlockCompiler >> instructionsDo: aBlock [
+	"Iterate all instructions in control-flow order"
+	| abstractInstruction |
+	<var: #abstractInstruction type: #'AbstractInstruction *'>
+	<var: #fixup type: #'BytecodeFixup *'>
+	0 to: opcodeIndex - 1 do: [:i|
+		abstractInstruction := self abstractInstructionAt: i.
+		aBlock value: abstractInstruction ]
+]
+
+{ #category : #'generate machine code' }
+BasicBlockCompiler >> instructionsWithIndexDo: aBlock [
+	"Iterate all instructions in control-flow order"
+	| abstractInstruction |
+	<var: #abstractInstruction type: #'AbstractInstruction *'>
+	<var: #fixup type: #'BytecodeFixup *'>
+	0 to: opcodeIndex - 1 do: [:i|
+		abstractInstruction := self abstractInstructionAt: i.
+		aBlock value: abstractInstruction value: i ]
 ]
 
 { #category : #'span functions' }
@@ -3596,6 +3584,14 @@ BasicBlockCompiler >> mergeWithFixupIfRequired: fixup [
 	fixup notAFixup ifTrue:
 		[^0].
 
+	"Check if the current bytecode is the leader of a basic block.
+	We identify this by checking the fixups.
+	A fixup has been created if the bytecode is the target of a backwards branch.
+	In this case, create a new basic block to host subsequent IR instructions"
+	fixup isBackwardBranchFixup ifTrue: [
+		self newBasicBlock.
+	].
+
 	"case 2"
 	fixup isNonMergeFixup ifTrue:
 		[deadCode := false. ^0].
@@ -3680,6 +3676,18 @@ BasicBlockCompiler >> needsFrameIfStackGreaterThanOne: stackDelta [
 	 spilled.  So avoid this by only allowing class to be sent if the stack contains a single element."
 
 	^stackDelta > 1
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> newBasicBlock [
+	
+	| block |
+	block := BasicBlock new.
+	block compiler: self.
+	block firstInstructionIndex: opcodeIndex.
+	block lastInstructionIndex: opcodeIndex.
+	self addBasicBlock: block.
+	^ block
 ]
 
 { #category : #'span functions' }
@@ -3962,82 +3970,116 @@ BasicBlockCompiler >> scanBlock: blockStart [
 
 { #category : #'compile abstract instructions' }
 BasicBlockCompiler >> scanMethod [
+
 	"Scan the method (and all embedded blocks) to determine
 		- what the last bytecode is; extra bytes at the end of a method are used to encode things like source pointers or temp names
 		- if the method needs a frame or not
 		- what are the targets of any backward branches.
 		- how many blocks it creates
 	 Answer the block count or on error a negative error code"
-	| latestContinuation nExts descriptor pc numBlocks framelessStackDelta seenInstVarStore |
+
 	<var: #descriptor type: #'BytecodeDescriptor *'>
+	| latestContinuation nExts descriptor pc numBlocks framelessStackDelta seenInstVarStore |
 	needsFrame := useTwoPaths := seenInstVarStore := false.
 	self maybeInitNumFixups.
 	self maybeInitNumCounters.
 	prevBCDescriptor := nil.
-	(primitiveIndex > 0
-	 and: [coInterpreter isQuickPrimitiveIndex: primitiveIndex]) ifTrue:
-		[^0].
+	(primitiveIndex > 0 and: [ 
+		 coInterpreter isQuickPrimitiveIndex: primitiveIndex ]) ifTrue: [ 
+		^ 0 ].
 	pc := latestContinuation := initialPC.
 	numBlocks := framelessStackDelta := nExts := extA := numExtB := extB := 0.
-	[pc <= endPC] whileTrue:
-		[byte0 := (objectMemory fetchByte: pc ofObject: methodObj) + bytecodeSetOffset.
-		 descriptor := self generatorAt: byte0.
-		 descriptor isExtension ifTrue:
-			[descriptor opcode = Nop ifTrue: "unknown bytecode tag; see Cogit class>>#generatorTableFrom:"
-				[^EncounteredUnknownBytecode].
-			 self loadSubsequentBytesForDescriptor: descriptor at: pc.
-			 self perform: descriptor generator].
-		 (descriptor isReturn
-		  and: [pc >= latestContinuation]) ifTrue:
-			[endPC := pc].
-		
-		  needsFrame ifFalse:
-			[(descriptor needsFrameFunction isNil
-			  or: [self perform: descriptor needsFrameFunction with: framelessStackDelta])
-					ifTrue:
-						["With immutability we win simply by avoiding a frame build if the receiver is young and not immutable."
-						 self cppIf: IMMUTABILITY
-							ifTrue: [descriptor is1ByteInstVarStore
-									ifTrue: [useTwoPaths := true]
-									ifFalse: [needsFrame := true. useTwoPaths := false]]
-							ifFalse: [needsFrame := true. useTwoPaths := false]]
-					ifFalse:
-						[framelessStackDelta := framelessStackDelta + descriptor stackDelta.
-						 "Without immutability we win if there are two or more stores and the receiver is new."
-						 self cppIf: IMMUTABILITY
-							ifTrue: []
-							ifFalse:
-								[descriptor is1ByteInstVarStore ifTrue:
-									[seenInstVarStore
-										ifTrue: [useTwoPaths := true]
-										ifFalse: [seenInstVarStore := true]]]]].
+	[ pc <= endPC ] whileTrue: [ 
+		byte0 := (objectMemory fetchByte: pc ofObject: methodObj)
+		         + bytecodeSetOffset.
+		descriptor := self generatorAt: byte0.
+		descriptor isExtension ifTrue: [ 
+			descriptor opcode = Nop ifTrue: [ "unknown bytecode tag; see Cogit class>>#generatorTableFrom:" 
+				^ EncounteredUnknownBytecode ].
+			self loadSubsequentBytesForDescriptor: descriptor at: pc.
+			self perform: descriptor generator ].
 
-		 descriptor isBranch ifTrue: [ | distance targetPC |
-			distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-			 targetPC := pc + descriptor numBytes + distance.
-			 self maybeCountFixup: descriptor.
-			 (self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj)
-				ifTrue: [self initializeFixupAt: targetPC]
-				ifFalse:
-					[latestContinuation := latestContinuation max: targetPC.
-					 self maybeCountCounter]].
-			
-		 latestContinuation := self 
-			maybeDealWithUnsafeJumpForDescriptor: descriptor 
-			pc: pc 
-			latestContinuation: latestContinuation.
-		
-		 descriptor isBlockCreation ifTrue: [ | distance targetPC |
+		"Find the endPC of the method.
+		A method may have trailing bytes, to encode for example a source pointer.
+		We identify an **earlier** end of the method by taking a look at returns"
+		(descriptor isReturn and: [ pc >= latestContinuation ]) ifTrue: [ 
+			endPC := pc ].
+
+		"Detect if the method is requires a frame or not.
+		We only do it if we did not yet find that a frame is required.
+		If we already found we need a frame, do not do it anymore for the rest of the bytecodes.
+		   => See the section on frameless leaf method optimizations in the class comment 
+		Detect also if we need to compile two paths in case immutability is enabled
+			=> See the section on immutability support in the class comment"
+		needsFrame ifFalse: [ 
+			(descriptor needsFrameFunction isNil or: [ 
+				 self
+					 perform: descriptor needsFrameFunction
+					 with: framelessStackDelta ])
+				ifTrue: [ "With immutability we win simply by avoiding a frame build if the receiver is young and not immutable."
+					self
+						cppIf: IMMUTABILITY
+						ifTrue: [ 
+							descriptor is1ByteInstVarStore
+								ifTrue: [ useTwoPaths := true ]
+								ifFalse: [ 
+									needsFrame := true.
+									useTwoPaths := false ] ]
+						ifFalse: [ 
+							needsFrame := true.
+							useTwoPaths := false ] ]
+				ifFalse: [ 
+					framelessStackDelta := framelessStackDelta
+					                       + descriptor stackDelta.
+					"Without immutability we win if there are two or more stores and the receiver is new."
+					self cppIf: IMMUTABILITY ifTrue: [  ] ifFalse: [ 
+						descriptor is1ByteInstVarStore ifTrue: [ 
+							seenInstVarStore
+								ifTrue: [ useTwoPaths := true ]
+								ifFalse: [ seenInstVarStore := true ] ] ] ] ].
+
+		descriptor isBranch ifTrue: [ | distance targetPC |
+			distance := self
+				            spanFor: descriptor
+				            at: pc
+				            exts: nExts
+				            in: methodObj.
+			targetPC := pc + descriptor numBytes + distance.
+			self maybeCountFixup: descriptor.
+			(self
+				 isBackwardBranch: descriptor
+				 at: pc
+				 exts: nExts
+				 in: methodObj)
+				ifTrue: [ self initializeFixupAt: targetPC ]
+				ifFalse: [ 
+					latestContinuation := latestContinuation max: targetPC.
+					self maybeCountCounter ] ].
+
+		latestContinuation := self
+			                      maybeDealWithUnsafeJumpForDescriptor:
+			                      descriptor
+			                      pc: pc
+			                      latestContinuation: latestContinuation.
+
+		"Count the blocks and take as next possible continuation of the PC the bytecode after the block"	
+		descriptor isBlockCreation ifTrue: [ | distance targetPC |
 			numBlocks := numBlocks + 1.
-			 distance := self spanFor: descriptor at: pc exts: nExts in: methodObj.
-			 targetPC := pc + descriptor numBytes + distance.
-			 latestContinuation := latestContinuation max: targetPC.
-			 self maybeCountFixup: descriptor].
+			distance := self
+				            spanFor: descriptor
+				            at: pc
+				            exts: nExts
+				            in: methodObj.
+			targetPC := pc + descriptor numBytes + distance.
+			latestContinuation := latestContinuation max: targetPC.
+			self maybeCountFixup: descriptor ].
 
-		 pc := pc + descriptor numBytes.
-		 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [extA := numExtB := extB := 0].
-		 prevBCDescriptor := descriptor].
-	^numBlocks
+		pc := pc + descriptor numBytes.
+		nExts := descriptor isExtension
+			         ifTrue: [ nExts + 1 ]
+			         ifFalse: [ extA := numExtB := extB := 0 ].
+		prevBCDescriptor := descriptor ].
+	^ numBlocks
 ]
 
 { #category : #initialization }
@@ -4117,21 +4159,6 @@ BasicBlockCompiler >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialN
 	"230		11100110	iiiiiiii		PushNClosureTemps iiiiiiii"
 	<inline: true>
 	^numInitialNils
-]
-
-{ #category : #'span functions' }
-BasicBlockCompiler >> squeakV3orSistaV1: descriptor Num: pc Push: nExts Nils: aMethodObj [
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	^bytecodeSetOffset = 0
-		ifTrue: [self v3: descriptor Num: pc Push: nExts Nils: aMethodObj]
-		ifFalse: [self sistaV1: descriptor Num: pc Push: nExts Nils: aMethodObj]
-]
-
-{ #category : #'span functions' }
-BasicBlockCompiler >> squeakV3orSistaV1PushNilSize: aMethodObj numInitialNils: numInitialNils [
-	^(coInterpreter methodUsesAlternateBytecodeSet: aMethodObj)
-		ifTrue: [self sistaV1PushNilSize: aMethodObj numInitialNils: numInitialNils]
-		ifFalse: [self v3PushNilSize: aMethodObj numInitialNils: numInitialNils]
 ]
 
 { #category : #'simulation stack' }
@@ -4654,57 +4681,6 @@ BasicBlockCompiler >> updateSimSpillBase [
 	self assert: (simSpillBase > simStackPtr or: [(self simStackAt: simSpillBase) spilled == false])
 ]
 
-{ #category : #'span functions' }
-BasicBlockCompiler >> v3: descriptor Num: pc Push: nExts Nils: aMethodObj [
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<inline: true>
-	^descriptor generator == #genPushConstantNilBytecode
-		ifTrue: [1]
-		ifFalse: [0]
-]
-
-{ #category : #'span functions' }
-BasicBlockCompiler >> v3PushNilSize: aMethodObj numInitialNils: numInitialNils [
-	<inline: true>
-	^numInitialNils
-]
-
-{ #category : #'span functions' }
-BasicBlockCompiler >> v3or4: descriptor Num: pc Push: nExts Nils: aMethodObj [
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	^bytecodeSetOffset = 0
-		ifTrue: [self v3: descriptor Num: pc Push: nExts Nils: aMethodObj]
-		ifFalse: [self v4: descriptor Num: pc Push: nExts Nils: aMethodObj]
-]
-
-{ #category : #'span functions' }
-BasicBlockCompiler >> v3or4PushNilSize: aMethodObj numInitialNils: numInitialNils [
-	^(coInterpreter methodUsesAlternateBytecodeSet: aMethodObj)
-		ifTrue: [self v4PushNilSize: aMethodObj numInitialNils: numInitialNils]
-		ifFalse: [self v3PushNilSize: aMethodObj numInitialNils: numInitialNils]
-]
-
-{ #category : #'span functions' }
-BasicBlockCompiler >> v4: descriptor Num: pc Push: nExts Nils: aMethodObj [
-	"*	77			01001101		Push false [* 1:true, 2:nil, 3:thisContext, ..., -N: pushExplicitOuter: N, N = Extend B]"
-	<var: #descriptor type: #'BytecodeDescriptor *'>
-	<inline: true>
-	^(descriptor generator == #genExtPushPseudoVariableOrOuterBytecode
-	   and: [self assert: (objectMemory fetchByte: pc ofObject: aMethodObj) = 77.
-			nExts = 1
-	   and: [(objectMemory fetchByte: pc - 1 ofObject: aMethodObj) = 2]])
-		ifTrue: [1]
-		ifFalse: [0]
-]
-
-{ #category : #'span functions' }
-BasicBlockCompiler >> v4PushNilSize: aMethodObj numInitialNils: numInitialNils [
-	"77			01001101				Push false [* 1:true, 2:nil, 3:thisContext, ..., -N: pushExplicitOuter: N, N = Extend B]
-	 225		11100001	sbbbbbbb	Extend B (Ext B = Ext B prev * 256 + Ext B)"
-	<inline: true>
-	^3 * numInitialNils
-]
-
 { #category : #testing }
 BasicBlockCompiler >> violatesEnsureSpilledSpillAssert [
 	^true
@@ -4743,4 +4719,12 @@ BasicBlockCompiler >> widthInDefaultFontOf: aString [
 		in: Display boundingBox;
 		adjustRightX)
 		extent x
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> zeroOpcodeIndex [
+
+	super zeroOpcodeIndex.
+	basicBlocks := OrderedCollection new.
+	self newBasicBlock.
 ]

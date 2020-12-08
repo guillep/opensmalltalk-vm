@@ -7,11 +7,29 @@ Class {
 	#category : #'VMMakerTests-JitTests'
 }
 
+{ #category : #'building suites' }
+VMJitMethodTest class >> testParameters [
+
+	^ super testParameters * 
+		(ParametrizedTestMatrix new
+			addCase: { 
+				#jitCompilerClass -> BasicBlockCompiler.
+				#bytecodeEncoderClass -> EncoderForSistaV1 };
+			addCase: { #jitCompilerClass -> StackToRegisterMappingCogit };
+			yourself)
+]
+
 { #category : #tests }
 VMJitMethodTest >> comparingSmallIntegers: aBitmap [
 
 	aBitmap size = 32768 ifTrue: [ ^ 17 ].
 	^ 23
+]
+
+{ #category : #tests }
+VMJitMethodTest >> ifTrueIfFalseWithUnknownReceiver: aReceiver [
+
+	^ aReceiver ifTrue: [ 42 ] ifFalse: [ 17 ]
 ]
 
 { #category : #running }
@@ -34,6 +52,15 @@ VMJitMethodTest >> initializeSpecialSelectors [
 			withValue: (anElement forMemory: memory) ].
 		
 	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
+]
+
+{ #category : #tests }
+VMJitMethodTest >> jitOptions [ 
+
+	^ super jitOptions 
+		at: #MULTIPLEBYTECODESETS put: true;
+		at: #bytecodeTableInitializer put: #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid;
+		yourself
 ]
 
 { #category : #running }
@@ -90,10 +117,98 @@ VMJitMethodTest >> testComparingSmallIntegersThatNotFit [
 ]
 
 { #category : #tests }
-VMJitMethodTest >> testMixedInlinedLiteralsSmoteTest [
+VMJitMethodTest >> testIfTrueIfFalseWithUnknownFalseReceiver [
+	
+	| method |
+	method := self jitMethod: (self findMethod: #ifTrueIfFalseWithUnknownReceiver:).
+	
+	self 
+		callCogMethod: method
+		receiver: memory nilObject 
+		arguments:  { memory falseObject }
+		returnAddress: callerAddress.
+
+	self 
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 17
+]
+
+{ #category : #tests }
+VMJitMethodTest >> testIfTrueIfFalseWithUnknownTrueReceiver [
+	
+	| method |
+	method := self jitMethod: (self findMethod: #ifTrueIfFalseWithUnknownReceiver:).
+	
+	self 
+		callCogMethod: method
+		receiver: memory nilObject 
+		arguments:  { memory trueObject }
+		returnAddress: callerAddress.
+	
+	self 
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 42
+]
+
+{ #category : #tests }
+VMJitMethodTest >> testMixedInlinedLiteralsSmokeTest [
 	| callingMethod |
 	
 	callingMethod := self jitMethod: (FreeTypeSubPixelAntiAliasedGlyphRenderer>>#filter:).
 	
 	self deny: callingMethod address equals: 0.
+]
+
+{ #category : #tests }
+VMJitMethodTest >> testToDo [
+	
+	| method |
+	method := self jitMethod: (self findMethod: #todo).
+	
+	self 
+		callCogMethod: method
+		receiver: memory nilObject 
+		arguments:  { }
+		returnAddress: callerAddress.
+	
+	self 
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 15
+]
+
+{ #category : #tests }
+VMJitMethodTest >> testWhileSingleLoop [
+	
+	| method |
+	TEST := true.
+	method := self jitMethod: (self findMethod: #whileSingleLoop).
+	
+	self 
+		callCogMethod: method
+		receiver: memory nilObject 
+		arguments:  { }
+		returnAddress: callerAddress.
+1halt.
+	self 
+		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
+		equals: 1
+]
+
+{ #category : #tests }
+VMJitMethodTest >> todo [
+
+	| accumulator |
+	accumulator := 0.
+	1 to: 5 do: [ :i |
+		accumulator := accumulator + i ].
+	^ accumulator
+]
+
+{ #category : #tests }
+VMJitMethodTest >> whileSingleLoop [
+
+	| accumulator |
+	accumulator := 0.
+	[ accumulator := accumulator + 1. false ] whileTrue.
+	^ accumulator
 ]

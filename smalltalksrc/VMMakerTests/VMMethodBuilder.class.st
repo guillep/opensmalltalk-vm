@@ -9,7 +9,8 @@ Class {
 		'isSmall',
 		'isPrimitive',
 		'method',
-		'slotSize'
+		'slotSize',
+		'encoderFlag'
 	],
 	#category : #'VMMakerTests-Builders'
 }
@@ -24,7 +25,8 @@ VMMethodBuilder >> buildMethod [
 { #category : #building }
 VMMethodBuilder >> buildMethodHeader [
 
-	^ (numberOfArguments bitShift: 24)
+	^ encoderFlag
+		+ (numberOfArguments bitShift: 24)
 		+ (numberOfTemporaries bitShift: 18) 
 		+ (isSmall ifTrue: [ 0 ] ifFalse: [ 1 bitShift: 17 ])
 		+ literals size 
@@ -46,10 +48,16 @@ VMMethodBuilder >> compiledMethodClassIndex [
 	^ 16
 ]
 
+{ #category : #'as yet unclassified' }
+VMMethodBuilder >> encoderFlag: anInteger [ 
+	encoderFlag := anInteger
+]
+
 { #category : #filling }
 VMMethodBuilder >> fillFromPharoMethod: aCompiledMethod [ 
 
 	self newMethod.
+	self encoderFlag: (CompiledMethod headerFlagForEncoder: aCompiledMethod encoderClass).
 	self numberOfTemporaries: aCompiledMethod numTemps.
 	self numberOfArguments: aCompiledMethod numArgs.
 	self bytecodes: aCompiledMethod bytecode.

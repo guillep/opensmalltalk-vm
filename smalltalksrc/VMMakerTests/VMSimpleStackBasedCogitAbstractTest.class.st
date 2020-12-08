@@ -21,7 +21,8 @@ Class {
 		'machineSimulator',
 		'send1TrampolineAddress',
 		'send2TrampolineAddress',
-		'send3TrampolineAddress'
+		'send3TrampolineAddress',
+		'bytecodeEncodeClass'
 	],
 	#pools : [
 		'CogAbstractRegisters',
@@ -79,6 +80,18 @@ VMSimpleStackBasedCogitAbstractTest >> assertStackRemainsUnchangedDuring: aBlock
 	self
 		assert: machineSimulator stackPointerRegisterValue
 		equals: before
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> bytecodeEncoderClass [
+
+	^ bytecodeEncodeClass ifNil: [ EncoderForV3PlusClosures ]
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> bytecodeEncoderClass: aClass [
+
+	bytecodeEncodeClass := aClass
 ]
 
 { #category : #accessing }
@@ -422,6 +435,29 @@ VMSimpleStackBasedCogitAbstractTest >> instructionPointer [
 VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 
 	^ SimpleStackBasedCogit
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod [ 
+
+	^ self jitMethod: aPharoCompiledMethod selector: memory nilObject
+]
+
+{ #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
+
+	| methodOop v3Method |
+	"We are using V3 bytecode, so we need to recompile the method"
+	v3Method := aPharoCompiledMethod methodClass compiler
+		            encoderClass: self bytecodeEncoderClass;
+		            options: #( - optionFullBlockClosure );
+		            compile: aPharoCompiledMethod sourceCode.
+
+	methodOop := methodBuilder
+		             fillFromPharoMethod: v3Method;
+		             buildMethod.
+
+	^ cogit cog: methodOop selector: aSelectorOop
 ]
 
 { #category : #running }

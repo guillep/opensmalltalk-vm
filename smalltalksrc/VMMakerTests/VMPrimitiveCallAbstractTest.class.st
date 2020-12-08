@@ -5,7 +5,7 @@ Class {
 		'baseMethodIP',
 		'baseFrame',
 		'baseMethod',
-		'v3Method'
+		'jitCompilerClass'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -68,29 +68,12 @@ VMPrimitiveCallAbstractTest >> findMethod: aSelector [
 { #category : #'methods under test' }
 VMPrimitiveCallAbstractTest >> jitCompilerClass [
 
-	^ StackToRegisterMappingCogit 
+	^ jitCompilerClass
 ]
 
-{ #category : #helpers }
-VMPrimitiveCallAbstractTest >> jitMethod: aPharoCompiledMethod [ 
-
-	^ self jitMethod: aPharoCompiledMethod selector: memory nilObject
-]
-
-{ #category : #helpers }
-VMPrimitiveCallAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
-
-	| methodOop |
-	
-	"We are using V3 bytecode, so we need to recompile the method"
-	v3Method := aPharoCompiledMethod methodClass compiler
-							encoderClass: EncoderForV3PlusClosures;
-							options: #(-optionFullBlockClosure);
-							compile: aPharoCompiledMethod sourceCode.
-	
-	methodOop := methodBuilder fillFromPharoMethod: v3Method; buildMethod.
-
-	^ cogit cog: methodOop selector: aSelectorOop
+{ #category : #accessing }
+VMPrimitiveCallAbstractTest >> jitCompilerClass: anObject [
+	jitCompilerClass := anObject
 ]
 
 { #category : #'methods under test' }

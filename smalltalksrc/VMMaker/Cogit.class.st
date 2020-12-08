@@ -1018,8 +1018,10 @@ Cogit class >> initializeWithOptions: optionsDictionary [
 	self initializeMiscConstants. "must precede other initialization."
 	self initializeErrorCodes.
 	self initializeCogMethodConstants.
-	self initializeAnnotationConstants.
 	self initializeBytecodeTable.
+
+	"Annotation constants should be initialized after the bytecode table, it depends on its values"
+	self initializeAnnotationConstants.
 	self initializeNumTrampolines.
 	self initializePrimitiveTable
 ]
@@ -5241,9 +5243,8 @@ Cogit >> compileAbstractInstructionsFrom: start through: end [
 	 self patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex.
 	 self maybeDumpLiterals: descriptor.
 	 bytecodePC := self nextBytecodePCFor: descriptor exts: nExts.
-	 result = 0 and: [bytecodePC <= end]]
-		whileTrue:
-			[nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0]].
+	 nExts := descriptor isExtension ifTrue: [nExts + 1] ifFalse: [0].
+	 result = 0 and: [bytecodePC <= end] ] whileTrue.
 	self checkEnoughOpcodes.
 	^result
 ]
@@ -6987,13 +6988,9 @@ Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstru
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	self assert: opcodeIndex < numAbstractOpcodes.
-	abstractInstruction := self abstractInstructionAt: opcodeIndex.
-	opcodeIndex := opcodeIndex + 1.
-	abstractInstruction opcode: opcode.
-	abstractInstruction operands at: 0 put: operandOne.
+
+	abstractInstruction := self gen: opcode operand: operandOne.
 	abstractInstruction operands at: 1 put: operandTwo.
-	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
 	^abstractInstruction
 ]
 
@@ -7003,14 +7000,9 @@ Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstru
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	self assert: opcodeIndex < numAbstractOpcodes.
-	abstractInstruction := self abstractInstructionAt: opcodeIndex.
-	opcodeIndex := opcodeIndex + 1.
-	abstractInstruction opcode: opcode.
-	abstractInstruction operands at: 0 put: operandOne.
-	abstractInstruction operands at: 1 put: operandTwo.
+
+	abstractInstruction := self gen: opcode operand: operandOne operand: operandTwo.
 	abstractInstruction operands at: 2 put: operandThree.
-	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
 	^abstractInstruction
 ]
 
@@ -7020,15 +7012,9 @@ Cogit >> gen: opcode "<Integer>" operand: operandOne "<Integer|CogAbstractInstru
 	<inline: false>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	self assert: opcodeIndex < numAbstractOpcodes.
-	abstractInstruction := self abstractInstructionAt: opcodeIndex.
-	opcodeIndex := opcodeIndex + 1.
-	abstractInstruction opcode: opcode.
-	abstractInstruction operands at: 0 put: operandOne.
-	abstractInstruction operands at: 1 put: operandTwo.
-	abstractInstruction operands at: 2 put: operandThree.
+	
+	abstractInstruction := self gen: opcode operand: operandOne operand: operandTwo operand: operandThree.
 	abstractInstruction operands at: 3 put: operandFour.
-	self cCode: '' inSmalltalk: [abstractInstruction bcpc: bytecodePC].
 	^abstractInstruction
 ]
 
@@ -8090,6 +8076,13 @@ Cogit >> generateEnilopmarts [
 	cePrimReturnEnterCogCodeProfiling := methodZoneBase.
 	self outputInstructionsForGeneratedRuntimeAt: cePrimReturnEnterCogCodeProfiling.
 	self recordGeneratedRunTime: 'cePrimReturnEnterCogCodeProfiling' address: cePrimReturnEnterCogCodeProfiling
+]
+
+{ #category : #'compile abstract instructions' }
+Cogit >> generateIRForBytecodeDescriptor: descriptor [
+	"Generate the IR for the given bytecode descriptor.
+	Return an error code indicating a problem or 0 if OK"
+	^ self perform: descriptor generator
 ]
 
 { #category : #'generate machine code' }
@@ -10014,7 +10007,7 @@ Cogit >> maybeDumpLiterals: descriptor [
 	((literalsManager mustDumpLiterals: opcodeIndex)
 	  or: [descriptor isUnconditionalBranch
 	  or: [descriptor isReturn]]) ifTrue:
-		[literalsManager dumpLiterals: (descriptor isUnconditionalBranch
+		[ literalsManager dumpLiterals: (descriptor isUnconditionalBranch
 										or: [descriptor isReturn]) not]
 ]
 
