@@ -4200,7 +4200,9 @@ BasicBlockCompiler >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialN
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> sortBasicBlocks [
 
-	basicBlocks := PettisHansenBottomUpSorter new sort: basicBlocks
+	| preambleBlocks |
+	preambleBlocks := basicBlocks first: 5.
+	basicBlocks := preambleBlocks, (PHBottomUpSorterNoDeadCode new sort: (basicBlocks allButFirst: 5)).
 ]
 
 { #category : #'simulation stack' }

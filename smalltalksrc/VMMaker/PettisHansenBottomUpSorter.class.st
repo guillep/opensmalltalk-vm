@@ -19,7 +19,7 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: basicBlocks [
 		chains at: e put: (PHChain with: e).
 	].
 	priority := 0.
-	((self basicBlockEdgesOf: basicBlocks) sorted: [ :e1 :e2 | e1 weight > e2 weight  ])
+	((self basicBlockEdgesOf: basicBlocks) sorted: [ :e1 :e2 | e1 weight >= e2 weight ])
 		do: [ :e |
 			fromChain := chains at: e from.
 			toChain := chains at: e to.
@@ -68,9 +68,9 @@ PettisHansenBottomUpSorter >> sortBlocksInChains: aSetOfChains [
 			block successors do: [ :succ |
 				(finalOrder includes: succ) ifFalse: [ | theChain |
 					"If not placed, treat its worklist (if not already done)"
-					theChain := aSetOfChains detect: [ :aChain | aChain contains: succ ].
+					theChain := aSetOfChains detect: [ :aChain | aChain includes: succ ].
 					(worklist includes: theChain)
-						ifFalse: [ worklist := (worklist, theChain) sorted: [ :a :b | a priority < b priority ] ].
+						ifFalse: [ worklist := (worklist, { theChain }) sorted: [ :a :b | a priority < b priority ] ].
 					 ] ] ]
 	].
 

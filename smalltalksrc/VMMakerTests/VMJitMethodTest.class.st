@@ -178,8 +178,6 @@ VMJitMethodTest >> testToDo [
 		arguments:  { }
 		returnAddress: callerAddress.
 		
-		1halt.
-	
 	self 
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
 		equals: 15

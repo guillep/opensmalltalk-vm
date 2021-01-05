@@ -78,6 +78,37 @@ BasicBlock >> lastInstructionIndex: anObject [
 	lastInstructionIndex := anObject
 ]
 
+{ #category : #'as yet unclassified' }
+BasicBlock >> outgoingEdges [
+	
+	| outgoingEdges |
+	outgoingEdges := OrderedCollection new.
+
+	self instructionBeforeLastInstruction isJump
+		ifTrue: [ | targetLabel |
+			targetLabel := self instructionBeforeLastInstruction
+				resolveJumpTarget;
+				jmpTarget.
+			targetLabel isLabel ifTrue: [ outgoingEdges add: (PHEdge new
+				from: self;
+				to: targetLabel basicBlock;
+				weight: 10;
+				yourself) ] ].
+		
+	self lastInstruction isJump
+		ifTrue: [ | targetLabel |
+			targetLabel := self lastInstruction
+				resolveJumpTarget;
+				jmpTarget.
+			targetLabel isLabel ifTrue: [ outgoingEdges add: (PHEdge new
+				from: self;
+				to: targetLabel basicBlock;
+				weight: 10;
+				yourself) ] ].
+
+	^ outgoingEdges
+]
+
 { #category : #accessing }
 BasicBlock >> printOn: aStream [
 
@@ -93,18 +124,5 @@ BasicBlock >> printOn: aStream [
 { #category : #'as yet unclassified' }
 BasicBlock >> successors [
 	
-	| successors |
-	successors := OrderedCollection new.
-
-	self instructionBeforeLastInstruction isJump
-		ifTrue: [ | targetLabel |
-			targetLabel := self instructionBeforeLastInstruction jmpTarget.
-			targetLabel isLabel ifTrue: [ successors add: targetLabel basicBlock ] ].
-		
-	self lastInstruction isJump
-		ifTrue: [ | targetLabel |
-			targetLabel := self lastInstruction jmpTarget.
-			targetLabel isLabel ifTrue: [ successors add: targetLabel basicBlock ] ].
-
-	^ successors
+	^ self outgoingEdges collect: [ :e | e to ]
 ]
