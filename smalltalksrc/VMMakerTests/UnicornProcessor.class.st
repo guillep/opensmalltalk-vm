@@ -199,6 +199,18 @@ UnicornProcessor >> r2: anInteger [
 ]
 
 { #category : #'as yet unclassified' }
+UnicornProcessor >> r3: anInteger [ 
+
+	machineSimulator r3: anInteger 
+]
+
+{ #category : #'as yet unclassified' }
+UnicornProcessor >> r4: anInteger [ 
+
+	machineSimulator r4: anInteger 
+]
+
+{ #category : #'as yet unclassified' }
 UnicornProcessor >> r5: anInteger [ 
 
 	machineSimulator r5: anInteger 

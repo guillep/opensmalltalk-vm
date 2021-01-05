@@ -85,3 +85,9 @@ VMAbstractFFITest >> readyProcesses [
 	interpreter processesInProcessListDo: [ :e | collection add: e ].
 	^ collection
 ]
+
+{ #category : #helpers }
+VMAbstractFFITest >> vmExtraOptions [
+
+	^ { #FEATURE_FFI . true }
+]

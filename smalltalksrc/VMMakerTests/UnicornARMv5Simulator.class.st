@@ -455,24 +455,33 @@ UnicornARMv5Simulator >> simulateJumpCallOf: address memory: aMemory [
 	uses a frame pointer. The standard never mentions a fp. It merely defines r4-r11 to be callee-saved."
 
 	self assert: self sp \\ 8 = 0. "This check ensures, that we conform with ARM abi. Before doing anything to the stack, we ensure 2-word alignment."
+
+	"Align it to 16 bytes"
+	self stackPointerRegisterValue: self sp - 8.
+	
 	self pushWord: self lr.
 	self pushWord: self fp.
 	self fp: self sp.
-	self pc: address
+	self pc: address.
 ]
 
 { #category : #'as yet unclassified' }
 UnicornARMv5Simulator >> simulateLeafCallOf: address nextpc: nextpc memory: aMemory [
 
 	self lr: nextpc.
-	self pc: address
+	self pc: address.
 ]
 
 { #category : #'as yet unclassified' }
 UnicornARMv5Simulator >> simulateReturnIn: aSpurSimulatedMemory [
 
 	self fp: self popWord.
-	self pc: self popWord
+	self lr: self popWord.
+	self pc: self lr.
+	
+	"Undo the alignment to 16 bytes"
+	self stackPointerRegisterValue: self sp + 8.
+
 ]
 
 { #category : #'as yet unclassified' }

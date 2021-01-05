@@ -68,7 +68,7 @@ VMPrimitiveCallAbstractTest >> findMethod: aSelector [
 { #category : #'methods under test' }
 VMPrimitiveCallAbstractTest >> jitCompilerClass [
 
-	^ jitCompilerClass
+	^ jitCompilerClass ifNil: [ StackToRegisterMappingCogit ]
 ]
 
 { #category : #accessing }
@@ -182,7 +182,7 @@ VMPrimitiveCallAbstractTest >> setUp [
 	super setUp.
 	
 	self setUpCogMethodEntry.
-	cogit generateClosedPICPrototype.
+	self setUpClosedPICPrototype.
 	cogit methodZone manageFrom: cogit methodZoneBase to: cogit methodZone effectiveLimit.
 
 	"Initializing the accessor depth table with a value for the first primitive"
@@ -197,6 +197,12 @@ VMPrimitiveCallAbstractTest >> setUp [
 	
 	cogit guardPageSize: cogit class guardPageSize.
 
+]
+
+{ #category : #running }
+VMPrimitiveCallAbstractTest >> setUpClosedPICPrototype [
+
+	cogit generateClosedPICPrototype
 ]
 
 { #category : #running }

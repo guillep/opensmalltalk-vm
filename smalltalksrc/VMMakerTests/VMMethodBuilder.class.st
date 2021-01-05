@@ -67,7 +67,9 @@ VMMethodBuilder >> encoderFlag: anInteger [
 VMMethodBuilder >> fillFromPharoMethod: aCompiledMethod [ 
 
 	self newMethod.
-	self encoderFlag: (CompiledMethod headerFlagForEncoder: aCompiledMethod encoderClass).
+	self encoderFlag: (aCompiledMethod signFlag
+		ifTrue: [ interpreter objectMemory minSmallInteger ]
+		ifFalse: [ 0 ]).
 	self numberOfTemporaries: aCompiledMethod numTemps.
 	self numberOfArguments: aCompiledMethod numArgs.
 	self bytecodes: aCompiledMethod bytecode.
@@ -102,6 +104,9 @@ VMMethodBuilder >> initialize [
 	numberOfArguments := 0.
 	numberOfTemporaries := 0.
 	
+	"primary bytecode set"	
+	encoderFlag := 0.
+
 	"We reuse initialize to reset the builder, so we nil those objects"
 	method := nil.
 	slotSize := nil.

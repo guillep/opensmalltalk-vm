@@ -8450,7 +8450,7 @@ Cogit >> halt: aString [
 { #category : #'translation support' }
 Cogit >> haltIf: aBlock [
 
-	aBlock ifTrue: [ self halt ]
+	aBlock value ifTrue: [ self halt ]
 
 ]
 
@@ -11905,7 +11905,7 @@ Cogit >> simulateLeafCallOf: someFunction [
 	
 	singleStep 
 		ifTrue: [ self notYetImplemented ].
-		
+
 	processor runUntil: 16rBADF00D0.
 
 	self assert: processor sp = spOnEntry.

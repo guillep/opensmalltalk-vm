@@ -477,6 +477,22 @@ BasicBlockCompiler >> Jump: jumpTarget [
 ]
 
 { #category : #'basic-blocks' }
+BasicBlockCompiler >> Label [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	
+	| fallthrough label theBasicBlock |
+	fallthrough := self Jump: 0.
+	theBasicBlock := self newBasicBlock.
+
+	label := super Label.
+	label basicBlock: theBasicBlock.
+
+	fallthrough jmpTarget: label.
+	^ label
+]
+
+{ #category : #'basic-blocks' }
 BasicBlockCompiler >> addBasicBlock: aBasicBlock [ 
 	
 	^ basicBlocks add: aBasicBlock
@@ -795,6 +811,13 @@ BasicBlockCompiler >> availableRegOrNoneNotConflictingWith: regMask [
 	^backEnd availableRegisterOrNoneFor: (self liveRegisters bitOr: regMask)
 ]
 
+{ #category : #'as yet unclassified' }
+BasicBlockCompiler >> basicBlockEdges [
+	
+	^ basicBlocks gather: [ :e |
+		e successors ]
+]
+
 { #category : #'simulation only' }
 BasicBlockCompiler >> bytecodeFixupClass [
 	<doNotGenerate>
@@ -1009,9 +1032,16 @@ BasicBlockCompiler >> compileCogMethod: selector [
 { #category : #'compile abstract instructions' }
 BasicBlockCompiler >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
+	| result |
 	regArgsHaveBeenPushed := false.
 	
-	^super compileEntireMethod
+	result := super compileEntireMethod.
+	
+	"If failure, return early"
+	result < 0 ifTrue: [ ^ result ].
+	
+	self sortBasicBlocks.
+	^ result
 ]
 
 { #category : #'compile abstract instructions' }
@@ -1511,7 +1541,7 @@ BasicBlockCompiler >> genConditionalBranch: opcode operand: operandOne [
 	A new block will contain all the subsequent instructions"
 	| jumpInstruction |
 	jumpInstruction := super genConditionalBranch: opcode operand: operandOne.
-	self newBasicBlock.
+	self Label.
 	^ jumpInstruction
 ]
 
@@ -2567,8 +2597,8 @@ BasicBlockCompiler >> genSpecialSelectorArithmetic [
 
 	"If we know nothing about the types then better not to inline as the inline cache and
 	 primitive code is not terribly slow so wasting time on duplicating tag tests is pointless."
-	(argIsInt or: [rcvrIsInt]) ifFalse:
-		[^self genSpecialSelectorSend].
+"	(argIsInt or: [rcvrIsInt]) ifFalse:
+		[^self genSpecialSelectorSend]."
 
 	argIsConst
 		ifTrue:
@@ -3589,7 +3619,8 @@ BasicBlockCompiler >> mergeWithFixupIfRequired: fixup [
 	A fixup has been created if the bytecode is the target of a backwards branch.
 	In this case, create a new basic block to host subsequent IR instructions"
 	fixup isBackwardBranchFixup ifTrue: [
-		self newBasicBlock.
+		"Labels implicitly create a new basic block and a fallthrough jump from the previous block"
+		self Label.
 	].
 
 	"case 2"
@@ -3682,7 +3713,12 @@ BasicBlockCompiler >> needsFrameIfStackGreaterThanOne: stackDelta [
 BasicBlockCompiler >> newBasicBlock [
 	
 	| block |
+	"Do not create duplicated blocks."
+	(basicBlocks notEmpty and: [self currentBasicBlock firstInstructionIndex = opcodeIndex])
+		ifTrue: [ ^ self currentBasicBlock ].
+	
 	block := BasicBlock new.
+	block index: basicBlocks size.
 	block compiler: self.
 	block firstInstructionIndex: opcodeIndex.
 	block lastInstructionIndex: opcodeIndex.
@@ -4159,6 +4195,12 @@ BasicBlockCompiler >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialN
 	"230		11100110	iiiiiiii		PushNClosureTemps iiiiiiii"
 	<inline: true>
 	^numInitialNils
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> sortBasicBlocks [
+
+	basicBlocks := PettisHansenBottomUpSorter new sort: basicBlocks
 ]
 
 { #category : #'simulation stack' }

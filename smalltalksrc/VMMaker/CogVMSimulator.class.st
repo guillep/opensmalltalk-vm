@@ -695,6 +695,7 @@ CogVMSimulator >> codeGeneratorToComputeAccessorDepth [
 
 	^ codeGeneratorToComputeAccessorDepth ifNil: [
 		(VMMaker new
+			vmmakerConfiguration: VMMakerConfiguration;
 			buildCodeGeneratorForInterpreter: CoInterpreterPrimitives
 			includeAPIMethods: false
 			initializeClasses: false)

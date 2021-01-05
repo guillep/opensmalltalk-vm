@@ -226,10 +226,10 @@ VMSpurMemoryManagerTest >> newInterpreter [
 
 	self interpreterClass
 		initializeWithOptions:
-			{#BytesPerWord.
+			({#BytesPerWord.
 			self wordSize.
 			#ObjectMemory.
-			memory class name}
+			memory class name}, self vmExtraOptions)
 		objectMemoryClass: memory class.
 
 	^ self interpreterClass basicNew
@@ -528,6 +528,12 @@ VMSpurMemoryManagerTest >> setUpScheduler [
 VMSpurMemoryManagerTest >> sizeOfObjectWithSlots: slots [
 
 	^ objectHeaderSize + ((slots min: 1 "at least one for the forwarder pointer") * memory wordSize "bytes")
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> vmExtraOptions [
+
+	^ #()
 ]
 
 { #category : #accessing }

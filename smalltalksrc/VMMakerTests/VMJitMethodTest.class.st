@@ -70,6 +70,13 @@ VMJitMethodTest >> setUp [
 	self initializeSpecialSelectors
 ]
 
+{ #category : #tests }
+VMJitMethodTest >> setUpClosedPICPrototype [
+
+	"Nothing for now"
+	self flag: #undooo
+]
+
 { #category : #running }
 VMJitMethodTest >> setUpTrampolines [
 
@@ -170,6 +177,8 @@ VMJitMethodTest >> testToDo [
 		receiver: memory nilObject 
 		arguments:  { }
 		returnAddress: callerAddress.
+		
+		1halt.
 	
 	self 
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
@@ -180,7 +189,6 @@ VMJitMethodTest >> testToDo [
 VMJitMethodTest >> testWhileSingleLoop [
 	
 	| method |
-	TEST := true.
 	method := self jitMethod: (self findMethod: #whileSingleLoop).
 	
 	self 
@@ -188,7 +196,9 @@ VMJitMethodTest >> testWhileSingleLoop [
 		receiver: memory nilObject 
 		arguments:  { }
 		returnAddress: callerAddress.
-1halt.
+		
+	self halt.
+
 	self 
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
 		equals: 1

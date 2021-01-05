@@ -511,6 +511,26 @@ CogAbstractInstruction >> availableRegisterOrNoneFor: liveRegsMask [
 	^NoReg
 ]
 
+{ #category : #'as yet unclassified' }
+CogAbstractInstruction >> basicBlock [
+	
+	"Pre-condition: this is a lable instruction"
+	self assert: opcode = Label.
+	
+	"Operand 0 is the label id, operand 1 is its basic block"
+	^ self operands at: 1
+]
+
+{ #category : #'as yet unclassified' }
+CogAbstractInstruction >> basicBlock: aBasicBlock [ 
+
+	"Pre-condition: this is a lable instruction"
+	self assert: opcode = Label.
+	
+	"Operand 0 is the label id, operand 1 is its basic block"
+	^ self operands at: 1 put: aBasicBlock
+]
+
 { #category : #accessing }
 CogAbstractInstruction >> bcpc [
 	^bcpc
@@ -1122,6 +1142,12 @@ CogAbstractInstruction >> isJump [
 	^opcode between: FirstJump and: LastJump
 ]
 
+{ #category : #'as yet unclassified' }
+CogAbstractInstruction >> isLabel [
+	
+	^ opcode = Label
+]
+
 { #category : #testing }
 CogAbstractInstruction >> isLiteral [
 
@@ -1141,6 +1167,15 @@ CogAbstractInstruction >> isWithinMwOffsetRange: anAddress [
 	 for values in the interpreter or the object memory."
 
 	^true
+]
+
+{ #category : #accessing }
+CogAbstractInstruction >> jmpTarget [
+
+	"Pre-condition: this instruction is a jmp".
+	self assert: self isJump.
+
+	^ operands at: 0
 ]
 
 { #category : #accessing }
