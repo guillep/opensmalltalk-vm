@@ -28,9 +28,28 @@ PHChain >> blocks [
 ]
 
 { #category : #'as yet unclassified' }
+PHChain >> blocksDo: aFullBlockClosure [ 
+	
+	blocks do: aFullBlockClosure
+]
+
+{ #category : #'as yet unclassified' }
 PHChain >> head [
 	
 	^ blocks first
+]
+
+{ #category : #'as yet unclassified' }
+PHChain >> includes: aBasicBlock [
+
+	 ^ blocks includes: aBasicBlock
+	
+]
+
+{ #category : #'as yet unclassified' }
+PHChain >> includesAll: aCollection [ 
+	
+	^ blocks includesAll: aCollection
 ]
 
 { #category : #'as yet unclassified' }
@@ -60,6 +79,12 @@ PHChain >> priority [
 { #category : #'as yet unclassified' }
 PHChain >> priority: anInteger [ 
 	priority := anInteger
+]
+
+{ #category : #'as yet unclassified' }
+PHChain >> size [
+
+	^ blocks size
 ]
 
 { #category : #'as yet unclassified' }

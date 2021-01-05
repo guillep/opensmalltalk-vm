@@ -3,7 +3,8 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'from',
-		'to'
+		'to',
+		'weight'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -18,12 +19,6 @@ PHEdge >> from: anObject [
 	from := anObject
 ]
 
-{ #category : #'as yet unclassified' }
-PHEdge >> priority [
-	
-	^ 10
-]
-
 { #category : #accessing }
 PHEdge >> to [
 	^ to
@@ -32,4 +27,14 @@ PHEdge >> to [
 { #category : #accessing }
 PHEdge >> to: anObject [
 	to := anObject
+]
+
+{ #category : #accessing }
+PHEdge >> weight [
+	^ weight
+]
+
+{ #category : #accessing }
+PHEdge >> weight: anObject [
+	weight := anObject
 ]

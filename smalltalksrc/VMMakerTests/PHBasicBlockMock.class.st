@@ -2,8 +2,8 @@ Class {
 	#name : #PHBasicBlockMock,
 	#superclass : #Object,
 	#instVars : [
-		'successors',
-		'name'
+		'name',
+		'outgoingEdges'
 	],
 	#category : #'VMMakerTests-BasicBlocks'
 }
@@ -16,6 +16,22 @@ PHBasicBlockMock class >> named: aString [
 		yourself
 ]
 
+{ #category : #accessing }
+PHBasicBlockMock >> addSuccessor: aSuccessor [
+
+	self addSuccessor: aSuccessor weight: 10
+]
+
+{ #category : #accessing }
+PHBasicBlockMock >> addSuccessor: aSuccessor weight: aWeight [
+
+	outgoingEdges add: (PHEdge new
+		from: self;
+		to: aSuccessor;
+		weight: aWeight;
+		yourself)
+]
+
 { #category : #'as yet unclassified' }
 PHBasicBlockMock >> id [
 
@@ -26,13 +42,18 @@ PHBasicBlockMock >> id [
 PHBasicBlockMock >> initialize [
 
 	super initialize.
-	successors := #()
+	outgoingEdges := OrderedCollection new
 ]
 
 { #category : #'as yet unclassified' }
 PHBasicBlockMock >> name: aString [ 
 	
 	name := aString
+]
+
+{ #category : #'as yet unclassified' }
+PHBasicBlockMock >> outgoingEdges [
+	^ outgoingEdges
 ]
 
 { #category : #accessing }
@@ -47,10 +68,11 @@ PHBasicBlockMock >> printOn: aStream [
 
 { #category : #accessing }
 PHBasicBlockMock >> successors [
-	^ successors
+
+	^ outgoingEdges collect: [ :e | e to ]
 ]
 
 { #category : #accessing }
 PHBasicBlockMock >> successors: anObject [
-	successors := anObject
+	outgoingEdges := anObject
 ]
