@@ -2303,7 +2303,8 @@ SimpleStackBasedCogit >> genPrimReturnEnterCogCodeEnilopmart: profiling [
 			 self RetN: 0].														"Return, popping result from stack"
 
 	"Primitive failed.  Invoke C code to build the frame and continue."
-	jmpFail jmpTarget: (self MoveAw: coInterpreter newMethodAddress R: SendNumArgsReg).
+	jmpFail jmpTarget: self Label.
+	self MoveAw: coInterpreter newMethodAddress R: SendNumArgsReg.
 	"Reload sp with CStackPointer; easier than popping args of checkProfileTick."
 	self MoveAw: self cStackPointerAddress R: SPReg.
 	self 

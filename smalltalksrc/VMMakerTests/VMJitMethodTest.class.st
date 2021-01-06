@@ -177,7 +177,7 @@ VMJitMethodTest >> testToDo [
 		receiver: memory nilObject 
 		arguments:  { }
 		returnAddress: callerAddress.
-		
+
 	self 
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
 		equals: 15
@@ -199,7 +199,7 @@ VMJitMethodTest >> testWhileSingleLoop [
 
 	self 
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
-		equals: 1
+		equals: 9
 ]
 
 { #category : #tests }
@@ -217,6 +217,7 @@ VMJitMethodTest >> whileSingleLoop [
 
 	| accumulator |
 	accumulator := 0.
-	[ accumulator := accumulator + 1. false ] whileTrue.
-	^ accumulator
+	[	accumulator := accumulator + 1. 
+		accumulator > 8 ifTrue: [ ^ accumulator ].
+	  	true ] whileTrue.
 ]

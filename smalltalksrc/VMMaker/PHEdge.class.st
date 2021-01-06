@@ -36,5 +36,6 @@ PHEdge >> weight [
 
 { #category : #accessing }
 PHEdge >> weight: anObject [
+self haltIf: [ anObject isNil ].
 	weight := anObject
 ]

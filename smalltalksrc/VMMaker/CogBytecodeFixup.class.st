@@ -162,6 +162,6 @@ CogBytecodeFixup >> targetInstruction [
 { #category : #accessing }
 CogBytecodeFixup >> targetInstruction: anObject [
 	"Set the value of targetInstruction"
-
+self haltIf: [ anObject isLabel not ].
 	^targetInstruction := anObject
 ]

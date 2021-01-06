@@ -1184,6 +1184,8 @@ CogAbstractInstruction >> jmpTarget: anAbstractInstruction [
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #anAbstractInstruction type: #'AbstractInstruction *'>
 	self cCode: [] "check for inadvertent smashing of already-set jmpTargets; development only"
+		inSmalltalk: [self assert: anAbstractInstruction isLabel ].
+	self cCode: [] "check for inadvertent smashing of already-set jmpTargets; development only"
 		inSmalltalk: [self assert: ((operands at: 0)
 									ifNil: [true]
 									ifNotNil: [:o|
@@ -1234,6 +1236,20 @@ CogAbstractInstruction >> jumpTargetAddress [
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
 	^jumpTarget
+]
+
+{ #category : #accessing }
+CogAbstractInstruction >> jumpWeight [
+	"Set the target of a jump instruction.  These all have the target in the first operand."
+	<returnC: #'uint'>
+	^ operands at: 1
+]
+
+{ #category : #accessing }
+CogAbstractInstruction >> jumpWeight: aWeight [
+	"Set the target of a jump instruction.  These all have the target in the first operand."
+	<var: #aWeight type: #'uint'>
+	operands at: 1 put: aWeight asUnsignedInteger.
 ]
 
 { #category : #'generate machine code' }
@@ -1545,6 +1561,7 @@ CogAbstractInstruction >> resolveJumpTarget [
 			[self assert: (self isAFixup: fixup)]].
 	(self isAFixup: fixup) ifTrue:
 		[self assert: (cogit addressIsInInstructions: fixup targetInstruction).
+		self haltIf: [ fixup targetInstruction isLabel not ].
 		 self jmpTarget: fixup targetInstruction]
 ]
 

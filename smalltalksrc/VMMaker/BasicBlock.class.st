@@ -74,7 +74,7 @@ BasicBlock >> lastInstructionIndex [
 
 { #category : #accessing }
 BasicBlock >> lastInstructionIndex: anObject [
-1haltIf: [ TEST and: [anObject < firstInstructionIndex]].
+
 	lastInstructionIndex := anObject
 ]
 
@@ -92,7 +92,7 @@ BasicBlock >> outgoingEdges [
 			targetLabel isLabel ifTrue: [ outgoingEdges add: (PHEdge new
 				from: self;
 				to: targetLabel basicBlock;
-				weight: 10;
+				weight: self instructionBeforeLastInstruction jumpWeight;
 				yourself) ] ].
 		
 	self lastInstruction isJump
@@ -103,7 +103,7 @@ BasicBlock >> outgoingEdges [
 			targetLabel isLabel ifTrue: [ outgoingEdges add: (PHEdge new
 				from: self;
 				to: targetLabel basicBlock;
-				weight: 10;
+				weight: self lastInstruction jumpWeight;
 				yourself) ] ].
 
 	^ outgoingEdges
@@ -117,7 +117,7 @@ BasicBlock >> printOn: aStream [
 		nextPutAll: 'id=';
 		nextPutAll: index asString;
 		nextPutAll: ', address=';
-		nextPutAll: (self firstInstruction address ifNil: [ '--' ] ifNotNil: [ :a | a hex ]);
+		nextPutAll: (self firstInstruction address ifNil: [ '--' ] ifNotNil: [ :a | a asString ]);
 		nextPutAll: ')'
 ]
 

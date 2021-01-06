@@ -472,12 +472,29 @@ BasicBlockCompiler >> Jump: jumpTarget [
 	A new block will contain all the subsequent instructions"
 	| jumpInstruction |
 	jumpInstruction := super Jump: jumpTarget.
+	jumpInstruction jumpWeight: self defaultJumpWeight.
 	self newBasicBlock.
 	^ jumpInstruction
 ]
 
 { #category : #'basic-blocks' }
+BasicBlockCompiler >> JumpNoOverflow: jumpTarget [
+
+	| jumpInstruction |
+	"If no overflow case, normal jump priority.
+	If overflow case (fallthough) give less priority"
+	jumpInstruction := self genConditionalBranch: JumpNoOverflow operand: jumpTarget withFallthroughWeight: 0.
+	^ jumpInstruction
+]
+
+{ #category : #'basic-blocks' }
 BasicBlockCompiler >> Label [
+
+	^ self LabelWithFallthroughWeight: self defaultJumpWeight
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> LabelWithFallthroughWeight: weight [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	
@@ -489,6 +506,7 @@ BasicBlockCompiler >> Label [
 	label basicBlock: theBasicBlock.
 
 	fallthrough jmpTarget: label.
+	fallthrough jumpWeight: weight.
 	^ label
 ]
 
@@ -1145,6 +1163,12 @@ BasicBlockCompiler >> debugStackPointerFor: bcpc [
 	^(debugStackPointers at: bcpc) + (needsFrame ifTrue: [0] ifFalse: [1])
 ]
 
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> defaultJumpWeight [
+
+	^ 100
+]
+
 { #category : #'bytecode generators' }
 BasicBlockCompiler >> doubleExtendedDoAnythingBytecode [
 	"Replaces the Blue Book double-extended send [132], in which the first byte was wasted on 8 bits of argument count. 
@@ -1442,6 +1466,7 @@ BasicBlockCompiler >> gen: opcode operand: operandOne [
 	"opcodeIndex points to the next free slot in the instruction stream, that will be allocated by #gen:"
 	self currentBasicBlock lastInstructionIndex: opcodeIndex.
 	abstractInstruction := super gen: opcode operand: operandOne.
+	abstractInstruction maxSize: thisContext stack copy.
 	^ abstractInstruction
 ]
 
@@ -1537,11 +1562,18 @@ BasicBlockCompiler >> genCmpArgIsConstant: argIsConstant rcvrIsConstant: rcvrIsC
 
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> genConditionalBranch: opcode operand: operandOne [
+	
+	^ self genConditionalBranch: opcode operand: operandOne withFallthroughWeight: self defaultJumpWeight
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> genConditionalBranch: opcode operand: operandOne withFallthroughWeight: fallthorughWeight [
 	"Jump instructions close basic blocks.
 	A new block will contain all the subsequent instructions"
 	| jumpInstruction |
 	jumpInstruction := super genConditionalBranch: opcode operand: operandOne.
-	self Label.
+	jumpInstruction jumpWeight: self defaultJumpWeight.
+	self LabelWithFallthroughWeight: fallthorughWeight.
 	^ jumpInstruction
 ]
 
@@ -1901,10 +1933,20 @@ BasicBlockCompiler >> genInlinedIdenticalOrNotIf: orNot [
 BasicBlockCompiler >> genJumpBackTo: targetBytecodePC [
 	self ssFlushTo: simStackPtr.
 	deadCode := true. "can't fall through"
-	^super genJumpBackTo: targetBytecodePC
+	
+	self MoveAw: coInterpreter stackLimitAddress R: TempReg.
+	self CmpR: TempReg R: SPReg. "N.B. FLAGS := SPReg - TempReg"
+	self
+		genConditionalBranch: JumpAboveOrEqual
+		operand: (self fixupAt: targetBytecodePC)
+		withFallthroughWeight: 0.
+	self CallRT: ceCheckForInterruptTrampoline.
+	self annotateBytecode: self Label.
+	self Jump: (self fixupAt: targetBytecodePC).
+	^0
 ]
 
-{ #category : #'bytecode generator support' }
+{ #category : #'basic-blocks' }
 BasicBlockCompiler >> genJumpIf: boolean to: targetBytecodePC [
 	<inline: false>
 	| desc fixup ok eventualTarget |
@@ -1945,7 +1987,9 @@ BasicBlockCompiler >> genJumpIf: boolean to: targetBytecodePC [
 					ifTrue: [objectMemory trueObject - objectMemory falseObject]
 					ifFalse: [objectMemory falseObject - objectMemory trueObject])
 		R: TempReg.
-	ok := self JumpZero: 0.
+	
+	"We want the ok case to have high priority, but the fallthrough branch to have higher priority during generation"
+	ok := self genConditionalBranch: JumpZero operand: 0 withFallthroughWeight: 0.
 	self genCallMustBeBooleanFor: boolean.
 	ok jmpTarget: (self annotateBytecode: self Label).
 	^0
@@ -2614,6 +2658,9 @@ BasicBlockCompiler >> genSpecialSelectorArithmetic [
 									[rcvrIsInt
 										ifTrue: [objectRepresentation genJumpNotSmallInteger: Arg0Reg]
 										ifFalse: [objectRepresentation genJumpNotSmallIntegersIn: ReceiverResultReg and: Arg0Reg scratch: TempReg]]].
+	"If receiver or argument are not small integers, fall to slow case, so give less priority"
+	jumpNotSmallInts jumpWeight: 0.
+	
 	primDescriptor opcode caseOf: {
 		[AddRR] -> [argIsConst
 						ifTrue:
@@ -2728,6 +2775,10 @@ BasicBlockCompiler >> genSpecialSelectorComparison [
 									[rcvrIsInt
 										ifTrue: [objectRepresentation genJumpNotSmallInteger: Arg0Reg]
 										ifFalse: [objectRepresentation genJumpNotSmallIntegersIn: ReceiverResultReg and: Arg0Reg scratch: TempReg]]].
+	
+	"If receiver or argument are not small integers, fall to slow case, so give less priority"
+	jumpNotSmallInts jumpWeight: 0.
+	
 	argIsIntConst
 		ifTrue: [self CmpCq: argInt R: ReceiverResultReg]
 		ifFalse: [self CmpR: Arg0Reg R: ReceiverResultReg].
@@ -3716,7 +3767,6 @@ BasicBlockCompiler >> newBasicBlock [
 	"Do not create duplicated blocks."
 	(basicBlocks notEmpty and: [self currentBasicBlock firstInstructionIndex = opcodeIndex])
 		ifTrue: [ ^ self currentBasicBlock ].
-	
 	block := BasicBlock new.
 	block index: basicBlocks size.
 	block compiler: self.
@@ -4201,6 +4251,7 @@ BasicBlockCompiler >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialN
 BasicBlockCompiler >> sortBasicBlocks [
 
 	| preambleBlocks |
+	1halt.
 	preambleBlocks := basicBlocks first: 5.
 	basicBlocks := preambleBlocks, (PHBottomUpSorterNoDeadCode new sort: (basicBlocks allButFirst: 5)).
 ]
