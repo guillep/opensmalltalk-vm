@@ -323,27 +323,27 @@ CogObjectRepresentationFor32BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	jumpNotIndexable jmpTarget: cogit Label.
 	jumpNotIndexable := cogit Jump: 0.
 
-	jumpIsBytes jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg).
+	jumpIsBytes jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg.
 		cogit AndCq: objectMemory wordSize - 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 	jumpBytesDone := cogit Jump: 0.
 
-	jumpIsShorts jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: destReg).
+	jumpIsShorts jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: destReg.
 		cogit AndCq: 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 	jumpShortsDone := cogit Jump: 0.
 
-	jumpIs64BitLongs jmpTarget:
-		(cogit LogicalShiftRightCq: 1 R: destReg).
+	jumpIs64BitLongs jmpTarget: cogit Label.
+		cogit LogicalShiftRightCq: 1 R: destReg.
 	jump64BitLongsDone := cogit Jump: 0.
 
 	"formatReg contains fmt, now up for grabs.
 	 destReg contains numSlots, precious.
 	 sourceReg must be preserved"
-	jumpHasFixedFields jmpTarget:
-		(cogit AndCq: objectMemory classIndexMask R: scratchReg).
+	jumpHasFixedFields jmpTarget: cogit Label.
+		cogit AndCq: objectMemory classIndexMask R: scratchReg.
 	cogit MoveR: scratchReg R: formatReg.
 	cogit CmpCq: ClassMethodContextCompactIndex R: scratchReg.
 	jumpIsContext := cogit JumpZero: 0.
@@ -584,8 +584,8 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPut [
 	cogit MoveR: Arg1Reg R: ReceiverResultReg.
 	cogit genPrimReturn.
 
-	jumpIsBytes jmpTarget:
-		(cogit CmpCq: (objectMemory integerObjectOf: 255) R: Arg1Reg).
+	jumpIsBytes jmpTarget: cogit Label.
+		cogit CmpCq: (objectMemory integerObjectOf: 255) R: Arg1Reg.
 	jumpBytesOutOfRange := cogit JumpAbove: 0.
 	cogit LogicalShiftLeftCq: objectMemory shiftForWord R: nSlotsOrBytesReg.
 	cogit AndCq: objectMemory wordSize - 1 R: formatReg R: TempReg.
@@ -602,8 +602,8 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtPut [
 	cogit MoveR: Arg1Reg R: ReceiverResultReg.
 	cogit genPrimReturn.
 
-	jumpIsShorts jmpTarget:
-		(cogit CmpCq: (objectMemory integerObjectOf: 65535) R: Arg1Reg).
+	jumpIsShorts jmpTarget: cogit Label.
+		cogit CmpCq: (objectMemory integerObjectOf: 65535) R: Arg1Reg.
 	jumpShortsOutOfRange := cogit JumpAbove: 0.
 	cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: nSlotsOrBytesReg.
 	cogit AndCq: objectMemory wordSize / 2 - 1 R: formatReg.
@@ -905,15 +905,15 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtSigned: signedVersion [
 	jumpNotIndexable jmpTarget: cogit Label.
 	jumpNotIndexable := cogit Jump: 0.
 
-	jumpIsArray jmpTarget:
-		(cogit CmpR: Arg1Reg R: nSlotsOrBytesReg).
+	jumpIsArray jmpTarget: cogit Label.
+		cogit CmpR: Arg1Reg R: nSlotsOrBytesReg.
 	jumpArrayOutOfBounds := cogit JumpBelowOrEqual: 0.	
 	cogit AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: Arg1Reg.
 	cogit MoveXwr: Arg1Reg R: ReceiverResultReg R: ReceiverResultReg.
 	cogit genPrimReturn.
 
-	jumpIsBytes jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord R: nSlotsOrBytesReg).
+	jumpIsBytes jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord R: nSlotsOrBytesReg.
 		cogit AndCq: objectMemory wordSize - 1 R: formatReg R: TempReg.
 		cogit SubR: TempReg R: nSlotsOrBytesReg;
 		CmpR: Arg1Reg R: nSlotsOrBytesReg.
@@ -936,8 +936,8 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtSigned: signedVersion [
 	self genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
 	cogit genPrimReturn.
 
-	jumpIsShorts jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: nSlotsOrBytesReg).
+	jumpIsShorts jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: nSlotsOrBytesReg.
 		cogit AndCq: 1 R: formatReg.
 		cogit SubR: formatReg R: nSlotsOrBytesReg;
 		CmpR: Arg1Reg R: nSlotsOrBytesReg.
@@ -949,8 +949,8 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtSigned: signedVersion [
 		[cogit SignExtend16R: ReceiverResultReg R: ReceiverResultReg].
 	cogit Jump: convertToIntAndReturn.
 
-	jumpIsWords jmpTarget:
-		(cogit CmpR: Arg1Reg R: nSlotsOrBytesReg).
+	jumpIsWords jmpTarget: cogit Label.
+		cogit CmpR: Arg1Reg R: nSlotsOrBytesReg.
 	jumpWordsOutOfBounds := cogit JumpBelowOrEqual: 0.
 	cogit AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: Arg1Reg.
 	cogit MoveXwr: Arg1Reg R: ReceiverResultReg R: TempReg.
@@ -958,8 +958,8 @@ CogObjectRepresentationFor32BitSpur >> genPrimitiveAtSigned: signedVersion [
 	cogit MoveR: TempReg R: ReceiverResultReg.
 	cogit Jump: convertToIntAndReturn.
 
-	jumpHasFixedFields jmpTarget:
-		(cogit AndCq: objectMemory classIndexMask R: TempReg).
+	jumpHasFixedFields jmpTarget: cogit Label.
+		cogit AndCq: objectMemory classIndexMask R: TempReg.
 	cogit MoveR: TempReg R: formatReg.
 	cogit CmpCq: ClassMethodContextCompactIndex R: TempReg.
 	jumpIsContext := cogit JumpZero: 0.

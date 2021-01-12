@@ -2000,8 +2000,10 @@ SimpleStackBasedCogit >> genInlinedIdenticalOrNotIf: orNot [
 	self annotate: (self genMoveTrueR: Arg0Reg)
 		objRef: objectMemory trueObject.
 	jumpPush := self Jump: 0.
-	jumpNotEqual jmpTarget: (self genMoveFalseR: Arg0Reg).
-	jumpPush jmpTarget: (self MoveR: Arg0Reg Mw: 0 r: SPReg).
+	jumpNotEqual jmpTarget: self Label.
+	self genMoveFalseR: Arg0Reg.
+	jumpPush jmpTarget: self Label.
+	self MoveR: Arg0Reg Mw: 0 r: SPReg.
 	^0
 ]
 

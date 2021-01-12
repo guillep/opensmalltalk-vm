@@ -22,7 +22,8 @@ Class {
 		'send1TrampolineAddress',
 		'send2TrampolineAddress',
 		'send3TrampolineAddress',
-		'bytecodeEncodeClass'
+		'bytecodeEncodeClass',
+		'jitCompilerClass'
 	],
 	#pools : [
 		'CogAbstractRegisters',
@@ -184,7 +185,7 @@ VMSimpleStackBasedCogitAbstractTest >> compileWithoutOutput: aBlockClosure bytec
 	  - compiler intrinsics (routines and trampolines) are written to output the machine code directly
 	  - this is used as the first part of the #compile:bytecodes:header: to initialize the compiler"
 
-	cogit allocateOpcodes: (bytecodes + 10) * 10 bytecodes: bytecodes ifFail: [ self fail ].
+	cogit allocateOpcodes: (bytecodes + 12) * 10 bytecodes: bytecodes ifFail: [ self fail ].
 	cogit zeroOpcodeIndex.
 	cogit maxLitIndex: -1.
 	cogit methodLabel address: cogit methodZone freeStart.
@@ -333,6 +334,12 @@ VMSimpleStackBasedCogitAbstractTest >> createSpecialSelectorArray [
 	memory specialObjectsOop: specialObjectsOop.
 ]
 
+{ #category : #running }
+VMSimpleStackBasedCogitAbstractTest >> defaultJitCompilerClass [
+
+	^ SimpleStackBasedCogit
+]
+
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> disassemble [
 	
@@ -434,7 +441,12 @@ VMSimpleStackBasedCogitAbstractTest >> instructionPointer [
 { #category : #running }
 VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 
-	^ SimpleStackBasedCogit
+	^ jitCompilerClass ifNil: [ self defaultJitCompilerClass ]
+]
+
+{ #category : #accessing }
+VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass: anObject [
+	jitCompilerClass := anObject
 ]
 
 { #category : #helpers }
@@ -446,15 +458,15 @@ VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
 
-	| methodOop v3Method |
+	| methodOop bytecodeMethodInTargetEncoding |
 	"We are using V3 bytecode, so we need to recompile the method"
-	v3Method := aPharoCompiledMethod methodClass compiler
+	bytecodeMethodInTargetEncoding := aPharoCompiledMethod methodClass compiler
 		            encoderClass: self bytecodeEncoderClass;
 		            options: #( - optionFullBlockClosure );
 		            compile: aPharoCompiledMethod sourceCode.
 
 	methodOop := methodBuilder
-		             fillFromPharoMethod: v3Method;
+		             fillFromPharoMethod: bytecodeMethodInTargetEncoding;
 		             buildMethod.
 
 	^ cogit cog: methodOop selector: aSelectorOop

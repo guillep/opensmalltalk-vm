@@ -223,8 +223,8 @@ CogObjectRepresentationFor64BitSpur >> genAlloc64BitSignedIntegerValue: valueReg
 	 an uncommon case; usually the value will fit in a SmallInteger."
 	self assert: (objectMemory headerForSlots: 0 format: 0 classIndex: 1) = 1.
 	cogit AddCq: ClassLargePositiveIntegerCompactIndex - ClassLargeNegativeIntegerCompactIndex R: scratch1.
-	jumpNeg jmpTarget:
-	(cogit MoveR: scratch1 Mw: 0 r: resultReg).
+	jumpNeg jmpTarget: cogit Label.
+	cogit MoveR: scratch1 Mw: 0 r: resultReg.
 	"The old less compact code was
 	cogit CmpCq: 0 R: valueReg.
 	jumpNeg := cogit JumpLess: 0.
@@ -297,8 +297,8 @@ CogObjectRepresentationFor64BitSpur >> genConvertBitsToSmallFloatIn: reg scratch
 	cogit JumpBelowOrEqual: 0.
 	cogit
 		SubCq: objectMemory smallFloatExponentOffset << (objectMemory smallFloatMantissaBits + 1) R: reg.
-	jumpZero jmpTarget:
-	(cogit LogicalShiftLeftCq: objectMemory numTagBits R: reg).
+	jumpZero jmpTarget: cogit Label.
+	cogit LogicalShiftLeftCq: objectMemory numTagBits R: reg.
 	cogit AddCq: objectMemory smallFloatTag R: reg.
 	^0
 ]
@@ -331,21 +331,21 @@ CogObjectRepresentationFor64BitSpur >> genConvertDataFormat: formatReg numSlots:
 	jumpLongLongsDone := cogit Jump: 0.
 	
 	"Bytes"
-	jumpIsBytes jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg).
+	jumpIsBytes jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg.
 		cogit AndCq: objectMemory wordSize - 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 	jumpBytesDone := cogit Jump: 0.
 	
-	jumpIsShorts jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: destReg).
+	jumpIsShorts jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: destReg.
 		cogit AndCq: (objectMemory wordSize >> 1) - 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 		cogit LogicalShiftLeftCq: 1 R: destReg.
 	jumpShortsDone := cogit Jump: 0.
 	
-	jumpIsLongs jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 2 R: destReg).
+	jumpIsLongs jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 2 R: destReg.
 		cogit AndCq: (objectMemory wordSize >> 2) - 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 		cogit LogicalShiftLeftCq: 2 R: destReg.
@@ -480,13 +480,15 @@ CogObjectRepresentationFor64BitSpur >> genFloatComparison: jumpOpcodeGenerator i
 		ifFalse: [self genGetSmallFloatValueOf: ReceiverResultReg scratch: TempReg into: DPFPReg0].
 	jumpNotSmallFloat := self genJumpNotSmallFloat: Arg0Reg.
 	self genGetSmallFloatValueOf: Arg0Reg scratch: TempReg into: DPFPReg1.
-	compare := invertComparison "May need to invert for NaNs"
+	compare := cogit Label.
+	invertComparison "May need to invert for NaNs"
 					ifTrue: [cogit CmpRd: DPFPReg0 Rd: DPFPReg1]
 					ifFalse: [cogit CmpRd: DPFPReg1 Rd: DPFPReg0].
 	jumpCond := cogit perform: jumpOpcodeGenerator with: 0. "FP jumps are a little weird"
 	cogit genMoveFalseR: ReceiverResultReg.
 	cogit genPrimReturn.
-	jumpCond jmpTarget: (cogit genMoveTrueR: ReceiverResultReg).
+	jumpCond jmpTarget: cogit Label.
+	cogit genMoveTrueR: ReceiverResultReg.
 	cogit genPrimReturn.
 	jumpNotSmallFloat jmpTarget: cogit Label.
 	jumpNotSmallInteger := self genJumpNotSmallInteger: Arg0Reg.
@@ -645,20 +647,20 @@ CogObjectRepresentationFor64BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	jumpNotIndexable jmpTarget: cogit Label.
 	jumpNotIndexable := cogit Jump: 0.
 
-	jumpIsBytes jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg).
+	jumpIsBytes jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord R: destReg.
 		cogit AndCq: objectMemory wordSize - 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 	jumpBytesDone := cogit Jump: 0.
 
-	jumpIsShorts jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: destReg).
+	jumpIsShorts jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: destReg.
 		cogit AndCq: objectMemory wordSize >> 1 - 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 	jumpShortsDone := cogit Jump: 0.
 
-	jumpIs32BitLongs jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 2 R: destReg).
+	jumpIs32BitLongs jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 2 R: destReg.
 		cogit AndCq: objectMemory wordSize >> 2 - 1 R: formatReg.
 		cogit SubR: formatReg R: destReg.
 	jump32BitLongsDone := cogit Jump: 0.
@@ -666,8 +668,8 @@ CogObjectRepresentationFor64BitSpur >> genGetSizeOf: sourceReg into: destReg for
 	"formatReg contains fmt, now up for grabs.
 	 destReg contains numSlots, precious.
 	 sourceReg must be preserved"
-	jumpHasFixedFields jmpTarget:
-		(cogit AndCq: objectMemory classIndexMask R: scratchReg).
+	jumpHasFixedFields jmpTarget: cogit Label.
+		cogit AndCq: objectMemory classIndexMask R: scratchReg.
 	cogit MoveR: scratchReg R: formatReg.
 	cogit CmpCq: ClassMethodContextCompactIndex R: scratchReg.
 	jumpIsContext := cogit JumpZero: 0.
@@ -699,7 +701,8 @@ CogObjectRepresentationFor64BitSpur >> genGetSmallFloatValueOf: oopReg scratch: 
 		CmpCq: 1 R: scratch.
 	jumpSFZero := cogit JumpLessOrEqual: 0.
 	cogit AddCq: objectMemory smallFloatExponentOffset << (objectMemory smallFloatMantissaBits + 1) R: scratch.
-	jumpSFZero jmpTarget: (cogit RotateRightCq: 1 R: scratch).
+	jumpSFZero jmpTarget: cogit Label.
+	cogit RotateRightCq: 1 R: scratch.
 	cogit MoveR: scratch Rd: dpReg.
 	^0
 ]
@@ -834,16 +837,16 @@ CogObjectRepresentationFor64BitSpur >> genJumpNotSmallFloatValueBits: reg scratc
 	jumpMaxExponent := cogit JumpLessOrEqual: 0.
 	jumpFail :=
 	cogit Jump: 0.
-	jumpMinExponent jmpTarget:
-	(cogit TstCq: 1 << objectMemory smallFloatMantissaBits - 1 R: reg). "test mantissa bits"
+	jumpMinExponent jmpTarget: cogit Label.
+	cogit TstCq: 1 << objectMemory smallFloatMantissaBits - 1 R: reg. "test mantissa bits"
 	jumpZeroMantissa := cogit JumpZero: 0.
 	cogit CmpCq: objectMemory smallFloatExponentOffset R: exponent.
 	jumpTest :=
 	cogit Jump: 0.
-	jumpZeroMantissa jmpTarget:
-	(cogit CmpCq: 0 R: exponent).
-	jumpTest jmpTarget:
-	(cogit JumpNonZero: jumpFail).
+	jumpZeroMantissa jmpTarget: cogit Label.
+	cogit CmpCq: 0 R: exponent.
+	jumpTest jmpTarget: cogit Label.
+	cogit JumpNonZero: jumpFail.
 	jumpMaxExponent jmpTarget: cogit Label.
 	^jumpFail
 ]
@@ -1055,8 +1058,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 
 	"Handle LargePositiveInteger (unsigned) or LargePositiveInteger and LargeNegativeInteger (signed)
 	 for sixtyFourBitIndexableFormat"
-	jumpNonSmallIntegerValue jmpTarget:
-		(cogit CmpCq: objectMemory sixtyFourBitIndexableFormat R: formatReg).
+	jumpNonSmallIntegerValue jmpTarget: cogit Label.
+		cogit CmpCq: objectMemory sixtyFourBitIndexableFormat R: formatReg.
 	jumpNot64BitIndexable := cogit JumpNonZero: 0.
 	jump64BitArgIsImmediate := self genJumpImmediate: Arg1Reg.
 	signedVersion ifTrue: "Test top bit of 64-bit word in large integer for range check."
@@ -1100,8 +1103,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 			 cogit AddCq: 1 R: TempReg. "Maps in range to 0,1"
 			 cogit CmpCq: 1 R: TempReg]
 		ifFalse:
-			[jumpIsWords jmpTarget:
-			 (cogit CmpCq: (objectMemory integerObjectOf: 16rFFFFFFFF) R: Arg1Reg)].
+			[jumpIsWords jmpTarget: cogit Label.
+			 cogit CmpCq: (objectMemory integerObjectOf: 16rFFFFFFFF) R: Arg1Reg].
 	jumpWordsOutOfRange := cogit JumpAbove: 0.
 	cogit LogicalShiftLeftCq: objectMemory shiftForWord - 2 R: nSlotsOrBytesReg.
 	cogit AndCq: objectMemory wordSize / 4 - 1 R: formatReg.
@@ -1117,14 +1120,14 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 
 	signedVersion
 		ifTrue:
-			[jumpIsBytes jmpTarget:
-			 (cogit MoveR: SendNumArgsReg R: TempReg).
+			[jumpIsBytes jmpTarget: cogit Label.
+			 cogit MoveR: SendNumArgsReg R: TempReg.
 			 cogit ArithmeticShiftRightCq: 7 R: TempReg. "Maps in range to -1,0".
 			 cogit AddCq: 1 R: TempReg. "Maps in range to 0,1"
 			 cogit CmpCq: 1 R: TempReg]
-		ifFalse:
-			[jumpIsBytes jmpTarget:
-			 (cogit CmpCq: (objectMemory integerObjectOf: 255) R: Arg1Reg)].
+		ifFalse: [
+			jumpIsBytes jmpTarget: cogit Label.
+			cogit CmpCq: (objectMemory integerObjectOf: 255) R: Arg1Reg ].
 	jumpBytesOutOfRange := cogit JumpAbove: 0.
 	cogit LogicalShiftLeftCq: objectMemory shiftForWord R: nSlotsOrBytesReg.
 	cogit AndCq: objectMemory wordSize - 1 R: formatReg R: TempReg.
@@ -1143,14 +1146,14 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 
 	signedVersion
 		ifTrue:
-			[jumpIsShorts jmpTarget:
-			 (cogit MoveR: SendNumArgsReg R: TempReg).
+			[jumpIsShorts jmpTarget: cogit Label.
+			cogit MoveR: SendNumArgsReg R: TempReg.
 			 cogit ArithmeticShiftRightCq: 15 R: TempReg. "Maps in range to -1,0".
 			 cogit AddCq: 1 R: TempReg. "Maps in range to 0,1"
 			 cogit CmpCq: 1 R: TempReg]
 		ifFalse:
-			[jumpIsShorts jmpTarget:
-			 (cogit CmpCq: (objectMemory integerObjectOf: 65535) R: Arg1Reg)].
+			[jumpIsShorts jmpTarget: cogit Label.
+			 cogit CmpCq: (objectMemory integerObjectOf: 65535) R: Arg1Reg ].
 	jumpShortsOutOfRange := cogit JumpAbove: 0.
 	cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: nSlotsOrBytesReg.
 	cogit AndCq: objectMemory wordSize / 2 - 1 R: formatReg.
@@ -1274,16 +1277,16 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 	jumpNotIndexable := cogit Jump: 0.
 
 	"Array case"
-	jumpIsArray jmpTarget:
-		(cogit CmpR: Arg1Reg R: nSlotsOrElementsReg).
+	jumpIsArray jmpTarget: cogit Label.
+	cogit CmpR: Arg1Reg R: nSlotsOrElementsReg.
 	jumpArrayOutOfBounds := cogit JumpBelowOrEqual: 0.	
 	cogit AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: Arg1Reg.
 	cogit MoveXwr: Arg1Reg R: ReceiverResultReg R: ReceiverResultReg.
 	cogit genPrimReturn.
 
 	"Bytes case (byte array, compiled method...)"
-	jumpIsBytes jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord R: nSlotsOrElementsReg).
+	jumpIsBytes jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord R: nSlotsOrElementsReg.
 		cogit AndCq: 7 R: formatReg R: TempReg.
 		cogit SubR: TempReg R: nSlotsOrElementsReg;
 		CmpR: Arg1Reg R: nSlotsOrElementsReg.
@@ -1306,8 +1309,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 	self genConvertIntegerToSmallIntegerInReg: ReceiverResultReg.
 	cogit genPrimReturn.
 
-	jumpIs16bitIndexable jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: nSlotsOrElementsReg).
+	jumpIs16bitIndexable jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 1 R: nSlotsOrElementsReg.
 		cogit AndCq: 3 R: formatReg.
 		cogit SubR: formatReg R: nSlotsOrElementsReg;
 		CmpR: Arg1Reg R: nSlotsOrElementsReg.
@@ -1319,8 +1322,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 		[cogit SignExtend16R: ReceiverResultReg R: ReceiverResultReg].
 	cogit Jump: convertToIntAndReturn.
 
-	jumpIs32bitIndexable jmpTarget:
-		(cogit LogicalShiftLeftCq: objectMemory shiftForWord - 2 R: nSlotsOrElementsReg).
+	jumpIs32bitIndexable jmpTarget: cogit Label.
+		cogit LogicalShiftLeftCq: objectMemory shiftForWord - 2 R: nSlotsOrElementsReg.
 		cogit AndCq: 1 R: formatReg.
 		cogit SubR: formatReg R: nSlotsOrElementsReg;
 		CmpR: Arg1Reg R: nSlotsOrElementsReg.
@@ -1332,8 +1335,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 		[cogit SignExtend32R: ReceiverResultReg R: ReceiverResultReg].
 	cogit Jump: convertToIntAndReturn.
 
-	jumpHasFixedFields jmpTarget:
-		(cogit AndCq: objectMemory classIndexMask R: TempReg).
+	jumpHasFixedFields jmpTarget: cogit Label.
+		cogit AndCq: objectMemory classIndexMask R: TempReg.
 	cogit MoveR: TempReg R: formatReg.
 	cogit CmpCq: ClassMethodContextCompactIndex R: TempReg.
 	jumpIsContext := cogit JumpZero: 0.
@@ -1351,8 +1354,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtSigned: signedVersion [
 	cogit MoveXwr: Arg1Reg R: ReceiverResultReg R: ReceiverResultReg.
 	cogit genPrimReturn.
 
-	jumpIs64bitIndexable jmpTarget:
-		(cogit CmpR: Arg1Reg R: nSlotsOrElementsReg).
+	jumpIs64bitIndexable jmpTarget: cogit Label.
+		cogit CmpR: Arg1Reg R: nSlotsOrElementsReg.
 	jumpLongsOutOfBounds := cogit JumpBelowOrEqual: 0.	
 	cogit AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: Arg1Reg.
 	cogit MoveXwr: Arg1Reg R: ReceiverResultReg R: ClassReg.

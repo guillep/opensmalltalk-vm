@@ -25,12 +25,16 @@ VMMethodBuilder >> buildMethod [
 { #category : #building }
 VMMethodBuilder >> buildMethodHeader [
 
-	^ encoderFlag
-		+ (numberOfArguments bitShift: 24)
+	| baseHeader signBit sign |
+	baseHeader := (numberOfArguments bitShift: 24)
 		+ (numberOfTemporaries bitShift: 18) 
 		+ (isSmall ifTrue: [ 0 ] ifFalse: [ 1 bitShift: 17 ])
 		+ literals size 
-		+ (isPrimitive asBit << 16)
+		+ (isPrimitive asBit << 16).
+
+	sign := encoderFlag < 0 ifTrue: [ 1 ] ifFalse: [ 0 ].
+	signBit := (sign << (memory wordSize * 8 - 1)).
+	^ signBit + (memory integerObjectOf: baseHeader).
 ]
 
 { #category : #helper }
@@ -105,6 +109,7 @@ VMMethodBuilder >> initialize [
 	"We reuse initialize to reset the builder, so we nil those objects"
 	method := nil.
 	slotSize := nil.
+	encoderFlag := 0
 ]
 
 { #category : #building }
@@ -202,8 +207,7 @@ VMMethodBuilder >> putBytecodesInMethod [
 VMMethodBuilder >> putHeaderInMethod [
 	memory storePointer: 0 
 		ofObject: method
-		withValue: (memory integerObjectOf: self buildMethodHeader)
-
+		withValue: self buildMethodHeader
 ]
 
 { #category : #filling }

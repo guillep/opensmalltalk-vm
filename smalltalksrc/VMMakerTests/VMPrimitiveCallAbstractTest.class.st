@@ -4,8 +4,7 @@ Class {
 	#instVars : [
 		'baseMethodIP',
 		'baseFrame',
-		'baseMethod',
-		'jitCompilerClass'
+		'baseMethod'
 	],
 	#category : #'VMMakerTests-JitTests'
 }
@@ -59,21 +58,16 @@ VMPrimitiveCallAbstractTest >> createBaseFrame [
 
 ]
 
+{ #category : #'methods under test' }
+VMPrimitiveCallAbstractTest >> defaultJitCompilerClass [
+
+	^ StackToRegisterMappingCogit
+]
+
 { #category : #helpers }
 VMPrimitiveCallAbstractTest >> findMethod: aSelector [
 
 	^ self class lookupSelector: aSelector
-]
-
-{ #category : #'methods under test' }
-VMPrimitiveCallAbstractTest >> jitCompilerClass [
-
-	^ jitCompilerClass ifNil: [ StackToRegisterMappingCogit ]
-]
-
-{ #category : #accessing }
-VMPrimitiveCallAbstractTest >> jitCompilerClass: anObject [
-	jitCompilerClass := anObject
 ]
 
 { #category : #'methods under test' }

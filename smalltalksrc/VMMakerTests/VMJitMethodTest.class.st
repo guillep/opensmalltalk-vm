@@ -195,8 +195,6 @@ VMJitMethodTest >> testWhileSingleLoop [
 		arguments:  { }
 		returnAddress: callerAddress.
 		
-	self halt.
-
 	self 
 		assert: (memory integerValueOf: machineSimulator receiverRegisterValue)
 		equals: 9

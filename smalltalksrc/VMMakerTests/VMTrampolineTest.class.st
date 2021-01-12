@@ -23,6 +23,12 @@ VMTrampolineTest class >> testParameters [
 ]
 
 { #category : #tests }
+VMTrampolineTest >> defaultJitCompilerClass [
+
+	^ StackToRegisterMappingCogit
+]
+
+{ #category : #tests }
 VMTrampolineTest >> isAligned [
 
 	^ isAligned
@@ -32,12 +38,6 @@ VMTrampolineTest >> isAligned [
 VMTrampolineTest >> isAligned: aBoolean [
 
 	isAligned := aBoolean
-]
-
-{ #category : #tests }
-VMTrampolineTest >> jitCompilerClass [
-
-	^ StackToRegisterMappingCogit
 ]
 
 { #category : #tests }

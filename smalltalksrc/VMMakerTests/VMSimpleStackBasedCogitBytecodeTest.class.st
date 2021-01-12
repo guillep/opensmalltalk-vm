@@ -247,6 +247,7 @@ VMSimpleStackBasedCogitBytecodeTest >> testJumpForwardJumpsOverAnInstruction [
 		cogit bytecodePC: 10. 
 		"We need to store the value to know if the bytecode has generated instructions"
 		nextOpcodeIndex := cogit getOpcodeIndex.
+		cogit Label.
 		cogit genReturnTrue.
 		"As the bytecode is the target of a jump it has a fixup. We need to process it"
 		fixup := cogit fixupAt: 10.

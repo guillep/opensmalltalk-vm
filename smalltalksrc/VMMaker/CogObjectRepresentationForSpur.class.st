@@ -448,7 +448,8 @@ CogObjectRepresentationForSpur >> genBoxedOrSmallFloat: floatOopReg scratchReg: 
 	self genGetDoubleValueOf: floatOopReg into: destReg.
 	jumpMerge := cogit Jump: 0.
 
-	jumpImmediate jmpTarget: (jumpFailClass jmpTarget: (jumpFail := cogit Jump: 0)).
+	jumpImmediate jmpTarget: (jumpFailClass jmpTarget: cogit Label).
+	jumpFail := cogit Jump: 0.
 
 	jumpMerge jmpTarget: cogit Label.
 	^ jumpFail
@@ -1684,7 +1685,8 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadBoolean8FromBytes [
 		cogit genPrimReturn.
 		
 		"True result"
-		inst := trueResultJump jmpTarget: (cogit MoveCw: objectMemory trueObject R: ReceiverResultReg).
+		inst := trueResultJump jmpTarget: cogit Label.
+		cogit MoveCw: objectMemory trueObject R: ReceiverResultReg.
 		cogit annotate: inst objRef: objectMemory trueObject.	
 		cogit genPrimReturn.
 	].
@@ -1704,7 +1706,8 @@ CogObjectRepresentationForSpur >> genPrimitiveLoadBoolean8FromExternalAddress [
 		cogit genPrimReturn.
 		
 		"True result"
-		inst := trueResultJump jmpTarget: (cogit MoveCw: objectMemory trueObject R: ReceiverResultReg).
+		inst := trueResultJump jmpTarget: cogit Label.
+		cogit MoveCw: objectMemory trueObject R: ReceiverResultReg.
 		cogit annotate: inst objRef: objectMemory trueObject.	
 		cogit genPrimReturn.
 	].
@@ -2139,7 +2142,8 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreBoolean8IntoBytes [
 		cogit genPrimReturn.
 
 		"False or not a boolean"
-		jumpNotTrueObject jmpTarget: (cogit annotate: (cogit CmpCw: objectMemory falseObject R: valueOop) objRef: objectMemory falseObject).
+		jumpNotTrueObject jmpTarget: cogit Label.
+		cogit annotate: (cogit CmpCw: objectMemory falseObject R: valueOop) objRef: objectMemory falseObject.
 		jumpNotBooleanObject := cogit JumpNonZero: 0.
 
 		"False"
@@ -2167,7 +2171,8 @@ CogObjectRepresentationForSpur >> genPrimitiveStoreBoolean8IntoExternalAddress [
 		cogit genPrimReturn.
 
 		"False or not a boolean"
-		jumpNotTrueObject jmpTarget: (cogit annotate: (cogit CmpCw: objectMemory falseObject R: valueOop) objRef: objectMemory falseObject).
+		jumpNotTrueObject jmpTarget: cogit Label.
+		cogit annotate: (cogit CmpCw: objectMemory falseObject R: valueOop) objRef: objectMemory falseObject.
 		jumpNotBooleanObject := cogit JumpNonZero: 0.
 
 		"False"

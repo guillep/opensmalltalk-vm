@@ -4251,7 +4251,6 @@ BasicBlockCompiler >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialN
 BasicBlockCompiler >> sortBasicBlocks [
 
 	| preambleBlocks |
-	1halt.
 	preambleBlocks := basicBlocks first: 5.
 	basicBlocks := preambleBlocks, (PHBottomUpSorterNoDeadCode new sort: (basicBlocks allButFirst: 5)).
 ]

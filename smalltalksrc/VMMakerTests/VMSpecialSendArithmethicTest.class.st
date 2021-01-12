@@ -78,6 +78,12 @@ VMSpecialSendArithmethicTest >> compileMethod [
 		               cogit genReturnTopFromMethod ]
 ]
 
+{ #category : #running }
+VMSpecialSendArithmethicTest >> defaultJitCompilerClass [
+
+	^ StackToRegisterMappingCogit
+]
+
 { #category : #accessing }
 VMSpecialSendArithmethicTest >> expectedReflexiveResult [
 	^ expectedReflexiveResult
@@ -96,12 +102,6 @@ VMSpecialSendArithmethicTest >> expectedResult [
 { #category : #accessing }
 VMSpecialSendArithmethicTest >> expectedResult: anObject [
 	expectedResult := anObject
-]
-
-{ #category : #running }
-VMSpecialSendArithmethicTest >> jitCompilerClass [
-
-	^ StackToRegisterMappingCogit 
 ]
 
 { #category : #builder }

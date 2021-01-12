@@ -5713,14 +5713,12 @@ Cogit >> compilePICAbort: numArgs [
 	 N.B. This code must match that in compileAbort so that the offset of the return address of
 	 the call is the same in methods and closed PICs."
 	picMNUAbort := self MoveCq: self picAbortDiscriminatorValue R: ClassReg.
-	backEnd hasLinkRegister
-		ifTrue:
-			["If there is a link register it must be saved (pushed onto the stack) before it
-			  is smashed by the abort call, and hence needs to be manually handled here".
-			 picInterpretAbort := self PushR: LinkReg.
-			 self Call: (self picAbortTrampolineFor: numArgs)]
-		ifFalse:
-			[picInterpretAbort := self Call: (self picAbortTrampolineFor: numArgs)].
+	picInterpretAbort := self Label.
+	backEnd hasLinkRegister ifTrue: [
+		"If there is a link register it must be saved (pushed onto the stack) before it
+		is smashed by the abort call, and hence needs to be manually handled here".
+		self PushR: LinkReg ].
+	self Call: (self picAbortTrampolineFor: numArgs).
 	^0
 ]
 
@@ -5853,7 +5851,7 @@ Cogit >> computeEntryOffsets [
 	 are effectively garbage collected on return."
 	| sendMissCall |
 	<var: 'sendMissCall' type: #'AbstractInstruction *'>
-	self allocateOpcodes: 24 bytecodes: 0.
+	self allocateOpcodes: 32 bytecodes: 0.
 	methodOrBlockNumArgs := 0.
 	sendMissCall := self compileAbort.
 	self compileEntry.
@@ -10486,7 +10484,8 @@ Cogit >> patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex [
 	 fixup needsFixup ifTrue:
 		["There is a fixup for this bytecode.  It must point to the first generated
 		   instruction for this bytecode.  If there isn't one we need to add a label."
-		 fixup targetInstruction: self Label ].
+		 opcodeIndex = nextOpcodeIndex ifTrue: [self Label].
+		 fixup targetInstruction: (self abstractInstructionAt: nextOpcodeIndex)].
 ]
 
 { #category : #'in-line cacheing' }

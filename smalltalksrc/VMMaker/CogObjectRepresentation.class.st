@@ -846,11 +846,13 @@ nonInt:
 	cogit LogicalShiftLeftR: ClassReg R: ReceiverResultReg.
 	self genAddSmallIntegerTagsTo: ReceiverResultReg.
 	cogit genPrimReturn.
-	jumpNegative jmpTarget: (cogit NegateR: ClassReg).
+	jumpNegative jmpTarget: cogit Label.
+	cogit NegateR: ClassReg.
 	cogit CmpCq: self numSmallIntegerBits R: ClassReg. "N.B. FLAGS := ClassReg - numSmallIntegerBits"
 	jumpInRange := cogit JumpLessOrEqual: 0.
 	cogit MoveCq: self numSmallIntegerBits R: ClassReg.
-	jumpInRange jmpTarget: (cogit ArithmeticShiftRightR: ClassReg R: ReceiverResultReg).
+	jumpInRange jmpTarget: cogit Label.
+	cogit ArithmeticShiftRightR: ClassReg R: ReceiverResultReg.
 	self genClearAndSetSmallIntegerTagsIn: ReceiverResultReg.
 	cogit genPrimReturn.
 	jumpNotSI jmpTarget: (jumpTooBig jmpTarget: (jumpOvfl jmpTarget: cogit Label)).
@@ -1807,7 +1809,8 @@ CogObjectRepresentation >> genSmallIntegerComparison: jumpOpcode [
 	jumpTrue := cogit genConditionalBranch: jumpOpcode operand: 0.
 	cogit genMoveFalseR: ReceiverResultReg.
 	cogit genPrimReturn.
-	jumpTrue jmpTarget: (cogit genMoveTrueR: ReceiverResultReg).
+	jumpTrue jmpTarget: cogit Label.
+	cogit genMoveTrueR: ReceiverResultReg.
 	cogit genPrimReturn.
 	jumpFail jmpTarget: cogit Label.
 	^CompletePrimitive
@@ -1845,7 +1848,8 @@ CogObjectRepresentation >> genSmallIntegerComparison: jumpOpcode orDoubleCompari
 	jumpCond := cogit perform: jumpFPOpcodeGenerator with: 0. "FP jumps are a little weird"
 	cogit genMoveFalseR: ReceiverResultReg.
 	cogit genPrimReturn.
-	jumpCond jmpTarget: (cogit genMoveTrueR: ReceiverResultReg).
+	jumpCond jmpTarget: cogit Label.
+	cogit genMoveTrueR: ReceiverResultReg.
 	cogit genPrimReturn.
 
 	self smallIntegerIsOnlyImmediateType
