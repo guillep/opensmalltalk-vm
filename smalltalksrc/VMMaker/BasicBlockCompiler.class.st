@@ -922,7 +922,7 @@ BasicBlockCompiler >> ceStoreCheckTrampoline [
 { #category : #'compile abstract instructions' }
 BasicBlockCompiler >> compileAbstractInstructionsFrom: start through: end [
 	"Loop over bytecodes, dispatching to the generator for each bytecode, handling fixups in due course."
-	| nextOpcodeIndex descriptor nExts fixup result |
+	| descriptor nExts fixup result mergeLabel |
 	<var: #descriptor type: #'BytecodeDescriptor *'>
 	<var: #fixup type: #'BytecodeFixup *'>
 	self traceSimStack.
@@ -931,15 +931,14 @@ BasicBlockCompiler >> compileAbstractInstructionsFrom: start through: end [
 	descriptor := nil.
 	deadCode := false.
 	[self maybeHaltIfDebugPC.
-	 self mergeWithFixupIfRequired: (fixup := self fixupAt: bytecodePC).
 	 descriptor := self loadBytesAndGetDescriptor.
-	 nextOpcodeIndex := opcodeIndex.
-	 result := deadCode
+	mergeLabel := self mergeWithFixupIfRequired: (fixup := self fixupAt: bytecodePC). 
+	result := deadCode
 				ifTrue: [self mapDeadDescriptorIfNeeded: descriptor]
 				ifFalse: [self generateIRForBytecodeDescriptor: descriptor].
 	 result = 0 ifTrue: [self assertExtsAreConsumed: descriptor].
 	 self traceDescriptor: descriptor; traceSimStack.
-	 self patchFixupTargetIfNeeded: fixup nextOpcodeIndex: nextOpcodeIndex.
+	 self patchFixupTargetIfNeeded: fixup nextInstruction: mergeLabel.
 	 self maybeDumpLiterals: descriptor.
 	 bytecodePC := self nextBytecodePCFor: descriptor exts: nExts.
 	 result = 0 and: [bytecodePC <= end]] whileTrue:
@@ -3659,24 +3658,28 @@ BasicBlockCompiler >> mergeWithFixupIfRequired: fixup [
 	for later assertions."
 	<var: #fixup type: #'BytecodeFixup *'>
 
+	| label |
 	self assertCorrectSimStackPtr.
 
 	"case 1"
 	fixup notAFixup ifTrue:
 		[^0].
 
+	label := 0.
 	"Check if the current bytecode is the leader of a basic block.
 	We identify this by checking the fixups.
 	A fixup has been created if the bytecode is the target of a backwards branch.
 	In this case, create a new basic block to host subsequent IR instructions"
 	fixup isBackwardBranchFixup ifTrue: [
 		"Labels implicitly create a new basic block and a fallthrough jump from the previous block"
-		self Label.
+		label := self Label.
 	].
 
 	"case 2"
-	fixup isNonMergeFixup ifTrue:
-		[deadCode := false. ^0].
+	fixup isNonMergeFixup ifTrue: [
+		label := self Label.
+		deadCode := false.
+		^ label].
 
 	"cases 3 and 4"
 	self assert: fixup isMergeFixup.
@@ -3702,7 +3705,7 @@ BasicBlockCompiler >> mergeWithFixupIfRequired: fixup [
 		[self assert: fixup simStackPtr = (self debugStackPointerFor: bytecodePC)].
 	self restoreSimStackAtMergePoint: fixup.
 
-	^0
+	^label
 ]
 
 { #category : #trampolines }
@@ -3799,6 +3802,16 @@ BasicBlockCompiler >> numberOfSpillsInTopNItems: n [
 		[:i| (self simStackAt: i) type = SSSpill ifTrue:
 			[^n - (simStackPtr - i)]].
 	^0
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> patchFixupTargetIfNeeded: fixup nextInstruction: aLabel [
+	<var: #fixup type: #'BytecodeFixup *'>
+	<inline: true>
+	fixup needsFixup ifTrue: [
+		"There is a fixup for this bytecode.  It must point to the first generated
+		instruction for this bytecode.  If there isn't one we need to add a label."
+		fixup targetInstruction: aLabel ].
 ]
 
 { #category : #trampolines }
