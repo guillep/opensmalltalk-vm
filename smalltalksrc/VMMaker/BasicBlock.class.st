@@ -61,6 +61,48 @@ BasicBlock >> instructions [
 		collect: [ :i | compiler abstractInstructionAt: i ]
 ]
 
+{ #category : #modifying }
+BasicBlock >> invertConditionalJump [
+	
+	| inverseOpcode targetA |
+	inverseOpcode := compiler inverseBranchFor: self instructionBeforeLastInstruction opcode.
+	self instructionBeforeLastInstruction opcode: inverseOpcode.
+	
+	targetA := self instructionBeforeLastInstruction jmpTarget.
+	self instructionBeforeLastInstruction jmpTarget: self lastInstruction jmpTarget.
+	self lastInstruction jmpTarget: targetA
+]
+
+{ #category : #testing }
+BasicBlock >> isFallingThroughBlock: aBasicBlock [ 
+	
+	| lastInstruction |
+	lastInstruction := self lastInstruction.
+	^ lastInstruction isJump
+		and: [ lastInstruction jmpTarget = aBasicBlock label ]
+]
+
+{ #category : #testing }
+BasicBlock >> isJumpingConditionallyOnTrueBranchToBlock: aBasicBlock [ 
+	"A conditional jump is represented by two jumps:
+		a conditional jump (the true branch) followed by a non conditional jump (the false branch).
+	Then, if the instruction before last anwers true to #isJump, we have a conditional jump.
+	#isJump answers true if the instruction is jump, conditional or not.
+
+	Then check that the jump target of the condition is the entry label of the block"
+	| instructionBeforeLast |
+	instructionBeforeLast := self instructionBeforeLastInstruction.
+	^ instructionBeforeLast isJump
+		and: [ instructionBeforeLast jmpTarget = aBasicBlock label ]
+	
+]
+
+{ #category : #accessing }
+BasicBlock >> label [
+	
+	^ self firstInstruction 
+]
+
 { #category : #'as yet unclassified' }
 BasicBlock >> lastInstruction [
 	
@@ -119,6 +161,15 @@ BasicBlock >> printOn: aStream [
 		nextPutAll: ', address=';
 		nextPutAll: (self firstInstruction address ifNil: [ '--' ] ifNotNil: [ :a | a asString ]);
 		nextPutAll: ')'
+]
+
+{ #category : #modifying }
+BasicBlock >> removeEndingJump [
+	
+	"Remove the last instruction in this block.
+	We can just make this block shorter by one instruction.
+	The instruction will still be in the stream of instructions but unreachable."
+	lastInstructionIndex := lastInstructionIndex - 1
 ]
 
 { #category : #'as yet unclassified' }
