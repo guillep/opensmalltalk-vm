@@ -1604,13 +1604,15 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNew [
 	cogit MoveCq: objectMemory baseHeaderSize * 2 R: byteSizeReg.
 	skip := cogit Jump: 0.
 	"round up to allocationUnit"
-	jumpHasSlots jmpTarget:
-	(cogit AddCq: objectMemory baseHeaderSize / objectMemory wordSize R: byteSizeReg).
+	jumpHasSlots jmpTarget: cogit Label.
+	cogit AddCq: objectMemory baseHeaderSize / objectMemory wordSize R: byteSizeReg.
 	cogit LogicalShiftLeftCq: objectMemory shiftForWord R: byteSizeReg.
-	skip jmpTarget:
+
+	skip jmpTarget: cogit Label.
 	"check if allocation fits (freeSize + byteSize < scavengeThreshold); scavengeThreshold is constant."
-	(cogit AddR: Arg1Reg R: byteSizeReg).
+	cogit AddR: Arg1Reg R: byteSizeReg.
 	cogit CmpCq: objectMemory getScavengeThreshold R: byteSizeReg.
+	
 	jumpNoSpace := cogit JumpAboveOrEqual: 0.
 	"write back new freeStart; get result. byteSizeReg holds new freeStart, the limit of the object"
 	cogit MoveR: byteSizeReg Aw: objectMemory freeStartAddress.
@@ -1720,8 +1722,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	cogit MoveCq: 0 R: fillReg.
 	jumpLongPrepDone := cogit Jump: 0. "go allocate"
 
-	jumpByteFormat jmpTarget:
-	(cogit CmpCq: (objectMemory integerObjectOf: maxSlots * objectMemory wordSize) R: Arg0Reg).
+	jumpByteFormat jmpTarget: cogit Label.
+	cogit CmpCq: (objectMemory integerObjectOf: maxSlots * objectMemory wordSize) R: Arg0Reg.
 	jumpByteTooBig := cogit JumpAbove: 0.
 	"save num elements to instSpecReg"
 	cogit MoveR: fillReg R: instSpecReg.
@@ -1737,8 +1739,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	cogit MoveCq: 0 R: fillReg.
 	jumpBytePrepDone := cogit Jump: 0. "go allocate"
 
-	jumpArrayFormat jmpTarget:
-		(cogit CmpCq: (objectMemory integerObjectOf: maxSlots) R: Arg0Reg).
+	jumpArrayFormat jmpTarget: cogit Label.
+	cogit CmpCq: (objectMemory integerObjectOf: maxSlots) R: Arg0Reg.
 	jumpArrayTooBig := cogit JumpAbove: 0.
 	"save num elements/slot size to instSpecReg"
 	cogit MoveR: fillReg R: instSpecReg.
@@ -1757,13 +1759,16 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveNewWithArg [
 	jumpHasSlots := cogit JumpNonZero: 0.
 	cogit MoveCq: objectMemory baseHeaderSize * 2 R: byteSizeReg.
 	skip := cogit Jump: 0.
-	jumpHasSlots jmpTarget:
-	(cogit AddCq: objectMemory baseHeaderSize / objectMemory wordSize R: byteSizeReg).
+
+	jumpHasSlots jmpTarget: cogit Label.
+	cogit AddCq: objectMemory baseHeaderSize / objectMemory wordSize R: byteSizeReg.
 	cogit LogicalShiftLeftCq: objectMemory shiftForWord R: byteSizeReg.
-	skip jmpTarget:
+
+	skip jmpTarget: cogit Label.
 	"check if allocation fits"
-	(cogit AddR: Arg1Reg R: byteSizeReg).
+	cogit AddR: Arg1Reg R: byteSizeReg.
 	cogit CmpCq: objectMemory getScavengeThreshold R: byteSizeReg.
+
 	jumpNoSpace := cogit JumpAboveOrEqual: 0.
 	"get result, increment freeStart and write it back. Arg1Reg holds new freeStart, the limit of the object"
 	cogit MoveR: Arg1Reg R: ReceiverResultReg.
