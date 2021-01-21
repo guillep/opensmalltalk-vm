@@ -1184,7 +1184,8 @@ CogAbstractInstruction >> jmpTarget: anAbstractInstruction [
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #anAbstractInstruction type: #'AbstractInstruction *'>
 	self cCode: [] "check for inadvertent smashing of already-set jmpTargets; development only"
-		inSmalltalk: [self assert: anAbstractInstruction isLabel ].
+		inSmalltalk: [
+			self assert: ((self isAFixup: anAbstractInstruction) or: [ anAbstractInstruction isLabel ]) ].
 	self cCode: [] "check for inadvertent smashing of already-set jmpTargets; development only"
 		inSmalltalk: [self assert: ((operands at: 0)
 									ifNil: [true]

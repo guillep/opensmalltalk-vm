@@ -852,12 +852,14 @@ SimpleStackBasedCogit >> compileFrameBuild [
 	 slower overflow check that clears SendNumArgsReg."
 	(coInterpreter canContextSwitchIfActivating: methodObj header: methodHeader)
 		ifTrue:
-			[self JumpBelow: stackOverflowCall.
+			[self BasicJumpBelow: stackOverflowCall.
+			"Use a normal label in here, marking the end of the frame build"
 			 stackCheckLabel := self Label]
 		ifFalse:
-			[jumpSkip := self JumpAboveOrEqual: 0.
+			[jumpSkip := self BasicJumpAboveOrEqual: 0.
 			 self MoveCq: 0 R: SendNumArgsReg.
-			 self Jump: stackOverflowCall.
+			 self BasicJump: stackOverflowCall.
+			"Use a normal label in here, marking the end of the frame build"
 			 jumpSkip jmpTarget: (stackCheckLabel := self Label)].
 	self annotateBytecode: stackCheckLabel
 ]

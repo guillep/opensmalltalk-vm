@@ -502,7 +502,7 @@ BasicBlockCompiler >> LabelWithFallthroughWeight: weight [
 	fallthrough := self Jump: 0.
 	theBasicBlock := self newBasicBlock.
 
-	label := super Label.
+	label := self BasicLabel.
 	label basicBlock: theBasicBlock.
 
 	fallthrough jmpTarget: label.
@@ -1570,7 +1570,7 @@ BasicBlockCompiler >> genConditionalBranch: opcode operand: operandOne withFallt
 	"Jump instructions close basic blocks.
 	A new block will contain all the subsequent instructions"
 	| jumpInstruction |
-	jumpInstruction := super genConditionalBranch: opcode operand: operandOne.
+	jumpInstruction := self genBasicConditionalBranch: opcode operand: operandOne.
 	jumpInstruction jumpWeight: self defaultJumpWeight.
 	self LabelWithFallthroughWeight: fallthorughWeight.
 	^ jumpInstruction
@@ -1873,7 +1873,8 @@ BasicBlockCompiler >> genIdenticalNoBranchArgIsConstant: argIsConstant rcvrIsCon
 		[objectRepresentation genEnsureOopInRegNotForwarded: rcvrRegOrNone scratchReg: TempReg jumpBackTo: label].
 	 orNot ifFalse: [self genMoveFalseR: resultReg] ifTrue: [self genMoveTrueR: resultReg].
 	 jumpNotEqual := self Jump: 0.
-	 jumpEqual jmpTarget: (orNot ifFalse: [self genMoveTrueR: resultReg] ifTrue: [self genMoveFalseR: resultReg]).
+	 jumpEqual jmpTarget: self Label.
+	 orNot ifFalse: [self genMoveTrueR: resultReg] ifTrue: [self genMoveFalseR: resultReg].
 	 jumpNotEqual jmpTarget: self Label.
 	 self ssPushRegister: resultReg.
 	 ^0
@@ -2774,10 +2775,7 @@ BasicBlockCompiler >> genSpecialSelectorComparison [
 									[rcvrIsInt
 										ifTrue: [objectRepresentation genJumpNotSmallInteger: Arg0Reg]
 										ifFalse: [objectRepresentation genJumpNotSmallIntegersIn: ReceiverResultReg and: Arg0Reg scratch: TempReg]]].
-	
-	"If receiver or argument are not small integers, fall to slow case, so give less priority"
-	jumpNotSmallInts jumpWeight: 0.
-	
+		
 	argIsIntConst
 		ifTrue: [self CmpCq: argInt R: ReceiverResultReg]
 		ifFalse: [self CmpR: Arg0Reg R: ReceiverResultReg].
@@ -2794,6 +2792,9 @@ BasicBlockCompiler >> genSpecialSelectorComparison [
 		 self ensureFixupAt: targetPC.
 		 deadCode := true.
 		 ^0].
+	
+	"If receiver or argument are not small integers, fall to slow case, so give less priority"
+	jumpNotSmallInts jumpWeight: 0.
 	jumpNotSmallInts jmpTarget: self Label.
 	argIsIntConst ifTrue:
 		[self MoveCq: argInt R: Arg0Reg].
@@ -4263,9 +4264,9 @@ BasicBlockCompiler >> sistaV1PushNilSize: aMethodObj numInitialNils: numInitialN
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> sortBasicBlocks [
 
-	| preambleBlocks |
-	preambleBlocks := basicBlocks first: 5.
-	basicBlocks := preambleBlocks, (PHBottomUpSorterNoDeadCode new sort: (basicBlocks allButFirst: 5)).
+	| preambleBlock |
+	preambleBlock := basicBlocks first.
+	basicBlocks := {preambleBlock}, (PHBottomUpSorterNoDeadCode new sort: basicBlocks allButFirst).
 ]
 
 { #category : #'simulation stack' }

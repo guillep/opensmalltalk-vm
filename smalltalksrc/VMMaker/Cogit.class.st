@@ -1592,6 +1592,52 @@ Cogit >> ArithmeticShiftRightR: reg1 R: reg2 [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> BasicJump: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^self gen: Jump operand: jumpTarget asInteger
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> BasicJumpAboveOrEqual: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^self genBasicConditionalBranch: JumpAboveOrEqual operand: jumpTarget asInteger
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> BasicJumpBelow: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^self genBasicConditionalBranch: JumpBelow operand: jumpTarget asInteger
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> BasicJumpLongZero: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	^self genBasicConditionalBranch: JumpLongZero operand: jumpTarget asInteger
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> BasicJumpNonZero: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^self genBasicConditionalBranch: JumpNonZero operand: jumpTarget asInteger
+]
+
+{ #category : #'abstract instructions' }
+Cogit >> BasicLabel [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	^self gen: Label operand: (labelCounter := labelCounter + 1) operand: bytecodePC
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> Call: callTarget [ 
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1824,7 +1870,7 @@ Cogit >> Jump: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^self gen: Jump operand: jumpTarget asInteger
+	^ self BasicJump: jumpTarget
 ]
 
 { #category : #'abstract instructions' }
@@ -2075,7 +2121,7 @@ Cogit >> JumpZero: jumpTarget [
 Cogit >> Label [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
-	^self gen: Label operand: (labelCounter := labelCounter + 1) operand: bytecodePC
+	^ self BasicLabel
 ]
 
 { #category : #'abstract instructions' }
@@ -5325,7 +5371,7 @@ Cogit >> compileCPICEntry [
 	"Compile the cache tag computation and the first comparison.  Answer the address of that comparison."
 	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg forEntry: true.
 	self CmpR: ClassReg R: TempReg.
-	^self JumpNonZero: 0
+	^self BasicJumpNonZero: 0
 ]
 
 { #category : #initialization }
@@ -5496,20 +5542,20 @@ Cogit >> compileClosedPICPrototype [
 	 On each entension we must update this jump to move back one case."
 	self MoveUniqueCw: self firstPrototypeMethodOop R: SendNumArgsReg.
 	self JumpLong: self cPICPrototypeCaseOffset + 16rCA5E10.
-	endCPICCase0 := self Label.
+	endCPICCase0 := self BasicLabel.
 	1 to: MaxCPICCases - 1 do:
 		[:h|
 		h = (MaxCPICCases - 1) ifTrue:
-			[jumpNext jmpTarget: self Label]. "this is where we jump to for the first case"
+			[jumpNext jmpTarget: self BasicLabel]. "this is where we jump to for the first case"
 		self MoveUniqueCw: self subsequentPrototypeMethodOop + h R: SendNumArgsReg.
 		"16rBABE1F15+h is the class tag for the Nth case"
 		self CmpC32: 16rBABE1F15+h R: TempReg.
-		self JumpLongZero: self cPICPrototypeCaseOffset + 16rCA5E10 + (h * 16).
+		self BasicJumpLongZero: self cPICPrototypeCaseOffset + 16rCA5E10 + (h * 16).
 		h = 1 ifTrue:
-			[endCPICCase1 := self Label]].
+			[endCPICCase1 := self BasicLabel]].
 	self MoveCw: methodLabel address R: ClassReg.
 	self JumpLong: (self cPICMissTrampolineFor: numArgs).	"Will get rewritten to appropriate arity when configuring."
-	cPICEndOfCodeLabel := self Label.
+	cPICEndOfCodeLabel := self BasicLabel.
 	literalsManager dumpLiterals: false.
 	^0
 ]
@@ -5640,8 +5686,8 @@ Cogit >> compileEntry [
 
 	entry := objectRepresentation genGetInlineCacheClassTagFrom: ReceiverResultReg into: TempReg forEntry: true.
 	self CmpR: ClassReg R: TempReg.
-	self JumpNonZero: sendMiss.
-	noCheckEntry := self Label.
+	self BasicJumpNonZero: sendMiss.
+	noCheckEntry := self BasicLabel.
 	self compileSendTrace ifTrue:
 		[backEnd saveAndRestoreLinkRegAround:
 			[self CallRT: ceTraceLinkedSendTrampoline]]
@@ -5713,7 +5759,7 @@ Cogit >> compilePICAbort: numArgs [
 	 N.B. This code must match that in compileAbort so that the offset of the return address of
 	 the call is the same in methods and closed PICs."
 	picMNUAbort := self MoveCq: self picAbortDiscriminatorValue R: ClassReg.
-	picInterpretAbort := self Label.
+	picInterpretAbort := self BasicLabel.
 	backEnd hasLinkRegister ifTrue: [
 		"If there is a link register it must be saved (pushed onto the stack) before it
 		is smashed by the abort call, and hence needs to be manually handled here".
@@ -7078,6 +7124,11 @@ Cogit >> gen: opcode "<Integer>" uniqueLiteral: operandOne "<Integer>" operand: 
 		forInstruction: (self gen: opcode operand: operandOne operand: operandTwo)
 ]
 
+{ #category : #'compile abstract instructions' }
+Cogit >> genBasicConditionalBranch: opcode operand: operandOne [
+	^self previousInstruction noteFollowingConditionalBranch: (self gen: opcode operand: operandOne)
+]
+
 { #category : #'trampoline support' }
 Cogit >> genCallMustBeBooleanFor: boolean [
 	"Call ceSendMustBeBooleanTo: via the relevant trampoline."
@@ -7112,7 +7163,8 @@ Cogit >> genCheckForInterruptsTrampoline [
 
 { #category : #'compile abstract instructions' }
 Cogit >> genConditionalBranch: opcode operand: operandOne [
-	^self previousInstruction noteFollowingConditionalBranch: (self gen: opcode operand: operandOne)
+	
+	^ self genBasicConditionalBranch: opcode operand: operandOne
 ]
 
 { #category : #initialization }
@@ -8324,7 +8376,7 @@ Cogit >> generateTrampolines [
 	| methodZoneStart |
 	methodZoneStart := methodZoneBase.
 	methodLabel address: methodZoneStart.
-	self allocateOpcodes: 80 bytecodes: 0.
+	self allocateOpcodes: 100 bytecodes: 0.
 	hasYoungReferent := false.
 	objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine.
 	self generateSendTrampolines.
@@ -10687,20 +10739,25 @@ Cogit >> printMethodHeader: cogMethod on: aStream [
 	aStream
 		crtab; nextPutAll: 'nArgs: ';	print: cogMethod cmNumArgs;
 		tab;    nextPutAll: 'type: ';	print: cogMethod cmType.
-	(cogMethod cmType ~= 0 and: [cogMethod cmType ~= CMBlock]) ifTrue:
-		[aStream crtab; nextPutAll: 'blksiz: '.
-		cogMethod blockSize printOn: aStream base: 16.
-		cogMethod cmType = CMMethod ifTrue:
+	(cogMethod cmType ~= 0 and: [
+		cogMethod cmType ~= CMBlock
+			and: [cogMethod cmIsFullBlock]]) ifTrue:
+		[aStream crtab; nextPutAll: 'blksiz: '; cr.
+		"cogMethod blockSize printOn: aStream base: 16."
+		(cogMethod cmType = CMMethod and: [ cogMethod cmIsFullBlock ]) ifTrue:
 			[aStream crtab; nextPutAll: 'method: '.
 			 cogMethod methodObject printOn: aStream base: 16.
 			 aStream crtab; nextPutAll: 'mthhdr: '.
 			 cogMethod methodHeader printOn: aStream base: 16].
-		aStream crtab; nextPutAll: 'selctr: '.
-		cogMethod selector printOn: aStream base: 16.
-		(coInterpreter lookupAddress: cogMethod selector) ifNotNil:
-			[:string| aStream nextPut: $=; nextPutAll: string].
-		cogMethod selector = objectMemory nilObject ifTrue:
-			[aStream space; nextPut: $(; nextPutAll: (coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: cogMethod methodObject)); nextPut: $)]. 
+		
+		cogMethod cmIsFullBlock ifTrue: [ 
+			aStream crtab; nextPutAll: 'selctr: '.
+			cogMethod selector printOn: aStream base: 16.
+			(coInterpreter lookupAddress: cogMethod selector) ifNotNil:
+				[:string| aStream nextPut: $=; nextPutAll: string].
+			cogMethod selector = objectMemory nilObject ifTrue:
+				[aStream space; nextPut: $(; nextPutAll: (coInterpreter stringOf: (coInterpreter maybeSelectorOfMethod: cogMethod methodObject)); nextPut: $)] ].
+		
 		cogMethod cmType = CMMethod ifTrue:
 			[aStream crtab; nextPutAll: 'blkentry: '.
 			 cogMethod blockEntryOffset printOn: aStream base: 16.

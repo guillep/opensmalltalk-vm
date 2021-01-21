@@ -918,8 +918,8 @@ CogObjectRepresentationForSpur >> genGetClassObjectOf: instReg into: destReg scr
 		cogit MoveMw: objectMemory baseHeaderSize r: instReg R: instReg.
 		cogit Jump: loop.
 		jumpNotForwarded jmpTarget: cogit Label].
-	jumpIsImm jmpTarget:
-	(cogit MoveR: scratchReg R: destReg).
+	jumpIsImm jmpTarget: cogit Label.
+	cogit MoveR: scratchReg R: destReg.
 	scratchReg = TempReg
 		ifTrue:
 			[cogit PushR: instReg.
@@ -2031,9 +2031,9 @@ CogObjectRepresentationForSpur >> genPrimitiveObjectAt [
 	cogit
 		MoveR: headerReg R: ReceiverResultReg;
 		genPrimReturn.
-	jumpNotHeaderIndex jmpTarget: (cogit
-		AndCq: (objectMemory integerObjectOf: coInterpreter alternateHeaderNumLiteralsMask) R: headerReg).
+	jumpNotHeaderIndex jmpTarget: cogit Label.
 	cogit
+		AndCq: (objectMemory integerObjectOf: coInterpreter alternateHeaderNumLiteralsMask) R: headerReg;
 		SubCq: (objectMemory integerObjectOf: 1) - objectMemory smallIntegerTag R: Arg0Reg;
 		CmpR: headerReg R: Arg0Reg.
 	jumpBounds := cogit JumpAbove: 0.
@@ -2044,8 +2044,8 @@ CogObjectRepresentationForSpur >> genPrimitiveObjectAt [
 		MoveXwr: Arg0Reg R: ReceiverResultReg R: ReceiverResultReg;
 		genPrimReturn.
 
-	jumpBounds jmpTarget: (cogit
-		AddCq: (objectMemory integerObjectOf: 1) - objectMemory smallIntegerTag R: Arg0Reg).
+	jumpBounds jmpTarget: cogit Label.
+	cogit AddCq: (objectMemory integerObjectOf: 1) - objectMemory smallIntegerTag R: Arg0Reg.
 	jumpBadIndex jmpTarget: cogit Label.
 	^CompletePrimitive
 ]
@@ -2767,7 +2767,8 @@ CogObjectRepresentationForSpur >> genPrimitiveStringReplace [
 		cogit CmpR: startReg R: stopReg.
 		cogit JumpAboveOrEqual: instr.
 		
-		jumpEmpty jmpTarget: cogit genPrimReturn.
+		jumpEmpty jmpTarget: cogit Label.
+		cogit genPrimReturn.
 	
 		"CANNOT REACH by falling though"
 	
@@ -2838,7 +2839,8 @@ CogObjectRepresentationForSpur >> genPrimitiveStringReplace [
 		cogit CmpR: startReg R: stopReg.
 		cogit JumpAboveOrEqual: instr.
 		
-		jumpEmpty jmpTarget: cogit genPrimReturn.
+		jumpEmpty jmpTarget: cogit Label.
+		cogit genPrimReturn.
 	
 		"CANNOT REACH by falling though"
 	
