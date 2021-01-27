@@ -5,13 +5,13 @@ Class {
 }
 
 { #category : #sorting }
-PHBottomUpSorterNoDeadCode >> sortBlocksInChains: aSetOfChains [
+PHBottomUpSorterNoDeadCode >> sortBlocksInChains: chainsToSort [
 
 	| finalOrder worklist |
-	finalOrder := OrderedCollection new.
-	aSetOfChains ifEmpty: [ ^ finalOrder ].
-
-	worklist := (aSetOfChains sorted: [ :a :b | a priority < b priority ]) asOrderedCollection.
+	chainsToSort isEmpty ifTrue: [ ^ chainsToSort ].
+	
+	finalOrder := self newLinkedList.
+	worklist := chainsToSort sorted: [ :a :b | a priority < b priority ].
 	[ worklist isEmpty ] whileFalse: [ | processedChain |
 		processedChain := worklist removeFirst.
 		processedChain blocksDo: [ :b |

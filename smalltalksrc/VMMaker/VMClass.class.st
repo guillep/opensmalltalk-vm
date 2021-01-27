@@ -831,6 +831,23 @@ VMClass >> minorVersion [
 	^self class vmProxyMinorVersion
 ]
 
+{ #category : #'basic-blocks' }
+VMClass >> newLinkedList [
+	| list |
+	<var: 'list' type: #'VMLinkedList *'>
+
+	self cCode: [ 
+		list := self
+			cCoerce: (self malloc: (self sizeof: VMLinkedList))
+			to: #'VMLinkedList *'.
+	] inSmalltalk: [ 
+		list := VMLinkedList new.
+	].
+	"Initial size = 0"
+	list size: 0.
+	^ list
+]
+
 { #category : #'translation support' }
 VMClass >> notYetImplemented [
 

@@ -339,6 +339,26 @@ VMStructType class >> typedef [
 	^String streamContents: [:s| self printTypedefOn: s]
 ]
 
+{ #category : #'instance creation' }
+VMStructType >> newLinkedList [
+	| list |
+	
+	"Duplicated from VMClass, ouch! :/"
+	
+	<var: 'list' type: #'VMLinkedList *'>
+
+	self cCode: [ 
+		list := self
+			cCoerce: (self malloc: (self sizeof: VMLinkedList))
+			to: #'VMLinkedList *'.
+	] inSmalltalk: [ 
+		list := VMLinkedList new.
+	].
+	"Initial size = 0"
+	list size: 0.
+	^ list
+]
+
 { #category : #printing }
 VMStructType >> printOn: aStream [
 	"A hook to allow subclasses to print their state if useful."

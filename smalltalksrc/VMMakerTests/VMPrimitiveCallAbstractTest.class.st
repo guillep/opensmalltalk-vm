@@ -70,6 +70,22 @@ VMPrimitiveCallAbstractTest >> findMethod: aSelector [
 	^ self class lookupSelector: aSelector
 ]
 
+{ #category : #running }
+VMPrimitiveCallAbstractTest >> initializeSpecialSelectors [
+
+	| specialSelectorsArrayOop |
+	specialSelectorsArrayOop := self newOldSpaceObjectWithSlots:
+		                            Smalltalk specialSelectors size.
+
+	Smalltalk specialSelectors withIndexDo: [ :anElement :anIndex | 
+		memory
+			storePointer: anIndex - 1
+			ofObject: specialSelectorsArrayOop
+			withValue: (anElement forMemory: memory) ].
+		
+	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
+]
+
 { #category : #'methods under test' }
 VMPrimitiveCallAbstractTest >> jitOptions [
 
@@ -191,6 +207,7 @@ VMPrimitiveCallAbstractTest >> setUp [
 	
 	cogit guardPageSize: cogit class guardPageSize.
 
+	self initializeSpecialSelectors.
 ]
 
 { #category : #running }
@@ -221,4 +238,9 @@ VMPrimitiveCallAbstractTest >> setUpTrampolines [
 	
 	cogit ceStoreCheckTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceStoreCheckTrampoline).
 	cogit objectRepresentation setAllStoreTrampolinesWith: (self compileTrampoline: [ cogit RetN: 0 ] named: #ceStoreTrampoline).
+	
+	cogit ceSendMustBeBooleanAddFalseTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceSendMustBeBooleanAddFalseTrampoline).
+	cogit ceSendMustBeBooleanAddTrueTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceSendMustBeBooleanAddTrueTrampoline).
+
+	cogit ceCheckForInterruptTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCheckForInterruptTrampoline)
 ]

@@ -1,28 +1,34 @@
 Class {
 	#name : #PettisHansenBottomUpSorter,
-	#superclass : #Object,
+	#superclass : #VMClass,
 	#category : #'VMMaker-JIT'
 }
 
 { #category : #sorting }
 PettisHansenBottomUpSorter >> basicBlockEdgesOf: basicBlocks [
 	
-	^ basicBlocks flatCollect: [ :e | e outgoingEdges ]
+	| sortedEdges |
+	sortedEdges := self newLinkedList.
+	basicBlocks do: [ :aBasicBlock | | aBlockEdges |
+		aBlockEdges := aBasicBlock outgoingEdges.
+		aBlockEdges do: [ :edge |
+			sortedEdges insert: edge sortedBy: [ :e1 :e2 | e1 weight >= e2 weight ].
+			 ] ].
+	^ sortedEdges
 ]
 
 { #category : #sorting }
 PettisHansenBottomUpSorter >> hotPathChainsOf: basicBlocks [
 
-	| chains priority fromChain toChain |
-	chains := Dictionary new.
+	| priority fromChain toChain list |
 	basicBlocks do: [ :e |
-		chains at: e put: (PHChain with: e).
+		e chain: (PHChain with: e).
 	].
 	priority := 0.
-	((self basicBlockEdgesOf: basicBlocks) sorted: [ :e1 :e2 | e1 weight >= e2 weight ])
+	(self basicBlockEdgesOf: basicBlocks)
 		do: [ :e |
-			fromChain := chains at: e from.
-			toChain := chains at: e to.
+			fromChain := e from chain.
+			toChain := e to chain.
 			(e from ~= e to and: [ 
 				e from = fromChain tail
 					and: [ e to = toChain head ] ])
@@ -32,12 +38,17 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: basicBlocks [
 							fromChain append: toChain.
 							"Update all the blocks in the to-chain to use the same merged chain"
 							toChain blocks do: [ :b |
-								chains at: b put: fromChain
+								b chain: fromChain
 							]
 						] ].
-
-	chains ifEmpty: [ ^ #() ].
-	^ chains values asSet
+	
+	"Collect all the different chains"
+	list := self newLinkedList.
+	basicBlocks do: [ :e |
+		(list includes: e chain)
+			ifFalse: [ list add: e chain ].		
+	].
+	^ list
 ]
 
 { #category : #sorting }

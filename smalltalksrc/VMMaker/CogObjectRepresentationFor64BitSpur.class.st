@@ -1048,7 +1048,7 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 	signedVersion ifFalse:
 		[cogit CmpCq: 0 R: SendNumArgsReg.
 		 jumpNegative := cogit JumpLess: 0].
-	rejoin :=
+	rejoin := cogit Label.
 	cogit CmpR: Arg0Reg R: nSlotsOrBytesReg.
 	jump64BitsOutOfBounds := cogit JumpBelowOrEqual: 0.
 	cogit AddCq: objectMemory baseHeaderSize >> objectMemory shiftForWord R: Arg0Reg.
@@ -1083,12 +1083,12 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 	cogit Jump: rejoin.
 	signedVersion ifTrue:
 		["Now check if the header is that of an 8 byte LargeNegativeInteger"
-		 jumpNot8ByteInteger jmpTarget:
-		 (cogit CmpCq: (objectMemory
+		 jumpNot8ByteInteger jmpTarget: cogit Label.
+		 cogit CmpCq: (objectMemory
 							headerForSlots: 1
 							format: objectMemory firstByteFormat
 							classIndex: ClassLargeNegativeIntegerCompactIndex)
-				R: SendNumArgsReg).
+				R: SendNumArgsReg.
 		 jumpNot8ByteInteger := cogit JumpNonZero: 0.
 		 cogit MoveMw: objectMemory baseHeaderSize r: Arg1Reg R: TempReg.
 		 cogit MoveCq: 0 R: SendNumArgsReg.
@@ -1097,8 +1097,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 
 	signedVersion
 		ifTrue:
-			[jumpIsWords jmpTarget:
-			 (cogit MoveR: SendNumArgsReg R: TempReg).
+			[jumpIsWords jmpTarget: cogit Label.
+			 cogit MoveR: SendNumArgsReg R: TempReg.
 			 cogit ArithmeticShiftRightCq: 31 R: TempReg. "Maps in range to -1,0".
 			 cogit AddCq: 1 R: TempReg. "Maps in range to 0,1"
 			 cogit CmpCq: 1 R: TempReg]
@@ -1136,7 +1136,8 @@ CogObjectRepresentationFor64BitSpur >> genPrimitiveAtPutSigned: signedVersion [
 	jumpBytesOutOfBounds := cogit JumpBelowOrEqual: 0.
 	cogit CmpCq: objectMemory firstCompiledMethodFormat R: formatReg.
 	jumpIsCompiledMethod := cogit JumpAboveOrEqual: 0.
-	methodInBounds :=
+
+	methodInBounds := cogit Label.
 	cogit MoveR: Arg1Reg R: TempReg.
 	self genConvertSmallIntegerToIntegerInReg: TempReg.
 	cogit AddCq: objectMemory baseHeaderSize R: Arg0Reg.

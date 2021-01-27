@@ -35,7 +35,7 @@ VMMockScheduler >> initialize [
 	1 to: quiescentProcessLists size do: [ :i |
 			quiescentProcessLists
 				at: i
-				put: (VMLinkedList new
+				put: (VMProcessLinkedList new
 					objectMemory: objectMemory;
 					yourself) ].
 ]

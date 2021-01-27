@@ -90,13 +90,9 @@ FilePluginSimulator >> fileOpenName: nameIndex size: nameSize write: writeFlag [
 	openFiles size >= maxOpenFiles ifTrue:
 		[^interpreterProxy primitiveFailFor: PrimErrLimitExceeded].
 	path := (interpreterProxy asByteArray: nameIndex size: nameSize) utf8Decoded.
-	(writeFlag
-	 or: [StandardFileStream isAFileNamed: path]) ifFalse:
+	(writeFlag or: [path asFileReference exists]) ifFalse:
 		[^interpreterProxy primitiveFail].
-	f := StandardFileStream new open: path forWrite: writeFlag.
-	f ifNil: [^interpreterProxy primitiveFail].
-	f binary.
-	self assert: f isReadOnly = writeFlag not.
+	f := (File named: path) openForWrite: writeFlag.
 	index := (3 to: openFiles size + 1) detect: [:n| (openFiles includesKey: n) not].
 	openFiles at: index put: f.
 	^interpreterProxy integerObjectOf: index

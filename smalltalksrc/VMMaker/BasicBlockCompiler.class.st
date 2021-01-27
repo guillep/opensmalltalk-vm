@@ -644,7 +644,7 @@ BasicBlockCompiler >> allocateFloatRegNotConflictingWith: regMask [
 BasicBlockCompiler >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes [
 
 	super allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes.
-	basicBlocks := OrderedCollection new.
+	basicBlocks := self newLinkedList.
 	self newBasicBlock.
 ]
 
@@ -655,7 +655,7 @@ BasicBlockCompiler >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: number
 		allocateOpcodes: numberOfAbstractOpcodes
 		bytecodes: numberOfBytecodes
 		ifFail: [ ^ failBlock value ].
-	basicBlocks := OrderedCollection new.
+	basicBlocks := self newLinkedList.
 	self newBasicBlock.
 ]
 
@@ -2658,9 +2658,7 @@ BasicBlockCompiler >> genSpecialSelectorArithmetic [
 									[rcvrIsInt
 										ifTrue: [objectRepresentation genJumpNotSmallInteger: Arg0Reg]
 										ifFalse: [objectRepresentation genJumpNotSmallIntegersIn: ReceiverResultReg and: Arg0Reg scratch: TempReg]]].
-	"If receiver or argument are not small integers, fall to slow case, so give less priority"
-	jumpNotSmallInts jumpWeight: 0.
-	
+
 	primDescriptor opcode caseOf: {
 		[AddRR] -> [argIsConst
 						ifTrue:
@@ -2705,7 +2703,10 @@ BasicBlockCompiler >> genSpecialSelectorArithmetic [
 				 self ssPushRegister: ReceiverResultReg.
 				 ^0]]
 		ifNotNil:
-			[jumpNotSmallInts jmpTarget: self Label].
+			[
+			"If receiver or argument are not small integers, fall to slow case, so give less priority"
+			jumpNotSmallInts jumpWeight: 0.
+			jumpNotSmallInts jmpTarget: self Label].
 	argIsConst ifTrue:
 		[self MoveCq: argInt R: Arg0Reg].
 	index := byte0 - self firstSpecialSelectorBytecodeOffset.
@@ -3767,13 +3768,21 @@ BasicBlockCompiler >> needsFrameIfStackGreaterThanOne: stackDelta [
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> newBasicBlock [
 	
+	<var: 'block' type: #'BasicBlock *'>
 	| block |
 	"Do not create duplicated blocks."
 	(basicBlocks notEmpty and: [self currentBasicBlock firstInstructionIndex = opcodeIndex])
 		ifTrue: [ ^ self currentBasicBlock ].
-	block := BasicBlock new.
-	block index: basicBlocks size.
-	block compiler: self.
+
+	self cCode: [ 
+		block := self
+			cCoerce: (self malloc: (self sizeof: BasicBlock))
+			to: 'BasicBlock *'.
+	] inSmalltalk: [ 
+		block := BasicBlock new.
+		block index: basicBlocks size.
+		block compiler: self.
+	].
 	block firstInstructionIndex: opcodeIndex.
 	block lastInstructionIndex: opcodeIndex.
 	self addBasicBlock: block.
@@ -4266,7 +4275,11 @@ BasicBlockCompiler >> sortBasicBlocks [
 
 	| preambleBlock |
 	preambleBlock := basicBlocks first.
-	basicBlocks := {preambleBlock}, (PHBottomUpSorterNoDeadCode new sort: basicBlocks allButFirst).
+	
+	basicBlocks removeFirst.
+	self flag: #deallocate "the linked list!".
+	basicBlocks := PHBottomUpSorterNoDeadCode new sort: basicBlocks.
+	basicBlocks addFirst: preambleBlock
 ]
 
 { #category : #'simulation stack' }
@@ -4833,6 +4846,6 @@ BasicBlockCompiler >> widthInDefaultFontOf: aString [
 BasicBlockCompiler >> zeroOpcodeIndex [
 
 	super zeroOpcodeIndex.
-	basicBlocks := OrderedCollection new.
+	basicBlocks := self newLinkedList.
 	self newBasicBlock.
 ]

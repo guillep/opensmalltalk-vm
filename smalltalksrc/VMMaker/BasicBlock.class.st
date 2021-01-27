@@ -1,14 +1,45 @@
 Class {
 	#name : #BasicBlock,
-	#superclass : #Object,
+	#superclass : #VMStructType,
 	#instVars : [
 		'firstInstructionIndex',
 		'lastInstructionIndex',
 		'compiler',
-		'index'
+		'index',
+		'chain'
 	],
 	#category : #'VMMaker-JIT'
 }
+
+{ #category : #translation }
+BasicBlock class >> filteredInstVarNames [
+	"Eliminate bcpc, which is development-time only."
+	^ super filteredInstVarNames copyWithoutAll: #( 'compiler' 'index' )
+]
+
+{ #category : #translation }
+BasicBlock class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+	
+	self filteredInstVarNames do:
+		[:ivn|
+		 aBinaryBlock
+			value: ivn
+			value: (ivn caseOf: {
+						['firstInstructionIndex'] -> [#usqInt].
+						['lastInstructionIndex'] -> [#usqInt] })]
+]
+
+{ #category : #accessing }
+BasicBlock >> chain [
+
+	^ chain
+]
+
+{ #category : #accessing }
+BasicBlock >> chain: anObject [
+
+	chain := anObject
+]
 
 { #category : #accessing }
 BasicBlock >> compiler [

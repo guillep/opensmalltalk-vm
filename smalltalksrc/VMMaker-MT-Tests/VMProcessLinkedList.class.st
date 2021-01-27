@@ -1,5 +1,5 @@
 Class {
-	#name : #VMLinkedList,
+	#name : #VMProcessLinkedList,
 	#superclass : #VMMockObject,
 	#instVars : [
 		'firstLink',
@@ -9,7 +9,7 @@ Class {
 }
 
 { #category : #accessing }
-VMLinkedList >> add: aProcess [
+VMProcessLinkedList >> add: aProcess [
 	self haltIf: [ aProcess isInteger ].
 	firstLink
 		ifNil: [ firstLink := aProcess]

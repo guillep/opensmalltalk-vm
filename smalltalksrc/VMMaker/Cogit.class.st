@@ -10867,7 +10867,7 @@ Cogit >> printPCMapPairsFor: cogMethod [
 			print: ') ';
 			printHexnp: (mapByte bitAnd: DisplacementMask);
 			printChar: $ ;
-			putchar: $@;
+			printChar: $@;
 		 printHex: mcpc;
 		 cr;
 		 flush.

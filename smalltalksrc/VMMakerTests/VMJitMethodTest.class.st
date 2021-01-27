@@ -38,22 +38,6 @@ VMJitMethodTest >> initialCodeSize [
 	^ 16 * 1024
 ]
 
-{ #category : #running }
-VMJitMethodTest >> initializeSpecialSelectors [
-
-	| specialSelectorsArrayOop |
-	specialSelectorsArrayOop := self newOldSpaceObjectWithSlots:
-		                            Smalltalk specialSelectors size.
-
-	Smalltalk specialSelectors withIndexDo: [ :anElement :anIndex | 
-		memory
-			storePointer: anIndex - 1
-			ofObject: specialSelectorsArrayOop
-			withValue: (anElement forMemory: memory) ].
-		
-	memory splObj: SpecialSelectors put: specialSelectorsArrayOop
-]
-
 { #category : #tests }
 VMJitMethodTest >> jitOptions [ 
 
@@ -63,29 +47,11 @@ VMJitMethodTest >> jitOptions [
 		yourself
 ]
 
-{ #category : #running }
-VMJitMethodTest >> setUp [ 
-
-	super setUp.
-	self initializeSpecialSelectors
-]
-
 { #category : #tests }
 VMJitMethodTest >> setUpClosedPICPrototype [
 
 	"Nothing for now"
 	self flag: #undooo
-]
-
-{ #category : #running }
-VMJitMethodTest >> setUpTrampolines [
-
-	super setUpTrampolines.
-	
-	cogit ceSendMustBeBooleanAddFalseTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceSendMustBeBooleanAddFalseTrampoline).
-	cogit ceSendMustBeBooleanAddTrueTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceSendMustBeBooleanAddTrueTrampoline).
-
-	cogit ceCheckForInterruptTrampoline: (self compileTrampoline: [ cogit RetN: 0 ] named:#ceCheckForInterruptTrampoline)
 ]
 
 { #category : #tests }
