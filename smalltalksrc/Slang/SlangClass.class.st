@@ -162,6 +162,12 @@ SlangClass >> interpreterClass [
 	self subclassResponsibility
 ]
 
+{ #category : #'C library simulation' }
+SlangClass >> malloc: size [
+	<doNotGenerate>
+	^CArrayAccessor on: (ByteArray new: size)
+]
+
 { #category : #accessing }
 SlangClass >> objectMemoryClass [
 	

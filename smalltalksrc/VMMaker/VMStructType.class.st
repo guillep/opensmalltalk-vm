@@ -342,7 +342,7 @@ VMStructType class >> typedef [
 { #category : #'instance creation' }
 VMStructType >> newLinkedList [
 	| list |
-	
+	<doNotGenerate>
 	"Duplicated from VMClass, ouch! :/"
 	
 	<var: 'list' type: #'VMLinkedList *'>

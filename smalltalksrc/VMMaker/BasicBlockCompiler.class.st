@@ -651,10 +651,13 @@ BasicBlockCompiler >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: number
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> allocateOpcodes: numberOfAbstractOpcodes bytecodes: numberOfBytecodes ifFail: failBlock [
 
+	"Assume: failBlock has a non-local return.
+	Here we should send [ ^ failBlock value ] to have the correct semantics.
+	Otherwise, if failBlock does not have a non-local return, we may incorrectly allocate basic blocks"
 	super
 		allocateOpcodes: numberOfAbstractOpcodes
 		bytecodes: numberOfBytecodes
-		ifFail: [ ^ failBlock value ].
+		ifFail: failBlock.
 	basicBlocks := self newLinkedList.
 	self newBasicBlock.
 ]
@@ -1049,16 +1052,8 @@ BasicBlockCompiler >> compileCogMethod: selector [
 { #category : #'compile abstract instructions' }
 BasicBlockCompiler >> compileEntireMethod [
 	"Compile the abstract instructions for the entire method, including blocks."
-	| result |
 	regArgsHaveBeenPushed := false.
-	
-	result := super compileEntireMethod.
-	
-	"If failure, return early"
-	result < 0 ifTrue: [ ^ result ].
-	
-	self sortBasicBlocks.
-	^ result
+	^super compileEntireMethod
 ]
 
 { #category : #'compile abstract instructions' }
@@ -1458,14 +1453,13 @@ BasicBlockCompiler >> freeAnyRegNotConflictingWith: regMask [
 ]
 
 { #category : #'compile abstract instructions' }
-BasicBlockCompiler >> gen: opcode operand: operandOne [
+BasicBlockCompiler >> gen: opcode "<Integer>" operand: operand [ "<Integer|CogAbstractInstruction>"
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	| abstractInstruction |
 	"opcodeIndex points to the next free slot in the instruction stream, that will be allocated by #gen:"
 	self currentBasicBlock lastInstructionIndex: opcodeIndex.
-	abstractInstruction := super gen: opcode operand: operandOne.
-	abstractInstruction maxSize: thisContext stack copy.
+	abstractInstruction := super gen: opcode operand: operand.
 	^ abstractInstruction
 ]
 
@@ -3093,6 +3087,13 @@ BasicBlockCompiler >> genVanillaInlinedIdenticalOrNotIf: orNot [
 	deadCode ifFalse:
 		[self ssPushConstant: objectMemory trueObject]. "dummy value"
 	^0
+]
+
+{ #category : #'compile abstract instructions' }
+BasicBlockCompiler >> generateCogMethod: selector [
+
+	self sortBasicBlocks.
+	^ super generateCogMethod: selector
 ]
 
 { #category : #initialization }

@@ -204,6 +204,12 @@ CCodeGenerator >> addMethod: aTMethod [
 
 { #category : #utilities }
 CCodeGenerator >> addMethodFor: aClass selector: selector [
+	
+	^ self addMethodFor: aClass selector: selector isStruct: false
+]
+
+{ #category : #utilities }
+CCodeGenerator >> addMethodFor: aClass selector: selector isStruct: isStruct [
 	"Add the given method to the code base and answer its translation
 	 or nil if it shouldn't be translated."
 
@@ -221,6 +227,24 @@ CCodeGenerator >> addMethodFor: aClass selector: selector [
 		[^nil].
 	(self shouldIncludeMethodFor: aClass selector: selector) ifFalse:
 		[^nil].
+	
+	"If it is a struct, we need to validate some extra conditions"
+	isStruct ifTrue: [
+		(self methodNamed: selector) ifNotNil:
+			[ :currentTMethod |
+			 "If we're repeating an attempt to add the same thing, or
+			  if the existing method overrides this one,don't complain."
+		 	(currentTMethod definingClass includesBehavior: aClass) ifTrue:
+				[^nil].
+			 "If the methods are both simple accessors, don't complain."
+			 ((currentTMethod definingClass isAccessor: selector)
+			 and: [aClass isAccessor: selector]) ifTrue:
+				[^nil].
+			 "If the method is overriding a method in a superclass, don't complain"
+			 (aClass inheritsFrom: currentTMethod definingClass)
+				ifTrue: [methods removeKey: selector]
+				ifFalse: [self error: 'conflicting implementations for ', selector storeString ] ] ].
+	
 	tmethod := self compileToTMethodSelector: selector in: aClass.
 	"Even though we exclude initialize methods, we must consider their
 	 global variable usage, otherwise globals may be incorrectly localized."
@@ -354,21 +378,7 @@ CCodeGenerator >> addStructClasses: classes silently: aSilentlyBoolean [
 CCodeGenerator >> addStructMethodFor: aClass selector: selector [ 
 	"Add the given struct method to the code base and answer its translation
 	 or nil if it shouldn't be translated."
-	(self methodNamed: selector) ifNotNil:
-		[:tmethod|
-		 "If we're repeating an attempt to add the same thing, or
-		  if the existing method overrides this one,don't complain."
-		 (tmethod definingClass includesBehavior: aClass) ifTrue:
-			[^self].
-		 "If the methods are both simple accessors, don't complain."
-		 ((tmethod definingClass isAccessor: selector)
-		 and: [aClass isAccessor: selector]) ifTrue:
-			[^self].
-		 "If the method is overriding a method in a superclass, don't complain"
-		 (aClass inheritsFrom: tmethod definingClass)
-			ifTrue: [methods removeKey: selector]
-			ifFalse: [self error: 'conflicting implementations for ', selector storeString]].
-	^(self addMethodFor: aClass selector: selector) ifNotNil:
+	^(self addMethodFor: aClass selector: selector isStruct: true) ifNotNil:
 		[:tmethod|
 		tmethod transformToStructClassMethodFor: self.
 		tmethod]

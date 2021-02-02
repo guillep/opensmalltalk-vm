@@ -752,12 +752,6 @@ VMClass >> majorVersion [
 ]
 
 { #category : #'C library simulation' }
-VMClass >> malloc: size [
-	<doNotGenerate>
-	^CArrayAccessor on: (ByteArray new: size)
-]
-
-{ #category : #'C library simulation' }
 VMClass >> memcpy: dest _: src _: bytes [
 	<doNotGenerate>
 	"implementation of memcpy(3). N.B. If ranges overlap, must use memmove."

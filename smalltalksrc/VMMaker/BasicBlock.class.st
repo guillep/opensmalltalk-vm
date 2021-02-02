@@ -152,32 +152,50 @@ BasicBlock >> lastInstructionIndex: anObject [
 ]
 
 { #category : #'as yet unclassified' }
+BasicBlock >> newEdgeFrom: fromBasicBlock to: toBasicBlock weight: weight [
+
+	| edge |
+	<var: 'edge' type: #'PHEdge *'>
+
+	self cCode: [ 
+		edge := self
+			cCoerce: (self malloc: (self sizeof: PHEdge))
+			to: #'PHEdge *'.
+	] inSmalltalk: [ 
+		edge := PHEdge new.
+	].
+	"Initialization"
+	edge from: fromBasicBlock.
+	edge to: toBasicBlock.
+	edge weight: weight.
+	^ edge
+]
+
+{ #category : #'as yet unclassified' }
 BasicBlock >> outgoingEdges [
 	
 	| outgoingEdges |
-	outgoingEdges := OrderedCollection new.
+	outgoingEdges := self newLinkedList.
 
 	self instructionBeforeLastInstruction isJump
 		ifTrue: [ | targetLabel |
 			targetLabel := self instructionBeforeLastInstruction
 				resolveJumpTarget;
 				jmpTarget.
-			targetLabel isLabel ifTrue: [ outgoingEdges add: (PHEdge new
-				from: self;
-				to: targetLabel basicBlock;
-				weight: self instructionBeforeLastInstruction jumpWeight;
-				yourself) ] ].
+			targetLabel isLabel ifTrue: [ outgoingEdges add: (self
+				newEdgeFrom: self
+				to: targetLabel basicBlock 
+				weight: self instructionBeforeLastInstruction jumpWeight) ] ].
 		
 	self lastInstruction isJump
 		ifTrue: [ | targetLabel |
 			targetLabel := self lastInstruction
 				resolveJumpTarget;
 				jmpTarget.
-			targetLabel isLabel ifTrue: [ outgoingEdges add: (PHEdge new
-				from: self;
-				to: targetLabel basicBlock;
-				weight: self lastInstruction jumpWeight;
-				yourself) ] ].
+			targetLabel isLabel ifTrue: [ outgoingEdges add: (self
+				newEdgeFrom: self
+				to: targetLabel basicBlock 
+				weight: self lastInstruction jumpWeight) ] ].
 
 	^ outgoingEdges
 ]
