@@ -1,17 +1,18 @@
 function(find_system_Freetype)
   message(STATUS "Looking for Freetype in the system")
   find_package(Freetype)
-  if(NOT Freetype_FOUND)
+  if(Freetype_FOUND)
+    add_dependencies(${VM_LIBRARY_NAME} Freetype::Freetype)
+  else()
     message(STATUS "Freetype not found.")
   endif()
   set(Freetype_FOUND ${Freetype_FOUND} PARENT_SCOPE)
-	add_dependencies(${VM_LIBRARY_NAME} Freetype::Freetype)
 endfunction()
 
 function(download_Freetype)
-  if (NOT UNIX)
+  if (WIN OR OSX)
     # Download it for now, except for linuxes
-    add_third_party_dependency("freetype-2.9.1" "build/vm")
+    add_third_party_dependency("freetype-2.9.1")
   endif()
 endfunction()
 
@@ -44,16 +45,16 @@ function(build_Freetype)
   add_dependencies(${VM_LIBRARY_NAME} freetype)
 endfunction()
 
-if (DOWNLOAD_DEPENDENCIES)
+if (BUILD_BUNDLE)
   #Only get Freetype if required
   if(PHARO_DEPENDENCIES_PREFER_DOWNLOAD_BINARIES)
     #Download Freetype binaries directly
     download_Freetype()
   else()
-    #Look for SDL2 in the system, then build or download if possible
+    #Look for Freetype in the system, then build or download if possible
     find_system_Freetype()
     if(NOT Freetype_FOUND)
-        build_Freetype_FOUND()
+        build_Freetype()
     endif()
   endif()
 endif()

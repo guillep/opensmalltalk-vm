@@ -458,17 +458,10 @@ VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod [
 { #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
 
-	| methodOop bytecodeMethodInTargetEncoding |
+	| methodOop |
 	"We are using V3 bytecode, so we need to recompile the method"
-	bytecodeMethodInTargetEncoding := aPharoCompiledMethod methodClass compiler
-		            encoderClass: self bytecodeEncoderClass;
-		            options: #( - optionFullBlockClosure );
-		            compile: aPharoCompiledMethod sourceCode.
-
-	methodOop := methodBuilder
-		             fillFromPharoMethod: bytecodeMethodInTargetEncoding;
-		             buildMethod.
-
+	methodOop := self createMethodOopFromPharoMethod:
+		             aPharoCompiledMethod.
 	^ cogit cog: methodOop selector: aSelectorOop
 ]
 

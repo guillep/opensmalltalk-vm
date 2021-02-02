@@ -35,7 +35,7 @@ def buildGTKBundle(){
 
 			def commitHash = checkout(scm).GIT_COMMIT
 
-			unstash name: "packages-Windows-x86_64-CoInterpreterWithQueueFFI"
+			unstash name: "packages-Windows-x86_64-CoInterpreter"
 			def shortGitHash = commitHash.substring(0,8)
 			def gtkBundleName = "PharoVM-8.1.0-GTK-${shortGitHash}-win64-bin.zip"
 
@@ -108,43 +108,48 @@ def runTests(platform, configuration, packages, withWorker){
   cleanWs()
 
   def stageName = withWorker ? "Tests-${platform}-${configuration}-worker" : "Tests-${platform}-${configuration}"
+  def hasWorker = withWorker ? "--worker" : ""
 
-  stage(stageName){
-    unstash name: "packages-${platform}-${configuration}"
-    shell "mkdir runTests"
-    dir("runTests"){
-      shell "wget -O - get.pharo.org/64/90 | bash "
-      shell "echo 90 > pharo.version"
+	stage(stageName){
+		unstash name: "packages-${platform}-${configuration}"
+		shell "mkdir runTests"
+		dir("runTests"){
+			try{
+				shell "wget -O - get.pharo.org/64/90 | bash "
+				shell "echo 90 > pharo.version"
           
-      if(isWindows()){
-        runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
-        if(withWorker){
-          runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=win64-${configuration}-worker '${packages}'"
-        }else{
-          runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 Pharo.image test --junit-xml-output --stage-name=win64-${configuration} '${packages}'"
-        }
-      } else {
-        shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+				if(isWindows()){
+					runInCygwin "cd runTests && unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
+					runInCygwin "PHARO_CI_TESTING_ENVIRONMENT=true cd runTests && ./PharoConsole.exe  --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+					} else {
+						shell "unzip ../build/build/packages/PharoVM-*-${platform}-bin.zip -d ."
 
-        if(platform == 'Darwin-x86_64'){
-          if(withWorker){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration}-worker '${packages}'"
-          } else {
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration} '${packages}'"
-          }
-        }
+						if(platform == 'Darwin-x86_64'){
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./Pharo.app/Contents/MacOS/Pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'"
+						}
 
-        if(platform == 'Linux-x86_64'){
-          if(withWorker){
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 --worker Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration}-worker '${packages}'" 
-          }else{
-            shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 Pharo.image test --junit-xml-output --stage-name=${platform}-${configuration} '${packages}'" 
-          }
-        }
-      }
-      junit allowEmptyResults: true, testResults: "*.xml"
-    }
-    archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
+						if(platform == 'Linux-x86_64'){
+							shell "PHARO_CI_TESTING_ENVIRONMENT=true ./pharo --logLevel=4 ${hasWorker} Pharo.image test --junit-xml-output --stage-name=${stageName} '${packages}'" 
+						}
+				}
+				junit allowEmptyResults: true, testResults: "*.xml"
+			} finally{
+				if(fileExists('PharoDebug.log')){
+					shell "mv PharoDebug.log PharoDebug-${stageName}.log"
+					 archiveArtifacts allowEmptyArchive: true, artifacts: "PharoDebug-${stageName}.log", fingerprint: true
+				}
+				if(fileExists('crash.dmp')){
+					shell "mv crash.dmp crash-${stageName}.dmp"
+					archiveArtifacts allowEmptyArchive: true, artifacts: "crash-${stageName}.dmp", fingerprint: true
+				}
+				if(fileExists('progress.log')){
+					shell "mv progress.log progress-${stageName}.log"
+					shell "cat progress-${stageName}.log"
+					archiveArtifacts allowEmptyArchive: true, artifacts: "progress-${stageName}.log", fingerprint: true
+				}
+			}
+		}
+		archiveArtifacts artifacts: 'runTests/*.xml', excludes: '_CPack_Packages'
 	}
 }
 
@@ -178,7 +183,7 @@ def uploadStockReplacement(platform, configuration, archiveName) {
 
 	cleanWs()
 
-	unstash name: "packages-${platform}-${configuration}"
+	unstash name: "packages-${archiveName}-${configuration}"
 
 	def expandedBinaryFileName = sh(returnStdout: true, script: "ls build-stockReplacement/build/packages/PharoVM-*-${archiveName}-bin.zip").trim()
 
@@ -211,13 +216,13 @@ def uploadPackages(){
 				return;
 			}
 			
-			upload('Darwin-x86_64', "CoInterpreterWithQueueFFI", 'Darwin-x86_64')
-			upload('Linux-x86_64', "CoInterpreterWithQueueFFI", 'Linux-x86_64')
-			upload('Windows-x86_64', "CoInterpreterWithQueueFFI", 'Windows-x86_64')
+			upload('Darwin-x86_64', "CoInterpreter", 'Darwin-x86_64')
+			upload('Linux-x86_64', "CoInterpreter", 'Linux-x86_64')
+			upload('Windows-x86_64', "CoInterpreter", 'Windows-x86_64')
 
-			uploadStockReplacement('Darwin-x86_64', "CoInterpreterWithQueueFFI", 'Darwin-x86_64-stockReplacement')
-			uploadStockReplacement('Linux-x86_64', "CoInterpreterWithQueueFFI", 'Linux-x86_64-stockReplacement')
-			uploadStockReplacement('Windows-x86_64', "CoInterpreterWithQueueFFI", 'Windows-x86_64-stockReplacement')
+			uploadStockReplacement('Darwin-x86_64', "CoInterpreter", 'Darwin-x86_64-stockReplacement')
+			uploadStockReplacement('Linux-x86_64', "CoInterpreter", 'Linux-x86_64-stockReplacement')
+			uploadStockReplacement('Windows-x86_64', "CoInterpreter", 'Windows-x86_64-stockReplacement')
 		}
 	}
 }
@@ -236,10 +241,13 @@ try{
 		builders[platform] = {
 			node(platform){
 				timeout(30){
-					runBuild(platform, "CoInterpreterWithQueueFFI")
+					runBuild(platform, "CoInterpreter")
 				}
 				timeout(30){
-					runBuild(platform, "CoInterpreterWithQueueFFI", false)
+					// Only build the Stock replacement version in the main branch
+					if(isMainBranch()){
+						runBuild(platform, "CoInterpreter", false)
+					}
 				}
 			}
 		}
@@ -247,10 +255,10 @@ try{
 		tests[platform] = {
 			node(platform){
 				timeout(45){
-					runTests(platform, "CoInterpreterWithQueueFFI", ".*", false)
+					runTests(platform, "CoInterpreter", ".*", false)
 				}
 				timeout(45){
-					runTests(platform, "CoInterpreterWithQueueFFI", ".*", true)
+					runTests(platform, "CoInterpreter", ".*", true)
 				}				
 			}
 		}

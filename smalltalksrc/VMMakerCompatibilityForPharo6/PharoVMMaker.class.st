@@ -26,7 +26,7 @@ PharoVMMaker class >> generate: aClassName outputDirectory: aDirectory [
 		nextPutAll: ' in ';
 		nextPutAll: aDirectory printString;
 		nextPutAll: '...';
-		cr;
+		newLine;
 		flush.
 	
 	self new
@@ -85,27 +85,17 @@ PharoVMMaker >> generateBasicBlockVM [
 { #category : #generation }
 PharoVMMaker >> generateCoInterpreter [
 
-	self generate: CoInterpreter memoryManager: #Spur64BitCoMemoryManager.
-]
-
-{ #category : #generation }
-PharoVMMaker >> generateCoInterpreterWithQueueFFI [
-
-	self generate: CoInterpreter memoryManager: #Spur64BitCoMemoryManager.
+	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager.
+	self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager.	
 ]
 
 { #category : #generation }
 PharoVMMaker >> generateStackVM [
 
-	self generate: StackInterpreter memoryManager: #Spur64BitMemoryManager.
+	self generate: StackInterpreter memoryManager: Spur64BitMemoryManager.
+	self generate: StackInterpreter memoryManager: Spur32BitMemoryManager.
 
 
-]
-
-{ #category : #generation }
-PharoVMMaker >> generateStackVM32 [
-
-	self generate: StackInterpreter memoryManager: #Spur32BitMemoryManager
 ]
 
 { #category : #accessing }
@@ -122,6 +112,12 @@ PharoVMMaker >> outputDirectory [
 { #category : #accessing }
 PharoVMMaker >> outputDirectory: anObject [
 	outputDirectory := anObject asFileReference
+]
+
+{ #category : #utils }
+PharoVMMaker >> platformDirectoryFor: aMemoryManagerClass [ 
+	
+	^ self outputDirectory / 'generated' / (aMemoryManagerClass wordSize * 8) asString
 ]
 
 { #category : #accessing }

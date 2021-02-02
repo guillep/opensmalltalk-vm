@@ -173,7 +173,7 @@ CogVMSimulator >> allObjectsSelect: objBlock [
 
 	| selected |
 	selected := OrderedCollection new.
-	objectMemory allObjectsDoSafely:
+	objectMemory allObjectsDo:
 		[:oop| (objBlock value: oop) ifTrue: [selected addLast: oop]].
 	^ selected
 ]
@@ -262,7 +262,6 @@ CogVMSimulator >> basicInitialize [
 	enableCog := true.
 
 	methodCache := Array new: MethodCacheSize.
-	nsMethodCache := Array new: NSMethodCacheSize.
 	atCache := nil.
 	self flushMethodCache.
 	cogCompiledCodeCompactionCalledFor := false.
@@ -3160,7 +3159,7 @@ CogVMSimulator >> printChar: aByte [
 CogVMSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream ensureCr; print: localIP - method - 3; tab.
+	aStream newLine; print: localIP - method - 3; tab.
 	bytecodeSetSelector > 0 ifTrue:
 		[aStream nextPutAll: 'ALT '].
 	aStream
@@ -3561,13 +3560,13 @@ CogVMSimulator >> setOwnerIndexOfProcess: aProcess to: anIndex bind: bind [
 
 { #category : #'debug printing' }
 CogVMSimulator >> shortPrintContext: aContext [
-	transcript ensureCr.
+	transcript newLine.
 	^super shortPrintContext: aContext
 ]
 
 { #category : #'debug printing' }
 CogVMSimulator >> shortPrintFrame: theFP [
-	self transcript ensureCr.
+	self transcript newLine.
 	^super shortPrintFrame: theFP
 ]
 

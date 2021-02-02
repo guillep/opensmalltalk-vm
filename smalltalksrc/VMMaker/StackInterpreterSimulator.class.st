@@ -120,7 +120,7 @@ StackInterpreterSimulator >> allObjectsSelect: objBlock [
 
 	| selected |
 	selected := OrderedCollection new.
-	objectMemory allObjectsDoSafely:
+	objectMemory allObjectsDo:
 		[:obj|
 		(objBlock value: obj) ifTrue: [selected addLast: obj]].
 	^selected
@@ -181,7 +181,6 @@ StackInterpreterSimulator >> basicInitialize [
 	self assert: ConstMinusOne = (objectMemory integerObjectOf: -1).
 
 	methodCache := Array new: MethodCacheSize.
-	nsMethodCache := Array new: NSMethodCacheSize.
 	atCache := Array new: AtCacheTotalSize.
 	self flushMethodCache.
 	gcSemaphoreIndex := 0.
@@ -1968,7 +1967,7 @@ StackInterpreterSimulator >> printChar: aByte [
 StackInterpreterSimulator >> printCurrentBytecodeOn: aStream [
 	| code |
 	code := currentBytecode radix: 16.
-	aStream ensureCr; print: localIP - method - 3; tab.
+	aStream newLine; print: localIP - method - 3; tab.
 	bytecodeSetSelector > 0 ifTrue:
 		[aStream nextPutAll: 'ALT '].
 	aStream
@@ -2297,13 +2296,13 @@ StackInterpreterSimulator >> setDisplayForm: aForm [
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> shortPrintContext: aContext [
-	transcript ensureCr.
+	transcript newLine.
 	^super shortPrintContext: aContext
 ]
 
 { #category : #'debug printing' }
 StackInterpreterSimulator >> shortPrintFrame: theFP [
-	self transcript ensureCr.
+	self transcript newLine.
 	^super shortPrintFrame: theFP
 ]
 

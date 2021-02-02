@@ -11,7 +11,12 @@ set(TestLibrary_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/structures.c
 )
 
-addLibraryWithRPATH(TestLibrary ${TestLibrary_SOURCES})
+addIndependentLibraryWithRPATH(TestLibrary ${TestLibrary_SOURCES})
+
+if(${FEATURE_THREADED_FFI})
+    target_compile_definitions(TestLibrary PRIVATE FEATURE_THREADED_FFI=1)
+endif()
+
 
 target_include_directories(TestLibrary
 PRIVATE
