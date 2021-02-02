@@ -22,7 +22,6 @@ Class {
 		'send1TrampolineAddress',
 		'send2TrampolineAddress',
 		'send3TrampolineAddress',
-		'bytecodeEncodeClass',
 		'jitCompilerClass'
 	],
 	#pools : [
@@ -81,18 +80,6 @@ VMSimpleStackBasedCogitAbstractTest >> assertStackRemainsUnchangedDuring: aBlock
 	self
 		assert: machineSimulator stackPointerRegisterValue
 		equals: before
-]
-
-{ #category : #helpers }
-VMSimpleStackBasedCogitAbstractTest >> bytecodeEncoderClass [
-
-	^ bytecodeEncodeClass ifNil: [ EncoderForV3PlusClosures ]
-]
-
-{ #category : #helpers }
-VMSimpleStackBasedCogitAbstractTest >> bytecodeEncoderClass: aClass [
-
-	bytecodeEncodeClass := aClass
 ]
 
 { #category : #accessing }

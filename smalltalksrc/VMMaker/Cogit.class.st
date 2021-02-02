@@ -8240,7 +8240,7 @@ Cogit >> generateTrampolines [
 	| methodZoneStart |
 	methodZoneStart := methodZoneBase.
 	methodLabel address: methodZoneStart.
-	self allocateOpcodes: 80 bytecodes: 0.
+	self allocateOpcodes: 100 bytecodes: 0.
 	hasYoungReferent := false.
 	objectRepresentation maybeGenerateSelectorIndexDereferenceRoutine.
 	self generateSendTrampolines.

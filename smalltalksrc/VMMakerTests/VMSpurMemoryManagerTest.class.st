@@ -17,7 +17,8 @@ Class {
 		'rumpCStackSize',
 		'wordSize',
 		'methodBuilder',
-		'v3Method'
+		'v3Method',
+		'bytecodeEncodeClass'
 	],
 	#pools : [
 		'VMBasicConstants',
@@ -34,6 +35,18 @@ VMSpurMemoryManagerTest class >> testParameters [
 	^ ParametrizedTestMatrix new
 			forSelector: #wordSize addOptions: { 4 . 8 };
 			yourself
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> bytecodeEncoderClass [
+
+	^ bytecodeEncodeClass ifNil: [ EncoderForV3PlusClosures ]
+]
+
+{ #category : #helpers }
+VMSpurMemoryManagerTest >> bytecodeEncoderClass: aClass [
+
+	bytecodeEncodeClass := aClass
 ]
 
 { #category : #helpers }
@@ -63,7 +76,7 @@ VMSpurMemoryManagerTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod 
 
 	| methodOop |
 	v3Method := aPharoCompiledMethod methodClass compiler
-		            encoderClass: EncoderForV3PlusClosures;
+		            encoderClass: self bytecodeEncoderClass;
 		            options: #( - optionFullBlockClosure );
 		            compile: aPharoCompiledMethod sourceCode.
 
