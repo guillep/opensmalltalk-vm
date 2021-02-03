@@ -832,7 +832,7 @@ BasicBlockCompiler >> availableRegOrNoneNotConflictingWith: regMask [
 	^backEnd availableRegisterOrNoneFor: (self liveRegisters bitOr: regMask)
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #'basic-blocks' }
 BasicBlockCompiler >> basicBlockEdges [
 	
 	^ basicBlocks gather: [ :e |
@@ -1516,24 +1516,6 @@ BasicBlockCompiler >> genCallPrimitiveBytecode [
 	prim := byte2 - 128 << 8 + byte1.
 	primSet := prim >> 13 bitAnd: 3.
 	prim := prim bitAnd: 8191.
-	LowcodeVM
-		ifTrue:
-			[
-			primSet = 1 ifTrue: [
-				prim < 1000 ifTrue:
-					[^self genLowcodeNullaryInlinePrimitive: prim].
-
-				prim < 2000 ifTrue:
-					[^self genLowcodeUnaryInlinePrimitive: prim - 1000].
-				
-				prim < 3000 ifTrue:
-					[^ self genLowcodeBinaryInlinePrimitive: prim - 2000].
-
-				prim < 4000 ifTrue:
-					[^self genLowcodeTrinaryInlinePrimitive: prim - 3000].
-			]
-		].
-
 	^EncounteredUnknownBytecode
 ]
 
@@ -3289,16 +3271,6 @@ BasicBlockCompiler >> generateTracingTrampolines [
 		 ceTraceStoreTrampoline := self simulatedTrampolineFor: #ceShortCutTraceStore:]
 ]
 
-{ #category : #'as yet unclassified' }
-BasicBlockCompiler >> gtInspectorFreeListIn: composite [
-	<gtInspectorPresentationOrder: 0>
-	^ composite fastTree
-		title: 'Basic Blocks';
-		children: [ :aNode | aNode instructions ];
-		hasChildren: [ :aNode | aNode isKindOf: BasicBlock ];
-		display: [ :anObject | basicBlocks ]
-]
-
 { #category : #'simulation stack' }
 BasicBlockCompiler >> initSimStackForFramefulMethod: startpc [
 	<var: #desc type: #'CogSimStackEntry *'>
@@ -4832,18 +4804,6 @@ BasicBlockCompiler >> voidReceiverResultRegContainsSelf [
 			[spillIndex := i]].
 	spillIndex > 0 ifTrue:
 		[self ssFlushTo: spillIndex]
-]
-
-{ #category : #'simulation only' }
-BasicBlockCompiler >> widthInDefaultFontOf: aString [
-	<doNotGenerate>
-	^(NewParagraph new
-		compose: aString asText
-		style: TextStyle default
-		from: 1
-		in: Display boundingBox;
-		adjustRightX)
-		extent x
 ]
 
 { #category : #'basic-blocks' }
