@@ -62,15 +62,17 @@ PettisHansenBottomUpSorter >> sort: basicBlocks [
 { #category : #sorting }
 PettisHansenBottomUpSorter >> sortBlocksInChains: aSetOfChains [
 
-	| finalOrder worklist |
+	| finalOrder worklist min |
 	finalOrder := OrderedCollection new.
-	aSetOfChains ifEmpty: [ ^ finalOrder ].
+	aSetOfChains isEmpty ifTrue: [ ^ finalOrder ].
 
 	worklist := OrderedCollection new.
-	worklist add: (aSetOfChains inject: aSetOfChains anyOne into: [:min :each | 
-		min priority < each priority
-			ifTrue: [ min ]
-			ifFalse: [ each ]]).
+	min := aSetOfChains first.
+	aSetOfChains do: [ :each |
+		each priority < min priority
+			ifFalse: [ min := each ] ].
+	
+	worklist add: min.
 	[ worklist isEmpty ] whileFalse: [ | processedChain |
 		processedChain := worklist removeFirst.
 		processedChain blocksDo: [ :b |

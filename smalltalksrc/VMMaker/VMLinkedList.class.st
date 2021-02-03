@@ -61,6 +61,27 @@ VMLinkedList >> allocateNodeWith: anObject [
 	^ node
 ]
 
+{ #category : #inserting }
+VMLinkedList >> asOrderedCollection [
+	<doNotGenerate>
+	^ OrderedCollection streamContents: [ :str |
+		str nextPutAll: self ]
+]
+
+{ #category : #iterating }
+VMLinkedList >> detect: aFullBlockClosure [ 
+
+	| currentNode found |
+	currentNode := firstNode.
+	found := nil.
+	[ found isNil and: [ currentNode notNil ] ] whileTrue: [ 
+		(aFullBlockClosure value: currentNode value)
+			ifTrue: [ found := currentNode value ]
+			ifFalse: [ currentNode := currentNode next ].
+	].
+	^ found
+]
+
 { #category : #iterating }
 VMLinkedList >> do: aBlockClosure [
 

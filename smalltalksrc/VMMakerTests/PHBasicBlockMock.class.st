@@ -1,6 +1,6 @@
 Class {
 	#name : #PHBasicBlockMock,
-	#superclass : #Object,
+	#superclass : #BasicBlock,
 	#instVars : [
 		'name',
 		'outgoingEdges'
@@ -43,6 +43,18 @@ PHBasicBlockMock >> initialize [
 
 	super initialize.
 	outgoingEdges := OrderedCollection new
+]
+
+{ #category : #testing }
+PHBasicBlockMock >> isFallingThroughBlock: aBasicBlock [
+	"In the tests we do not re-order instructions"
+	^ false
+]
+
+{ #category : #testing }
+PHBasicBlockMock >> isJumpingConditionallyOnTrueBranchToBlock: aBasicBlock [
+	"In the tests we do not re-order instructions"
+	^ false
 ]
 
 { #category : #'as yet unclassified' }
