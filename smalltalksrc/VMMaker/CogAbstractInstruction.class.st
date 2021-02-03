@@ -512,16 +512,6 @@ CogAbstractInstruction >> availableRegisterOrNoneFor: liveRegsMask [
 ]
 
 { #category : #'as yet unclassified' }
-CogAbstractInstruction >> basicBlock [
-	
-	"Pre-condition: this is a lable instruction"
-	self assert: opcode = Label.
-	
-	"Operand 0 is the label id, operand 1 is its basic block"
-	^ self operands at: 1
-]
-
-{ #category : #'as yet unclassified' }
 CogAbstractInstruction >> basicBlock: aBasicBlock [ 
 
 	"Pre-condition: this is a lable instruction"
@@ -990,6 +980,16 @@ CogAbstractInstruction >> generateLowLevelUnlock: vmOwnerLockAddress [
 	self subclassResponsibility
 ]
 
+{ #category : #'as yet unclassified' }
+CogAbstractInstruction >> getBasicBlock [
+	
+	"Pre-condition: this is a lable instruction"
+	self assert: opcode = Label.
+	
+	"Operand 0 is the label id, operand 1 is its basic block"
+	^ self operands at: 1
+]
+
 { #category : #accessing }
 CogAbstractInstruction >> getDefaultCogCodeSize [
 	"Answer the default number of bytes to allocate for native code at startup.
@@ -1005,6 +1005,13 @@ CogAbstractInstruction >> getJmpTarget [
 	"Get the target of a jump instruction.  Jumps have the target in the first operand."
 	<inline: true>
 	^cogit cCoerceSimple: (operands at: 0) to: #'AbstractInstruction *'
+]
+
+{ #category : #accessing }
+CogAbstractInstruction >> getJumpWeight [
+	"Set the target of a jump instruction.  These all have the target in the first operand."
+	<returnC: #'uint'>
+	^ operands at: 1
 ]
 
 { #category : #testing }
@@ -1161,15 +1168,6 @@ CogAbstractInstruction >> isWithinMwOffsetRange: anAddress [
 ]
 
 { #category : #accessing }
-CogAbstractInstruction >> jmpTarget [
-
-	"Pre-condition: this instruction is a jmp".
-	self assert: self isJump.
-
-	^ operands at: 0
-]
-
-{ #category : #accessing }
 CogAbstractInstruction >> jmpTarget: anAbstractInstruction [
 	"Set the target of a jump instruction.  These all have the target in the first operand."
 	<returnTypeC: #'AbstractInstruction *'>
@@ -1228,13 +1226,6 @@ CogAbstractInstruction >> jumpTargetAddress [
 		[jumpTarget := cogit cCoerceSimple: jumpTarget address to: #'AbstractInstruction *'].
 	self assert: jumpTarget ~= 0.
 	^jumpTarget
-]
-
-{ #category : #accessing }
-CogAbstractInstruction >> jumpWeight [
-	"Set the target of a jump instruction.  These all have the target in the first operand."
-	<returnC: #'uint'>
-	^ operands at: 1
 ]
 
 { #category : #accessing }

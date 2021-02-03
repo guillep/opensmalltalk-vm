@@ -99,18 +99,18 @@ BasicBlock >> invertConditionalJump [
 	inverseOpcode := compiler inverseBranchFor: self instructionBeforeLastInstruction opcode.
 	self instructionBeforeLastInstruction opcode: inverseOpcode.
 	
-	targetA := self instructionBeforeLastInstruction jmpTarget.
-	self instructionBeforeLastInstruction jmpTarget: self lastInstruction jmpTarget.
+	targetA := self instructionBeforeLastInstruction getJmpTarget.
+	self instructionBeforeLastInstruction jmpTarget: self lastInstruction getJmpTarget.
 	self lastInstruction jmpTarget: targetA
 ]
 
 { #category : #testing }
-BasicBlock >> isFallingThroughBlock: aBasicBlock [ 
+BasicBlock >> isFallingThroughBlock: aBasicBlock [
 	
 	| lastInstruction |
 	lastInstruction := self lastInstruction.
 	^ lastInstruction isJump
-		and: [ lastInstruction jmpTarget = aBasicBlock label ]
+		and: [ lastInstruction getJmpTarget = aBasicBlock label ]
 ]
 
 { #category : #testing }
@@ -124,7 +124,7 @@ BasicBlock >> isJumpingConditionallyOnTrueBranchToBlock: aBasicBlock [
 	| instructionBeforeLast |
 	instructionBeforeLast := self instructionBeforeLastInstruction.
 	^ instructionBeforeLast isJump
-		and: [ instructionBeforeLast jmpTarget = aBasicBlock label ]
+		and: [ instructionBeforeLast getJmpTarget = aBasicBlock label ]
 	
 ]
 
@@ -138,11 +138,6 @@ BasicBlock >> label [
 BasicBlock >> lastInstruction [
 	
 	^ compiler abstractInstructionAt: lastInstructionIndex
-]
-
-{ #category : #accessing }
-BasicBlock >> lastInstructionIndex [
-	^ lastInstructionIndex
 ]
 
 { #category : #accessing }
@@ -181,21 +176,21 @@ BasicBlock >> outgoingEdges [
 		ifTrue: [ | targetLabel |
 			targetLabel := self instructionBeforeLastInstruction
 				resolveJumpTarget;
-				jmpTarget.
+				getJmpTarget.
 			targetLabel isLabel ifTrue: [ outgoingEdges add: (self
 				newEdgeFrom: self
-				to: targetLabel basicBlock 
-				weight: self instructionBeforeLastInstruction jumpWeight) ] ].
+				to: targetLabel getBasicBlock 
+				weight: self instructionBeforeLastInstruction getJumpWeight) ] ].
 		
 	self lastInstruction isJump
 		ifTrue: [ | targetLabel |
 			targetLabel := self lastInstruction
 				resolveJumpTarget;
-				jmpTarget.
+				getJmpTarget.
 			targetLabel isLabel ifTrue: [ outgoingEdges add: (self
 				newEdgeFrom: self
-				to: targetLabel basicBlock 
-				weight: self lastInstruction jumpWeight) ] ].
+				to: targetLabel getBasicBlock 
+				weight: self lastInstruction getJumpWeight) ] ].
 
 	^ outgoingEdges
 ]
