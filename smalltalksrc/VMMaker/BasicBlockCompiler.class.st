@@ -50,7 +50,7 @@ Class {
 { #category : #translation }
 BasicBlockCompiler class >> ancilliaryClasses [
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedList . PHBottomUpSorterNoDeadCode . PHEdge . PHChain }
 ]
 
 { #category : #documentation }
@@ -3440,6 +3440,9 @@ BasicBlockCompiler >> instructionsDo: aBlock [
 BasicBlockCompiler >> instructionsWithIndexDo: aBlock [
 	"Iterate all instructions in control-flow order"
 	| abstractInstruction |
+	"We must force inlining because of the block argument"
+	<inline: true>
+
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	<var: #fixup type: #'BytecodeFixup *'>
 	0 to: opcodeIndex - 1 do: [:i|

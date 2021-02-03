@@ -1544,7 +1544,7 @@ CogAbstractInstruction >> resolveJumpTarget [
 			[self assert: (self isAFixup: fixup)]].
 	(self isAFixup: fixup) ifTrue:
 		[self assert: (cogit addressIsInInstructions: fixup targetInstruction).
-		self haltIf: [ fixup targetInstruction isLabel not ].
+		"self haltIf: [ fixup targetInstruction isLabel not ]."
 		 self jmpTarget: fixup targetInstruction]
 ]
 

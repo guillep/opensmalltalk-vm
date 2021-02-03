@@ -1,6 +1,6 @@
 Class {
 	#name : #PHEdge,
-	#superclass : #Object,
+	#superclass : #VMStructType,
 	#instVars : [
 		'from',
 		'to',
@@ -36,6 +36,6 @@ PHEdge >> weight [
 
 { #category : #accessing }
 PHEdge >> weight: anObject [
-self haltIf: [ anObject isNil ].
+"self haltIf: [ anObject isNil ]."
 	weight := anObject
 ]
