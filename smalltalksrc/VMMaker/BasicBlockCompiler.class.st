@@ -3760,7 +3760,7 @@ BasicBlockCompiler >> newBasicBlock [
 		block compiler: self.
 	].
 	block firstInstructionIndex: opcodeIndex.
-	block lastInstructionIndex: opcodeIndex.
+	block lastInstructionIndex: opcodeIndex - 1 "initially empty".
 	self addBasicBlock: block.
 	^ block
 ]
