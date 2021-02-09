@@ -101,7 +101,7 @@ PettisHansenBottomUpSorter >> sortBlocksInChains: aSetOfChains [
 			block successors do: [ :succ |
 				(finalOrder includes: succ) ifFalse: [ | theChain |
 					"If not placed, treat its worklist (if not already done)"
-					theChain := aSetOfChains detect: [ :aChain | aChain includes: succ ].
+					theChain := aSetOfChains detect: [ :aChain | aChain includesBlock: succ ].
 					(worklist includes: theChain) ifFalse: [
 							worklist
 								insert: theChain

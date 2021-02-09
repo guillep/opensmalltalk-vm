@@ -268,7 +268,7 @@ VMMASTTranslationTest >> testInlineMethodWithLoopDeclaresLoopIndexVariable [
 	codeGenerator addMethod: inlinedMethod.
 	codeGenerator doInlining: true.
 
-	self assert: (translation locals includesAll: inlinedMethod locals)
+	self assert: (translation locals includesAllBlocks: inlinedMethod locals)
 ]
 
 { #category : #tests }

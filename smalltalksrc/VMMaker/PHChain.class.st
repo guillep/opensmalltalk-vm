@@ -75,27 +75,33 @@ PHChain >> blocksDo: aFullBlockClosure [
 ]
 
 { #category : #accessing }
+PHChain >> chainSize [
+
+	^ blocks size
+]
+
+{ #category : #accessing }
 PHChain >> head [
 	
 	^ blocks first
 ]
 
 { #category : #testing }
-PHChain >> includes: aBasicBlock [
-
-	 ^ blocks includes: aBasicBlock
-	
+PHChain >> includesAllBlocks: aCollection [ 
+	"Returns if this chain of blocks includes all the blocks in the argument"
+	^ blocks includesAll: aCollection
 ]
 
 { #category : #testing }
-PHChain >> includesAll: aCollection [ 
+PHChain >> includesBlock: aBasicBlock [
+	"Return if this chain contains the basic block as argument"
+	^ blocks includes: aBasicBlock
 	
-	^ blocks includesAll: aCollection
 ]
 
 { #category : #printing }
 PHChain >> printOn: aStream [
-
+	<doNotGenerate>
 	aStream
 		nextPutAll: self class name;
 		nextPutAll: '('.
@@ -125,12 +131,6 @@ PHChain >> setChainBlocks: aVMLinkedList [
 PHChain >> setChainPriority: anInteger [ 
 	
 	priority := anInteger
-]
-
-{ #category : #accessing }
-PHChain >> size [
-
-	^ blocks size
 ]
 
 { #category : #accessing }

@@ -2,16 +2,28 @@ Class {
 	#name : #VMLinkedListNode,
 	#superclass : #Object,
 	#instVars : [
-		'value',
-		'next'
+		'next',
+		'element'
 	],
 	#category : #'VMMaker-Support'
 }
 
+{ #category : #accessing }
+VMLinkedListNode >> element [
+
+	^ element
+]
+
+{ #category : #accessing }
+VMLinkedListNode >> element: anObject [
+
+	element := anObject
+]
+
 { #category : #testing }
 VMLinkedListNode >> includes: anObject [
 	
-	value = anObject ifTrue: [ ^ true ].
+	element = anObject ifTrue: [ ^ true ].
 	next ifNil: [ ^ false ].
 	^ next includes: anObject
 ]
@@ -26,7 +38,7 @@ VMLinkedListNode >> insertNode: aNode sortedBy: aCriterion [
 	Assummption: the object cannot be before me"
 	
 	"Should it just be my next? => Insert it"
-	(next isNil or: [aCriterion value: aNode value value: next value])
+	(next isNil or: [aCriterion value: aNode element value: next element])
 		ifTrue: [
 			aNode next: next.
 			next := aNode.
@@ -53,16 +65,4 @@ VMLinkedListNode >> next [
 VMLinkedListNode >> next: anObject [
 
 	next := anObject
-]
-
-{ #category : #accessing }
-VMLinkedListNode >> value [
-
-	^ value
-]
-
-{ #category : #accessing }
-VMLinkedListNode >> value: anObject [
-
-	value := anObject
 ]

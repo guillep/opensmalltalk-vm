@@ -34,7 +34,7 @@ PHEdge >> from: anObject [
 
 { #category : #printing }
 PHEdge >> printOn: aStream [
-
+	<doNotGenerate>
 	aStream
 		nextPutAll: 'PHEdge(from=';
 		print: from id;

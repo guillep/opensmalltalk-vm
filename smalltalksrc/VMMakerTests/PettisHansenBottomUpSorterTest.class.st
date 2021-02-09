@@ -44,11 +44,11 @@ PettisHansenBottomUpSorterTest >> testControlFlowWithDegenerateBlocksReturnsThre
 
 	chains := PettisHansenBottomUpSorter new hotPathChainsOf: basicBlocks.
 	
-	self assert: (chains anySatisfy: [ :c | c includesAll: {b0 . b3 . b4} ]).
+	self assert: (chains anySatisfy: [ :c | c includesAllBlocks: {b0 . b3 . b4} ]).
 	self assert: (chains anySatisfy: [ :c | 
-		(c includes: b1) and: [ c size = 1 ] ]).
+		(c includesBlock: b1) and: [ c chainSize = 1 ] ]).
 	self assert: (chains anySatisfy: [ :c | 
-		(c includes: b2) and: [ c size = 1 ] ]).
+		(c includesBlock: b2) and: [ c chainSize = 1 ] ]).
 ]
 
 { #category : #tests }
@@ -98,8 +98,8 @@ PettisHansenBottomUpSorterTest >> testControlFlowWithTwoChainsReturnsTwoChains [
 
 	chains := PettisHansenBottomUpSorter new hotPathChainsOf: basicBlocks.
 	
-	self assert: (chains anySatisfy: [ :c | c includesAll: {bA . bB . bD } ]).
-	self assert: (chains anySatisfy: [ :c | c includesAll: {bC . bE . bF} ]).
+	self assert: (chains anySatisfy: [ :c | c includesAllBlocks: {bA . bB . bD } ]).
+	self assert: (chains anySatisfy: [ :c | c includesAllBlocks: {bC . bE . bF} ]).
 ]
 
 { #category : #tests }

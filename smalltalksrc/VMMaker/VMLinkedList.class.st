@@ -68,7 +68,7 @@ VMLinkedList >> allocateNodeWith: anObject [
 	] inSmalltalk: [
 		node := VMLinkedListNode new.
 	].
-	node value: anObject.
+	node element: anObject.
 	node next: nil.
 	^ node
 ]
@@ -114,8 +114,8 @@ VMLinkedList >> detect: aFullBlockClosure [
 	currentNode := firstNode.
 	found := nil.
 	[ found isNil and: [ currentNode notNil ] ] whileTrue: [ 
-		(aFullBlockClosure value: currentNode value)
-			ifTrue: [ found := currentNode value ]
+		(aFullBlockClosure value: currentNode element)
+			ifTrue: [ found := currentNode element ]
 			ifFalse: [ currentNode := currentNode next ].
 	].
 	^ found
@@ -127,7 +127,7 @@ VMLinkedList >> do: aBlockClosure [
 	| node |
 	node := firstNode.
 	[ node isNil ] whileFalse: [ 
-		aBlockClosure value: node value.
+		aBlockClosure value: node element.
 		node := node next.
 	].
 ]
@@ -135,7 +135,7 @@ VMLinkedList >> do: aBlockClosure [
 { #category : #accessing }
 VMLinkedList >> first [
 
-	^ firstNode value
+	^ firstNode element
 ]
 
 { #category : #accessing }
@@ -175,7 +175,7 @@ VMLinkedList >> insert: anObject sortedBy: aCriterion [
 		^ self ].
 	
 	"Should it be before first?"
-	(aCriterion value: anObject value: firstNode value)
+	(aCriterion value: anObject value: firstNode element)
 		ifTrue: [
 			self addFirst: anObject.
 			^ self ].
@@ -195,7 +195,7 @@ VMLinkedList >> isEmpty [
 VMLinkedList >> last [
 	
 	self isEmpty ifTrue: [ self error: 'Trying to access last of empty list' ].
-	^ firstNode lastNode value
+	^ firstNode lastNode element
 ]
 
 { #category : #testing }
@@ -206,7 +206,7 @@ VMLinkedList >> notEmpty [
 
 { #category : #printing }
 VMLinkedList >> printOn: aStream [
-
+	<doNotGenerate>
 	aStream nextPutAll: 'VMLinkedList('.
 	self do: [ :e |
 		aStream
@@ -223,13 +223,13 @@ VMLinkedList >> removeFirst [
 	firstNode := firstNode next.
 
 	self flag: #deallocation.
-	^ removedNode value
+	^ removedNode element
 ]
 
 { #category : #accessing }
 VMLinkedList >> second [
 	
-	^ firstNode next value
+	^ firstNode next element
 ]
 
 { #category : #accessing }
@@ -258,5 +258,5 @@ VMLinkedList >> sorted: aCriterion [
 { #category : #accessing }
 VMLinkedList >> third [
 	
-	^ firstNode next next value
+	^ firstNode next next element
 ]
