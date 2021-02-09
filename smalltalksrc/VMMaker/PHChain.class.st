@@ -70,7 +70,7 @@ PHChain >> blocks [
 
 { #category : #iterating }
 PHChain >> blocksDo: aFullBlockClosure [ 
-	
+	<inline: true>
 	blocks do: aFullBlockClosure
 ]
 

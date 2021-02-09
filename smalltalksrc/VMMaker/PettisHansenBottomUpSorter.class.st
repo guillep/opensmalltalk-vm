@@ -11,11 +11,11 @@ PettisHansenBottomUpSorter class >> typeForSelf [
 ]
 
 { #category : #sorting }
-PettisHansenBottomUpSorter >> basicBlockEdgesOf: basicBlocks [
+PettisHansenBottomUpSorter >> basicBlockEdgesOf: aListOfBasicBlocks [
 	
 	| sortedEdges |
 	sortedEdges := self newLinkedList.
-	basicBlocks do: [ :aBasicBlock | | aBlockEdges |
+	aListOfBasicBlocks do: [ :aBasicBlock | | aBlockEdges |
 		aBlockEdges := aBasicBlock outgoingEdges.
 		aBlockEdges do: [ :edge |
 			sortedEdges insert: edge sortedBy: [ :e1 :e2 | e1 weight >= e2 weight ].
@@ -24,16 +24,16 @@ PettisHansenBottomUpSorter >> basicBlockEdgesOf: basicBlocks [
 ]
 
 { #category : #sorting }
-PettisHansenBottomUpSorter >> hotPathChainsOf: basicBlocks [
+PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 
 	| priority fromChain toChain list |
-	basicBlocks do: [ :e | | chain |
+	aListOfBasicBlocks do: [ :e | | chain |
 		chain := self newBlockChain.
 		chain blocks add: e.
 		e chain: chain.
 	].
 	priority := 0.
-	(self basicBlockEdgesOf: basicBlocks)
+	(self basicBlockEdgesOf: aListOfBasicBlocks)
 		do: [ :e |
 			fromChain := e from chain.
 			toChain := e to chain.
@@ -52,7 +52,7 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: basicBlocks [
 	
 	"Collect all the different chains"
 	list := self newLinkedList.
-	basicBlocks do: [ :e |
+	aListOfBasicBlocks do: [ :e |
 		(list includes: e chain)
 			ifFalse: [ list add: e chain ].		
 	].
@@ -78,10 +78,10 @@ PettisHansenBottomUpSorter >> newBlockChain [
 ]
 
 { #category : #sorting }
-PettisHansenBottomUpSorter >> sort: basicBlocks [
+PettisHansenBottomUpSorter >> sort: aListOfBasicBlocks [
 
 	| chains |
-	chains := self hotPathChainsOf: basicBlocks.
+	chains := self hotPathChainsOf: aListOfBasicBlocks.
 	^ self sortBlocksInChains: chains
 ]
 

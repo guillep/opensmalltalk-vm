@@ -41,7 +41,7 @@ VMLinkedList >> addFirstNode: aVMLinkedListNode [
 	
 	"Assumption: the node is orphan"
 	
-	aVMLinkedListNode next: firstNode.
+	aVMLinkedListNode setNext: firstNode.
 	firstNode := aVMLinkedListNode.
 	size := size + 1
 ]
@@ -52,7 +52,7 @@ VMLinkedList >> addLastNode: aVMLinkedListNode [
 	self isEmpty ifTrue: [ 
 		firstNode := aVMLinkedListNode.
 	] ifFalse: [
-		firstNode lastNode next: aVMLinkedListNode
+		firstNode lastNode setNext: aVMLinkedListNode
 	].
 	size := size + 1
 ]
@@ -104,7 +104,7 @@ VMLinkedList >> concatenateWith: aVMLinkedList [
 		^ self.
 	].
 	
-	firstNode lastNode next: aVMLinkedList firstNode
+	firstNode lastNode setNext: aVMLinkedList firstNode
 ]
 
 { #category : #iterating }
@@ -123,7 +123,7 @@ VMLinkedList >> detect: aFullBlockClosure [
 
 { #category : #iterating }
 VMLinkedList >> do: aBlockClosure [
-
+	<inline: true>
 	| node |
 	node := firstNode.
 	[ node isNil ] whileFalse: [ 
@@ -169,7 +169,8 @@ VMLinkedList >> includesAll: aCollection [
 { #category : #inserting }
 VMLinkedList >> insert: anObject sortedBy: aCriterion [
 	
-	| node |
+	<inline: true>
+	| node currentNode |
 	self isEmpty ifTrue: [ 
 		self add: anObject.
 		^ self ].
@@ -182,7 +183,24 @@ VMLinkedList >> insert: anObject sortedBy: aCriterion [
 	
 	"Else recurse and ask each node to test"
 	node := self allocateNodeWith: anObject.	
-	^ firstNode insertNode: node sortedBy: aCriterion
+	
+	"Check if the object should be inserted 
+	- just after a node, 
+	- else after some of my next nodes
+	
+	Assummption: the object cannot be before the first one"
+	
+	currentNode := firstNode.
+	["Should it just be my next? => Insert it"
+	(currentNode next isNil or: [aCriterion value: node element value: currentNode next element])
+		ifTrue: [
+			node setNext: currentNode next.
+			currentNode setNext: node.
+			^ self ].
+	currentNode := currentNode next.
+	
+	true ] whileTrue.
+	^ self
 ]
 
 { #category : #testing }
@@ -247,6 +265,7 @@ VMLinkedList >> size: anObject [
 { #category : #sorting }
 VMLinkedList >> sorted: aCriterion [ 
 	
+	<inline: true>
 	| sortedList |
 	sortedList := self newLinkedList.
 	self do: [ :element |
