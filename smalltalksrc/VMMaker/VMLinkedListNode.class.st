@@ -1,12 +1,24 @@
 Class {
 	#name : #VMLinkedListNode,
-	#superclass : #Object,
+	#superclass : #VMStructType,
 	#instVars : [
 		'next',
 		'element'
 	],
 	#category : #'VMMaker-Support'
 }
+
+{ #category : #translation }
+VMLinkedListNode class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+
+	self filteredInstVarNames halt do:
+		[:ivn|
+		aBinaryBlock
+			value: ivn
+			value: (ivn caseOf: {
+						['size']			-> [#sqInt].
+						['firstNode']		-> [#'VMLinkedListNode *']})]
+]
 
 { #category : #accessing }
 VMLinkedListNode >> element [

@@ -50,7 +50,7 @@ Class {
 { #category : #translation }
 BasicBlockCompiler class >> ancilliaryClasses [
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedList . PHBottomUpSorterNoDeadCode . PHEdge . PHChain }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedList . BasicBlock . PHBottomUpSorterNoDeadCode . PHEdge . PHChain }
 ]
 
 { #category : #documentation }
@@ -138,7 +138,9 @@ BasicBlockCompiler class >> declareCVarsIn: aCodeGen [
 		var: #optStatus
 			type: #CogSSOptStatus;
 		var: 'prevBCDescriptor'
-			type: #'BytecodeDescriptor *'.
+			type: #'BytecodeDescriptor *';
+		var: 'basicBlocks'
+			type: #'VMLinkedList *'.
 
 	self numPushNilsFunction ifNotNil:
 		[aCodeGen

@@ -9,6 +9,12 @@ Class {
 }
 
 { #category : #translation }
+VMLinkedList class >> ancilliaryClasses [
+
+	^ { VMLinkedListNode }
+]
+
+{ #category : #translation }
 VMLinkedList class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do:

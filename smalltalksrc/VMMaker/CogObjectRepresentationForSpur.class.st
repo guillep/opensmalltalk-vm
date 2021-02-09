@@ -3380,7 +3380,8 @@ CogObjectRepresentationForSpur >> numRegArgs [
 	 so that the register-popping enilopmarts such as enterRegisterArgCogMethod:-
 	 at:receiver: do not have to be implemented in SimpleStackBasedCogit."
 	<api>
-	<option: #StackToRegisterMappingCogit>
+"	<option: #StackToRegisterMappingCogit>"
+	<option: #BasicBlockCompiler>
 	^2
 ]
 

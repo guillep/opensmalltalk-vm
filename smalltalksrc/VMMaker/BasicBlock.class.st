@@ -26,7 +26,8 @@ BasicBlock class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 			value: ivn
 			value: (ivn caseOf: {
 						['firstInstructionIndex'] -> [#usqInt].
-						['lastInstructionIndex'] -> [#usqInt] })]
+						['lastInstructionIndex'] -> [#usqInt].
+						['chain'] -> [#'PHChain *'] })]
 ]
 
 { #category : #accessing }
