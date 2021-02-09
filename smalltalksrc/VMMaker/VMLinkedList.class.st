@@ -8,6 +8,18 @@ Class {
 	#category : #'VMMaker-Support'
 }
 
+{ #category : #translation }
+VMLinkedList class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+
+	self filteredInstVarNames do:
+		[:ivn|
+		aBinaryBlock
+			value: ivn
+			value: (ivn caseOf: {
+						['size']			-> [#sqInt].
+						['firstNode']		-> [#'VMLinkedListNode *']})]
+]
+
 { #category : #adding }
 VMLinkedList >> add: anObject [
 	
