@@ -63,8 +63,8 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 					 true.
 					 #bytecodeTableInitializer.
 					 #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid }
-			 to: (self platformDirectoryFor: memoryManager)
-			 platformDir: (self platformDirectoryFor: memoryManager)
+			 to: (self platformDirectoryFor: memoryManager asClass)
+			 platformDir: (self platformDirectoryFor: memoryManager asClass)
 			 including: #(  )
 			 configuration: VMMakerConfiguration)
 			stopOnErrors: stopOnErrors;
