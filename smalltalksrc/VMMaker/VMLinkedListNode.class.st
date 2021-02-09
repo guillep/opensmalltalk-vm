@@ -11,33 +11,24 @@ Class {
 { #category : #translation }
 VMLinkedListNode class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
-	self filteredInstVarNames halt do:
+	self filteredInstVarNames do:
 		[:ivn|
 		aBinaryBlock
 			value: ivn
 			value: (ivn caseOf: {
-						['size']			-> [#sqInt].
-						['firstNode']		-> [#'VMLinkedListNode *']})]
+						['element']			-> [#'void *'].
+						['next']		-> [#'struct _LinkedListNode *' "recursive definition..."]})]
+]
+
+{ #category : #translation }
+VMLinkedListNode class >> structTypeName [
+	^'LinkedListNode'
 ]
 
 { #category : #accessing }
 VMLinkedListNode >> element [
 
 	^ element
-]
-
-{ #category : #accessing }
-VMLinkedListNode >> element: anObject [
-
-	element := anObject
-]
-
-{ #category : #testing }
-VMLinkedListNode >> includes: anObject [
-	
-	element = anObject ifTrue: [ ^ true ].
-	next ifNil: [ ^ false ].
-	^ next includes: anObject
 ]
 
 { #category : #inserting }
@@ -52,7 +43,7 @@ VMLinkedListNode >> insertNode: aNode sortedBy: aCriterion [
 	"Should it just be my next? => Insert it"
 	(next isNil or: [aCriterion value: aNode element value: next element])
 		ifTrue: [
-			aNode next: next.
+			aNode setNext: next.
 			next := aNode.
 			^ self ].
 	
@@ -73,8 +64,22 @@ VMLinkedListNode >> next [
 	^ next
 ]
 
+{ #category : #testing }
+VMLinkedListNode >> nodeIncludes: anObject [
+	
+	element = anObject ifTrue: [ ^ true ].
+	next ifNil: [ ^ false ].
+	^ next nodeIncludes: anObject
+]
+
 { #category : #accessing }
-VMLinkedListNode >> next: anObject [
+VMLinkedListNode >> setElement: anObject [
+
+	element := anObject
+]
+
+{ #category : #accessing }
+VMLinkedListNode >> setNext: anObject [
 
 	next := anObject
 ]

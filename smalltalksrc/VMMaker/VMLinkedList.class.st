@@ -9,12 +9,6 @@ Class {
 }
 
 { #category : #translation }
-VMLinkedList class >> ancilliaryClasses [
-
-	^ { VMLinkedListNode }
-]
-
-{ #category : #translation }
 VMLinkedList class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 	self filteredInstVarNames do:
@@ -70,12 +64,12 @@ VMLinkedList >> allocateNodeWith: anObject [
 	self cCode: [ 
 		node := self
 			cCoerce: (self malloc: (self sizeof: VMLinkedListNode))
-			to: 'VMLinkedListNode *'.
+			to: 'LinkedListNode *'.
 	] inSmalltalk: [
 		node := VMLinkedListNode new.
 	].
-	node element: anObject.
-	node next: nil.
+	node setElement: anObject.
+	node setNext: nil.
 	^ node
 ]
 
@@ -161,7 +155,7 @@ VMLinkedList >> includes: anObject [
 	
 	self isEmpty ifTrue: [ ^ false ].
 	
-	^ firstNode includes: anObject
+	^ firstNode nodeIncludes: anObject
 ]
 
 { #category : #testing }

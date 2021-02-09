@@ -49,8 +49,9 @@ Class {
 
 { #category : #translation }
 BasicBlockCompiler class >> ancilliaryClasses [
+
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedList . BasicBlock . PHBottomUpSorterNoDeadCode . PHEdge . PHChain }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedListNode. VMLinkedList . PHChain . BasicBlock . PHBottomUpSorterNoDeadCode . PHEdge }
 ]
 
 { #category : #documentation }
