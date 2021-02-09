@@ -61,11 +61,38 @@ VMLinkedList >> allocateNodeWith: anObject [
 	^ node
 ]
 
+{ #category : #iterating }
+VMLinkedList >> anySatisfy: aFullBlockClosure [ 
+	
+	self do: [ :e | (aFullBlockClosure value: e) ifTrue: [ ^ true ] ].
+	^ false
+]
+
+{ #category : #converting }
+VMLinkedList >> asArray [
+	
+	^ Array streamContents: [ :stream |
+		self do: [ :e | stream nextPut: e ] ]
+]
+
 { #category : #inserting }
 VMLinkedList >> asOrderedCollection [
 	<doNotGenerate>
 	^ OrderedCollection streamContents: [ :str |
 		str nextPutAll: self ]
+]
+
+{ #category : #operations }
+VMLinkedList >> concatenateWith: aVMLinkedList [ 
+	
+	"Concatenate the linked list in the argument with myself.
+	This destroys the argument, and appends all elements to myself"
+	self isEmpty ifTrue: [ 
+		firstNode := aVMLinkedList firstNode.
+		^ self.
+	].
+	
+	firstNode lastNode next: aVMLinkedList firstNode
 ]
 
 { #category : #iterating }
@@ -119,6 +146,14 @@ VMLinkedList >> includes: anObject [
 	^ firstNode includes: anObject
 ]
 
+{ #category : #testing }
+VMLinkedList >> includesAll: aCollection [ 
+	
+	aCollection do: [ :e |
+		(self includes: e) ifFalse: [ ^ false ] ].
+	^ true
+]
+
 { #category : #inserting }
 VMLinkedList >> insert: anObject sortedBy: aCriterion [
 	
@@ -157,6 +192,17 @@ VMLinkedList >> notEmpty [
 	^ firstNode notNil
 ]
 
+{ #category : #printing }
+VMLinkedList >> printOn: aStream [
+
+	aStream nextPutAll: 'VMLinkedList('.
+	self do: [ :e |
+		aStream
+			print: e;
+			nextPut: $, ].
+	aStream nextPut: $)
+]
+
 { #category : #removing }
 VMLinkedList >> removeFirst [
 	
@@ -166,6 +212,12 @@ VMLinkedList >> removeFirst [
 
 	self flag: #deallocation.
 	^ removedNode value
+]
+
+{ #category : #accessing }
+VMLinkedList >> second [
+	
+	^ firstNode next value
 ]
 
 { #category : #accessing }
@@ -189,4 +241,10 @@ VMLinkedList >> sorted: aCriterion [
 		sortedList insert: element sortedBy: aCriterion.
 	].
 	^ sortedList
+]
+
+{ #category : #accessing }
+VMLinkedList >> third [
+	
+	^ firstNode next next value
 ]

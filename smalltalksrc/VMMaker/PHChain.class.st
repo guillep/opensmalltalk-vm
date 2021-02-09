@@ -1,6 +1,6 @@
 Class {
 	#name : #PHChain,
-	#superclass : #Object,
+	#superclass : #VMStructType,
 	#instVars : [
 		'priority',
 		'blocks'
@@ -8,12 +8,16 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
-{ #category : #'as yet unclassified' }
-PHChain class >> with: aPHBasicBlockMock [ 
-	
-	^ self new
-		initializeWithBlock: aPHBasicBlockMock;
-		yourself
+{ #category : #translation }
+PHChain class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
+
+	self filteredInstVarNames do:
+		[:ivn|
+		aBinaryBlock
+			value: ivn
+			value: (ivn caseOf: {
+						['priority']			-> [#'usqInt'].
+						['blocks']				-> [#'VMLinkedList *']})]
 ]
 
 { #category : #modifying }
@@ -56,7 +60,7 @@ PHChain >> append: aPHChain [
 		ifTrue: [ blocks last removeEndingJump ].
 
 	"Concatenate block lists"
-	blocks := blocks , aPHChain blocks
+	blocks concatenateWith: aPHChain blocks
 ]
 
 { #category : #accessing }
@@ -89,13 +93,6 @@ PHChain >> includesAll: aCollection [
 	^ blocks includesAll: aCollection
 ]
 
-{ #category : #initialization }
-PHChain >> initializeWithBlock: aPHBasicBlockMock [ 
-	
-	priority := 1000.
-	blocks := { aPHBasicBlockMock }
-]
-
 { #category : #printing }
 PHChain >> printOn: aStream [
 
@@ -103,7 +100,7 @@ PHChain >> printOn: aStream [
 		nextPutAll: self class name;
 		nextPutAll: '('.
 	
-	blocks do: [ :b | aStream print: b id ]  separatedBy: [ aStream nextPut: $, ].
+	blocks do: [ :b | aStream print: b id; nextPut: $, ].
 	
 	aStream nextPutAll: ')'
 ]
@@ -115,6 +112,18 @@ PHChain >> priority [
 
 { #category : #accessing }
 PHChain >> priority: anInteger [ 
+	priority := anInteger
+]
+
+{ #category : #accessing }
+PHChain >> setChainBlocks: aVMLinkedList [ 
+	
+	blocks := aVMLinkedList
+]
+
+{ #category : #accessing }
+PHChain >> setChainPriority: anInteger [ 
+	
 	priority := anInteger
 ]
 

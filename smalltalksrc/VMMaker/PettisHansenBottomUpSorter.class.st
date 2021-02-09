@@ -21,8 +21,10 @@ PettisHansenBottomUpSorter >> basicBlockEdgesOf: basicBlocks [
 PettisHansenBottomUpSorter >> hotPathChainsOf: basicBlocks [
 
 	| priority fromChain toChain list |
-	basicBlocks do: [ :e |
-		e chain: (PHChain with: e).
+	basicBlocks do: [ :e | | chain |
+		chain := self newBlockChain.
+		chain blocks add: e.
+		e chain: chain.
 	].
 	priority := 0.
 	(self basicBlockEdgesOf: basicBlocks)
@@ -51,6 +53,24 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: basicBlocks [
 	^ list
 ]
 
+{ #category : #'basic-blocks' }
+PettisHansenBottomUpSorter >> newBlockChain [
+	| chain |
+	<var: 'chain' type: #'PHChain *'>
+
+	self cCode: [ 
+		chain := self
+			cCoerce: (self malloc: (self sizeof: PHChain))
+			to: #'PHChain *'.
+	] inSmalltalk: [ 
+		chain := PHChain new.
+	].
+	"Initial size = 0"
+	chain setChainPriority: 1000.
+	chain setChainBlocks: self newLinkedList.
+	^ chain
+]
+
 { #category : #sorting }
 PettisHansenBottomUpSorter >> sort: basicBlocks [
 
@@ -63,14 +83,14 @@ PettisHansenBottomUpSorter >> sort: basicBlocks [
 PettisHansenBottomUpSorter >> sortBlocksInChains: aSetOfChains [
 
 	| finalOrder worklist min |
-	finalOrder := OrderedCollection new.
+	finalOrder := self newLinkedList.
 	aSetOfChains isEmpty ifTrue: [ ^ finalOrder ].
 
-	worklist := OrderedCollection new.
+	worklist := self newLinkedList.
 	min := aSetOfChains first.
 	aSetOfChains do: [ :each |
 		each priority < min priority
-			ifFalse: [ min := each ] ].
+			ifTrue: [ min := each ] ].
 	
 	worklist add: min.
 	[ worklist isEmpty ] whileFalse: [ | processedChain |
@@ -82,9 +102,13 @@ PettisHansenBottomUpSorter >> sortBlocksInChains: aSetOfChains [
 				(finalOrder includes: succ) ifFalse: [ | theChain |
 					"If not placed, treat its worklist (if not already done)"
 					theChain := aSetOfChains detect: [ :aChain | aChain includes: succ ].
-					(worklist includes: theChain)
-						ifFalse: [ worklist := (worklist, { theChain }) sorted: [ :a :b | a priority < b priority ] ].
-					 ] ] ]
+					(worklist includes: theChain) ifFalse: [
+							worklist
+								insert: theChain
+								sortedBy: [ :a :b | a priority < b priority ] ].
+				]
+			]
+		]
 	].
 
 	^ finalOrder
