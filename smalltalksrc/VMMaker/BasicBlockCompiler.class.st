@@ -28,7 +28,8 @@ Class {
 		'compilationPass',
 		'basicBlockArena',
 		'initialBasicBlock',
-		'basicBlocks'
+		'basicBlocks',
+		'sorter'
 	],
 	#classVars : [
 		'NeedsMergeFixupFlag',
@@ -51,7 +52,7 @@ Class {
 BasicBlockCompiler class >> ancilliaryClasses [
 
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedListNode. VMLinkedList . PHChain . BasicBlock . PHBottomUpSorterNoDeadCode . PHEdge }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedListNode. VMLinkedList . PHChain . BasicBlock . PHBottomUpSorterNoDeadCode superclass.PHBottomUpSorterNoDeadCode . PHEdge }
 ]
 
 { #category : #documentation }
@@ -333,6 +334,14 @@ BasicBlockCompiler class >> isAcceptableAncilliaryClass: aClass [
 			[(aClass includesBehavior: CogSimStackEntry)
 				ifTrue: [aClass == self basicNew simStackEntryClass]
 				ifFalse: [true]]
+]
+
+{ #category : #translation }
+BasicBlockCompiler class >> isNonArgumentImplicitReceiverVariableName: aString [
+
+	"Avoid translating the sorter receiver as an argument of the functions"
+	^ (super isNonArgumentImplicitReceiverVariableName: aString)
+		or:  [ #('sorter') includes: aString ]
 ]
 
 { #category : #translation }
@@ -1150,8 +1159,8 @@ BasicBlockCompiler >> compileTwoPathFramelessInit [
 
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> currentBasicBlock [
-	
-	^ basicBlocks last
+
+	^ self cCoerce: basicBlocks last to: 'BasicBlock *'
 ]
 
 { #category : #'simulation only' }
@@ -3376,6 +3385,13 @@ BasicBlockCompiler >> initSimStackForFramelessMethod: startpc [
 	simSpillBase := methodOrBlockNumArgs + 1.
 ]
 
+{ #category : #initialization }
+BasicBlockCompiler >> initialize [
+	<doNotGenerate>
+	super initialize.
+	sorter := PHBottomUpSorterNoDeadCode new
+]
+
 { #category : #'compile abstract instructions' }
 BasicBlockCompiler >> initializeFixup: fixup [
 	"Initialize a fixup.  These are the targets of backward branches.  A backward branch fixup's
@@ -4257,7 +4273,8 @@ BasicBlockCompiler >> sortBasicBlocks [
 	
 	basicBlocks removeFirst.
 	self flag: #deallocate "the linked list!".
-	basicBlocks := PHBottomUpSorterNoDeadCode new sort: basicBlocks.
+	basicBlocks := sorter sort: basicBlocks.
+	
 	basicBlocks addFirst: preambleBlock
 ]
 

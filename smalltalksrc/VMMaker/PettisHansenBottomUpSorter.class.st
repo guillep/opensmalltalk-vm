@@ -4,6 +4,12 @@ Class {
 	#category : #'VMMaker-JIT'
 }
 
+{ #category : #translation }
+PettisHansenBottomUpSorter class >> typeForSelf [
+	"Should not receive the receiver as first argument, it is implicit"
+	^#implicit
+]
+
 { #category : #sorting }
 PettisHansenBottomUpSorter >> basicBlockEdgesOf: basicBlocks [
 	
