@@ -1470,7 +1470,7 @@ BasicBlockCompiler >> gen: opcode "<Integer>" operand: operand [ "<Integer|CogAb
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	| abstractInstruction |
 	"opcodeIndex points to the next free slot in the instruction stream, that will be allocated by #gen:"
-	self currentBasicBlock lastInstructionIndex: opcodeIndex.
+	self currentBasicBlock setLastInstructionIndex: opcodeIndex.
 	abstractInstruction := super gen: opcode operand: operand.
 	^ abstractInstruction
 ]
@@ -3778,8 +3778,8 @@ BasicBlockCompiler >> newBasicBlock [
 		block index: basicBlocks size.
 		block compiler: self.
 	].
-	block firstInstructionIndex: opcodeIndex.
-	block lastInstructionIndex: opcodeIndex - 1 "initially empty".
+	block setFirstInstructionIndex: opcodeIndex.
+	block setLastInstructionIndex: opcodeIndex - 1 "initially empty".
 	self addBasicBlock: block.
 	^ block
 ]

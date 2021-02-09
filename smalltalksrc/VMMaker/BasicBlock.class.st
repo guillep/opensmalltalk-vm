@@ -30,6 +30,14 @@ BasicBlock class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 						['chain'] -> [#'PHChain *'] })]
 ]
 
+{ #category : #translation }
+BasicBlock class >> isNonArgumentImplicitReceiverVariableName: aString [
+
+	"Avoid translating the sorter receiver as an argument of the functions"
+	^ (super isNonArgumentImplicitReceiverVariableName: aString)
+		or:  [ #('compiler') includes: aString ]
+]
+
 { #category : #accessing }
 BasicBlock >> chain [
 
@@ -55,17 +63,12 @@ BasicBlock >> compiler: anObject [
 { #category : #accessing }
 BasicBlock >> firstInstruction [
 
-	^ compiler abstractInstructionAt: firstInstructionIndex
+	^ compiler abstractInstructionAt: self firstInstructionIndex
 ]
 
 { #category : #accessing }
 BasicBlock >> firstInstructionIndex [
 	^ firstInstructionIndex
-]
-
-{ #category : #accessing }
-BasicBlock >> firstInstructionIndex: anObject [
-	firstInstructionIndex := anObject
 ]
 
 { #category : #'as yet unclassified' }
@@ -83,13 +86,13 @@ BasicBlock >> index: anIndex [
 { #category : #'as yet unclassified' }
 BasicBlock >> instructionBeforeLastInstruction [
 	
-	^ compiler abstractInstructionAt: lastInstructionIndex - 1
+	^ compiler abstractInstructionAt: self lastInstructionIndex - 1
 ]
 
 { #category : #accessing }
 BasicBlock >> instructions [
 
-	^ (firstInstructionIndex to: lastInstructionIndex)
+	^ (self firstInstructionIndex to: self lastInstructionIndex)
 		collect: [ :i | compiler abstractInstructionAt: i ]
 ]
 
@@ -138,13 +141,13 @@ BasicBlock >> label [
 { #category : #'as yet unclassified' }
 BasicBlock >> lastInstruction [
 	
-	^ compiler abstractInstructionAt: lastInstructionIndex
+	^ compiler abstractInstructionAt: self lastInstructionIndex
 ]
 
 { #category : #accessing }
-BasicBlock >> lastInstructionIndex: anObject [
+BasicBlock >> lastInstructionIndex [
 
-	lastInstructionIndex := anObject
+	^ lastInstructionIndex
 ]
 
 { #category : #'as yet unclassified' }
@@ -214,7 +217,18 @@ BasicBlock >> removeEndingJump [
 	"Remove the last instruction in this block.
 	We can just make this block shorter by one instruction.
 	The instruction will still be in the stream of instructions but unreachable."
-	lastInstructionIndex := lastInstructionIndex - 1
+	self setLastInstructionIndex: self lastInstructionIndex - 1
+]
+
+{ #category : #accessing }
+BasicBlock >> setFirstInstructionIndex: anObject [
+	firstInstructionIndex := anObject
+]
+
+{ #category : #accessing }
+BasicBlock >> setLastInstructionIndex: anObject [
+
+	lastInstructionIndex := anObject
 ]
 
 { #category : #'as yet unclassified' }
