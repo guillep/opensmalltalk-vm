@@ -4,9 +4,9 @@ Class {
 	#instVars : [
 		'firstInstructionIndex',
 		'lastInstructionIndex',
-		'compiler',
 		'index',
-		'chain'
+		'chain',
+		'cogit'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -52,18 +52,18 @@ BasicBlock >> chain: anObject [
 
 { #category : #accessing }
 BasicBlock >> compiler [
-	^ compiler
+	^ cogit
 ]
 
 { #category : #accessing }
 BasicBlock >> compiler: anObject [
-	compiler := anObject
+	cogit := anObject
 ]
 
 { #category : #accessing }
 BasicBlock >> firstInstruction [
 
-	^ compiler abstractInstructionAt: self firstInstructionIndex
+	^ cogit abstractInstructionAt: self firstInstructionIndex
 ]
 
 { #category : #accessing }
@@ -86,21 +86,21 @@ BasicBlock >> index: anIndex [
 { #category : #'as yet unclassified' }
 BasicBlock >> instructionBeforeLastInstruction [
 	
-	^ compiler abstractInstructionAt: self lastInstructionIndex - 1
+	^ cogit abstractInstructionAt: self lastInstructionIndex - 1
 ]
 
 { #category : #accessing }
 BasicBlock >> instructions [
 
 	^ (self firstInstructionIndex to: self lastInstructionIndex)
-		collect: [ :i | compiler abstractInstructionAt: i ]
+		collect: [ :i | cogit abstractInstructionAt: i ]
 ]
 
 { #category : #modifying }
 BasicBlock >> invertConditionalJump [
 	
 	| inverseOpcode targetA |
-	inverseOpcode := compiler inverseBranchFor: self instructionBeforeLastInstruction opcode.
+	inverseOpcode := cogit inverseBranchFor: self instructionBeforeLastInstruction opcode.
 	self instructionBeforeLastInstruction opcode: inverseOpcode.
 	
 	targetA := self instructionBeforeLastInstruction getJmpTarget.
@@ -141,7 +141,7 @@ BasicBlock >> label [
 { #category : #'as yet unclassified' }
 BasicBlock >> lastInstruction [
 	
-	^ compiler abstractInstructionAt: self lastInstructionIndex
+	^ cogit abstractInstructionAt: self lastInstructionIndex
 ]
 
 { #category : #accessing }

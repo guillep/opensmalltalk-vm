@@ -12,7 +12,7 @@ PettisHansenBottomUpSorter class >> typeForSelf [
 
 { #category : #sorting }
 PettisHansenBottomUpSorter >> basicBlockEdgesOf: aListOfBasicBlocks [
-	
+	<var: #edge type: #PHEdge >
 	| sortedEdges |
 	sortedEdges := self newLinkedList.
 	aListOfBasicBlocks do: [ :aBasicBlock | | aBlockEdges |
@@ -26,11 +26,12 @@ PettisHansenBottomUpSorter >> basicBlockEdgesOf: aListOfBasicBlocks [
 { #category : #sorting }
 PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 
+	<var: #basicBlock type: #BasicBlock>
 	| priority fromChain toChain list |
-	aListOfBasicBlocks do: [ :e | | chain |
+	aListOfBasicBlocks do: [ :basicBlock | | chain |
 		chain := self newBlockChain.
-		chain blocks add: e.
-		e chain: chain.
+		chain blocks add: basicBlock.
+		basicBlock chain: chain.
 	].
 	priority := 0.
 	(self basicBlockEdgesOf: aListOfBasicBlocks)
