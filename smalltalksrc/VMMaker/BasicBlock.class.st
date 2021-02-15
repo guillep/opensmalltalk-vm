@@ -14,7 +14,7 @@ Class {
 { #category : #translation }
 BasicBlock class >> filteredInstVarNames [
 	"Eliminate bcpc, which is development-time only."
-	^ super filteredInstVarNames copyWithoutAll: #( 'compiler' 'index' )
+	^ super filteredInstVarNames copyWithoutAll: #( 'index' )
 ]
 
 { #category : #translation }
@@ -28,14 +28,6 @@ BasicBlock class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 						['firstInstructionIndex'] -> [#usqInt].
 						['lastInstructionIndex'] -> [#usqInt].
 						['chain'] -> [#'PHChain *'] })]
-]
-
-{ #category : #translation }
-BasicBlock class >> isNonArgumentImplicitReceiverVariableName: aString [
-
-	"Avoid translating the sorter receiver as an argument of the functions"
-	^ (super isNonArgumentImplicitReceiverVariableName: aString)
-		or:  [ #('compiler') includes: aString ]
 ]
 
 { #category : #accessing }
@@ -111,10 +103,10 @@ BasicBlock >> invertConditionalJump [
 { #category : #testing }
 BasicBlock >> isFallingThroughBlock: aBasicBlock [
 	
-	| lastInstruction |
-	lastInstruction := self lastInstruction.
-	^ lastInstruction isJump
-		and: [ lastInstruction getJmpTarget = aBasicBlock label ]
+	| anInstruction |
+	anInstruction := self lastInstruction.
+	^ anInstruction isJump
+		and: [ anInstruction getJmpTarget = aBasicBlock label ]
 ]
 
 { #category : #testing }

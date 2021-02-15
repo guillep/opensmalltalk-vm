@@ -7999,6 +7999,7 @@ Cogit >> generateEnilopmarts [
 Cogit >> generateIRForBytecodeDescriptor: descriptor [
 	"Generate the IR for the given bytecode descriptor.
 	Return an error code indicating a problem or 0 if OK"
+	<inline: true>
 	^ self perform: descriptor generator
 ]
 
