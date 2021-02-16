@@ -47,9 +47,9 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 			edge := self cCoerce: e to: #'PHEdge *'.
 			fromChain := edge from chain.
 			toChain := edge to chain.
-			(e from ~= e to and: [ 
-				e from = fromChain tail
-					and: [ e to = toChain head ] ])
+			(edge from ~= edge to and: [ 
+				edge from = fromChain tail
+					and: [ edge to = toChain head ] ])
 						ifTrue: [ 
 							priority := priority + 1.
 							fromChain priority: ((fromChain priority min: toChain priority) min: priority).

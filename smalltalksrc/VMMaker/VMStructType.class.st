@@ -329,6 +329,11 @@ VMStructType class >> shouldBeGenerated [
 ]
 
 { #category : #accessing }
+VMStructType class >> structTypeName [
+	^'void'
+]
+
+{ #category : #accessing }
 VMStructType class >> timeStamp [
 	
 	^ VMClass timeStamp
