@@ -218,6 +218,30 @@ VMLinkedList >> last [
 	^ firstNode lastNode element
 ]
 
+{ #category : #'instance creation' }
+VMLinkedList >> newLinkedList2 [
+	| list |
+	<var: 'list' type: #'VMLinkedList *'>
+	
+	self flag: #slangouch.
+	"Duplicated from VMClass, ouch! :/
+	We put it here because of Slang generation issues.
+	If we put it in a superclass, it generates wrong code.
+	
+	We need this special case, because otherwise the #sorted: method gets inlined and slang adds an argument to this method. In this version, this method is generated as a function with a single argument that is ignored"
+
+	self cCode: [ 
+		list := self
+			cCoerce: (self malloc: (self sizeof: VMLinkedList))
+			to: #'VMLinkedList *'.
+	] inSmalltalk: [ 
+		list := VMLinkedList new.
+	].
+	"Initial size = 0"
+	list size: 0.
+	^ list
+]
+
 { #category : #testing }
 VMLinkedList >> notEmpty [
 	

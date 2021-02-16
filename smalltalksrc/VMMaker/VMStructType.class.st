@@ -329,11 +329,6 @@ VMStructType class >> shouldBeGenerated [
 ]
 
 { #category : #accessing }
-VMStructType class >> structTypeName [
-	^'void'
-]
-
-{ #category : #accessing }
 VMStructType class >> timeStamp [
 	
 	^ VMClass timeStamp
@@ -344,13 +339,14 @@ VMStructType class >> typedef [
 	^String streamContents: [:s| self printTypedefOn: s]
 ]
 
-{ #category : #'instance creation' }
-VMStructType >> newLinkedList2 [
+{ #category : #printing }
+VMStructType >> newLinkedList [
 	| list |
 	<var: 'list' type: #'VMLinkedList *'>
-	
+	<doNotGenerate>
 	self flag: #slangouch.
-	"Duplicated from VMClass, ouch! :/"
+	"Duplicated from VMClass, ouch! :/
+	We need it here for BasicBlock"
 
 	self cCode: [ 
 		list := self
