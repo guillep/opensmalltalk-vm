@@ -166,7 +166,7 @@ BasicBlock >> newEdgeFrom: fromBasicBlock to: toBasicBlock weight: weight [
 BasicBlock >> outgoingEdges [
 	
 	| outgoingEdges |
-	outgoingEdges := self newLinkedList2.
+	outgoingEdges := self newLinkedList.
 
 	self instructionBeforeLastInstruction isJump
 		ifTrue: [ | targetLabel |
