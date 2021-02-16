@@ -12,13 +12,16 @@ PettisHansenBottomUpSorter class >> typeForSelf [
 
 { #category : #sorting }
 PettisHansenBottomUpSorter >> basicBlockEdgesOf: aListOfBasicBlocks [
-	<var: #edge type: #PHEdge >
 	| sortedEdges |
 	sortedEdges := self newLinkedList.
 	aListOfBasicBlocks do: [ :aBasicBlock | | aBlockEdges |
 		aBlockEdges := aBasicBlock outgoingEdges.
-		aBlockEdges do: [ :edge |
-			sortedEdges insert: edge sortedBy: [ :e1 :e2 | e1 weight >= e2 weight ].
+		aBlockEdges do: [ :anElement |
+			sortedEdges insert: anElement sortedBy: [ :e1 :e2 | 
+				| edge1 edge2 |
+				edge1 := self cCoerce: e1 to: #'PHEdge *'.
+				edge2 := self cCoerce: e2 to: #'PHEdge *'.
+				edge1 weight >= edge2 weight ].
 			 ] ].
 	^ sortedEdges
 ]
@@ -26,7 +29,7 @@ PettisHansenBottomUpSorter >> basicBlockEdgesOf: aListOfBasicBlocks [
 { #category : #sorting }
 PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 
-	<var: #basicBlock type: #BasicBlock>
+	<var: #basicBlock type: #'BasicBlock *'>
 	| priority fromChain toChain list |
 	aListOfBasicBlocks do: [ :basicBlock | | chain |
 		chain := self newBlockChain.
@@ -36,8 +39,8 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 	priority := 0.
 	(self basicBlockEdgesOf: aListOfBasicBlocks)
 		do: [ :e |
-			fromChain := e from chain.
-			toChain := e to chain.
+			fromChain := self cCoerce: e from chain to: #'PHEdge*'.
+			toChain := self cCoerce: e to chain to: #'PHEdge*'.
 			(e from ~= e to and: [ 
 				e from = fromChain tail
 					and: [ e to = toChain head ] ])
