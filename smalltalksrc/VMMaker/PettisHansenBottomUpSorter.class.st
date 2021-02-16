@@ -30,6 +30,9 @@ PettisHansenBottomUpSorter >> basicBlockEdgesOf: aListOfBasicBlocks [
 PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 
 	<var: #basicBlock type: #'BasicBlock *'>
+	<var: #basicBlock1 type: #'BasicBlock *'>
+	<var: #basicBlock2 type: #'BasicBlock *'>
+	<var: #edge type: #'PHEdge *'>
 	<var: #fromChain type: #'PHChain *'>
 	<var: #toChain type: #'PHChain *'>
 	| priority fromChain toChain list |
@@ -40,9 +43,10 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 	].
 	priority := 0.
 	(self basicBlockEdgesOf: aListOfBasicBlocks)
-		do: [ :e |
-			fromChain := (self cCoerce: e to: #'PHEdge*') from chain.
-			toChain := (self cCoerce: e to: #'PHEdge*') to chain.
+		do: [ :e | | edge |
+			edge := self cCoerce: e to: #'PHEdge *'.
+			fromChain := edge from chain.
+			toChain := edge to chain.
 			(e from ~= e to and: [ 
 				e from = fromChain tail
 					and: [ e to = toChain head ] ])
@@ -51,16 +55,19 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 							fromChain priority: ((fromChain priority min: toChain priority) min: priority).
 							fromChain append: toChain.
 							"Update all the blocks in the to-chain to use the same merged chain"
-							toChain blocks do: [ :b |
-								(self cCoerce: b to: #'BasicBlock *') chain: fromChain
+							toChain blocks do: [ :b | | basicBlock1 |
+								basicBlock1 := self cCoerce: b to: #'BasicBlock *'.
+								basicBlock1 chain: fromChain
 							]
 						] ].
 	
 	"Collect all the different chains"
 	list := self newLinkedList.
 	aListOfBasicBlocks do: [ :e |
-		(list includes: (self cCoerce: e to: #'PHChain *') chain)
-			ifFalse: [ list add: (self cCoerce: e to: #'PHChain *') chain ].
+		| basicBlock2 |
+		basicBlock2 := self cCoerce: e to: #'BasicBlock *'.
+		(list includes: basicBlock2)
+			ifFalse: [ list add: basicBlock2 chain ].
 	].
 	^ list
 ]

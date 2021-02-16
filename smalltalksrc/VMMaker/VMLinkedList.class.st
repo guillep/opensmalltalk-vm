@@ -95,10 +95,12 @@ VMLinkedList >> asOrderedCollection [
 ]
 
 { #category : #operations }
-VMLinkedList >> concatenateWith: aVMLinkedList [ 
+VMLinkedList >> concatenateWith: aVMLinkedList [
 	
 	"Concatenate the linked list in the argument with myself.
 	This destroys the argument, and appends all elements to myself"
+	<var: #aVMLinkedList type: #'VMLinkedList *'>
+	
 	self isEmpty ifTrue: [ 
 		firstNode := aVMLinkedList firstNode.
 		^ self.

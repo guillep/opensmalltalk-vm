@@ -50,6 +50,7 @@ PHChain >> append: aPHChain [
 	4. a block has a conditional jump to a contiguous block when condition true
 		=> Inverse the conditions, then 3.
 	"
+	<var: #aPHChain type: #'PHChain *'>
 	
 	"Case 4"
 	(blocks last isJumpingConditionallyOnTrueBranchToBlock: aPHChain blocks first)
