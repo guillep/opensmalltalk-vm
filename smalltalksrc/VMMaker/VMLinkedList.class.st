@@ -269,7 +269,7 @@ VMLinkedList >> sorted: aCriterion [
 	
 	<inline: true>
 	| sortedList |
-	sortedList := self newLinkedList.
+	sortedList := self newLinkedList2.
 	self do: [ :element |
 		sortedList insert: element sortedBy: aCriterion.
 	].

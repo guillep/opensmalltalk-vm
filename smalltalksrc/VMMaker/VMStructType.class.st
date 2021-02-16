@@ -340,12 +340,12 @@ VMStructType class >> typedef [
 ]
 
 { #category : #'instance creation' }
-VMStructType >> newLinkedList [
+VMStructType >> newLinkedList2 [
 	| list |
-	<doNotGenerate>
-	"Duplicated from VMClass, ouch! :/"
-	
 	<var: 'list' type: #'VMLinkedList *'>
+	
+	self flag: #slangouch.
+	"Duplicated from VMClass, ouch! :/"
 
 	self cCode: [ 
 		list := self
