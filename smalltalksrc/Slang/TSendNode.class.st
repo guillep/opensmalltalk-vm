@@ -495,12 +495,13 @@ TSendNode >> shouldExcludeReceiverAsFirstArgument: aCodeGen [
 	(aCodeGen isAssertSelector: selector) ifTrue:
 		[^true].
 
-	(receiver isSend
-	 and: [(receiver shouldExcludeReceiverAsFirstArgument: aCodeGen)
-		or: [receiver receiver isVariable
+	receiver isSend ifTrue: [
+		(receiver shouldExcludeReceiverAsFirstArgument: aCodeGen)
+			ifTrue: [ ^ true ].
+		(receiver receiver isVariable
 			 and: [(self isSelfReference: receiver receiver in: aCodeGen)
-				or: [self isStructReference: receiver receiver in: aCodeGen]]]]) ifTrue:
-		[^aCodeGen isNonArgumentImplicitReceiverVariableName: receiver selector].
+				or: [self isStructReference: receiver receiver in: aCodeGen]])
+					ifTrue: [ ^ aCodeGen isNonArgumentImplicitReceiverVariableName: receiver selector ] ].
 
 	^receiver isVariable
 	    and: [(aCodeGen isNonArgumentImplicitReceiverVariableName: receiver name)
