@@ -339,6 +339,12 @@ VMStructType class >> typedef [
 	^String streamContents: [:s| self printTypedefOn: s]
 ]
 
+{ #category : #coercing }
+VMStructType >> coerceTo: aString sim: interpreterSimulator [ 
+	
+	^ self
+]
+
 { #category : #printing }
 VMStructType >> newLinkedList [
 	| list |
