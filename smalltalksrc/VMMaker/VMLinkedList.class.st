@@ -237,8 +237,10 @@ VMLinkedList >> newLinkedList2 [
 	] inSmalltalk: [ 
 		list := VMLinkedList new.
 	].
-	"Initial size = 0"
+	"Initialization.
+	Required for the translated code that has no default initializations"
 	list size: 0.
+	list firstNode: nil.
 	^ list
 ]
 
