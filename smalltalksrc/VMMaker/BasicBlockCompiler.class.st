@@ -844,13 +844,6 @@ BasicBlockCompiler >> availableRegOrNoneNotConflictingWith: regMask [
 	^backEnd availableRegisterOrNoneFor: (self liveRegisters bitOr: regMask)
 ]
 
-{ #category : #'basic-blocks' }
-BasicBlockCompiler >> basicBlockEdges [
-	
-	^ basicBlocks gather: [ :e |
-		e successors ]
-]
-
 { #category : #'simulation only' }
 BasicBlockCompiler >> bytecodeFixupClass [
 	<doNotGenerate>
@@ -3766,8 +3759,11 @@ BasicBlockCompiler >> newBasicBlock [
 	<var: 'block' type: #'BasicBlock *'>
 	| block |
 	"Do not create duplicated blocks."
-	(basicBlocks notEmpty and: [self currentBasicBlock firstInstructionIndex = opcodeIndex])
-		ifTrue: [ ^ self currentBasicBlock ].
+	basicBlocks notEmpty ifTrue: [
+		"Written this way to avoid a clang optimization bug"
+		block := self currentBasicBlock.
+		(block firstInstructionIndex = opcodeIndex)
+			ifTrue: [ ^ block ] ].
 
 	self cCode: [ 
 		block := self

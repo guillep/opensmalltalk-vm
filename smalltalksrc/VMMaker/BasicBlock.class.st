@@ -42,6 +42,12 @@ BasicBlock >> chain: anObject [
 	chain := anObject
 ]
 
+{ #category : #coercing }
+BasicBlock >> coerceTo: cTypeString sim: interpreter [
+
+	^ self
+]
+
 { #category : #accessing }
 BasicBlock >> compiler [
 	^ cogit
