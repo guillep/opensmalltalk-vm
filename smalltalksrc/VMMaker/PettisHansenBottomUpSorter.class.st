@@ -47,18 +47,23 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 			edge := self cCoerce: e to: #'PHEdge *'.
 			fromChain := edge from chain.
 			toChain := edge to chain.
-			(edge from ~= edge to and: [ 
-				edge from = fromChain tail
-					and: [ edge to = toChain head ] ])
-						ifTrue: [ 
+			
+			"We should check that the from and to were not already merged in the same chain.
+			This could happen if two blocks are mutually recursive
+			e.g., 2->3 and 3->2"
+			(edge from chain ~= edge to chain and: [
+				(edge from ~= edge to and: [ 
+					edge from = fromChain tail
+						and: [ edge to = toChain head ] ])])
+							ifTrue: [ 
 							priority := priority + 1.
 							fromChain priority: ((fromChain priority min: toChain priority) min: priority).
-							fromChain append: toChain.
 							"Update all the blocks in the to-chain to use the same merged chain"
 							toChain blocks do: [ :b | | basicBlock1 |
 								basicBlock1 := self cCoerce: b to: #'BasicBlock *'.
 								basicBlock1 chain: fromChain
-							]
+							].
+							fromChain append: toChain.						
 						] ].
 	
 	"Collect all the different chains"
@@ -66,7 +71,7 @@ PettisHansenBottomUpSorter >> hotPathChainsOf: aListOfBasicBlocks [
 	aListOfBasicBlocks do: [ :e |
 		| basicBlock2 |
 		basicBlock2 := self cCoerce: e to: #'BasicBlock *'.
-		(list includes: basicBlock2)
+		(list includes: basicBlock2 chain)
 			ifFalse: [ list add: basicBlock2 chain ].
 	].
 	^ list
