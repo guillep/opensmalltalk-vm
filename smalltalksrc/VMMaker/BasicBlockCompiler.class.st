@@ -1150,6 +1150,25 @@ BasicBlockCompiler >> compileTwoPathFramelessInit [
 	jumpOld jmpTarget: self Label
 ]
 
+{ #category : #'generate machine code' }
+BasicBlockCompiler >> computeMaximumSizes [
+	"This pass assigns maximum sizes to all abstract instructions and eliminates jump fixups.
+	 It hence assigns the maximum address an instruction will occur at which allows the next
+	 pass to conservatively size jumps."
+	<inline: false>
+	<var: #abstractInstruction type: #'AbstractInstruction *'>
+	| relativeAddress |
+	"Dump literals in a new basic block"
+	self newBasicBlock.
+	literalsManager dumpLiterals: false.
+	relativeAddress := 0.
+	self instructionsWithIndexDo: [ :abstractInstruction :i |
+		abstractInstruction
+			address: relativeAddress;
+			maxSize: abstractInstruction computeMaximumSize.
+		relativeAddress := relativeAddress + abstractInstruction maxSize]
+]
+
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> currentBasicBlock [
 
@@ -3410,28 +3429,12 @@ BasicBlockCompiler >> initializeFixupAt: targetPC [
 ]
 
 { #category : #'generate machine code' }
-BasicBlockCompiler >> instructionsDo: aBlock [
-	"Iterate all instructions in control-flow order"
-	| abstractInstruction |
-	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	<var: #fixup type: #'BytecodeFixup *'>
-	0 to: opcodeIndex - 1 do: [:i|
-		abstractInstruction := self abstractInstructionAt: i.
-		aBlock value: abstractInstruction ]
-]
-
-{ #category : #'generate machine code' }
 BasicBlockCompiler >> instructionsWithIndexDo: aBlock [
 	"Iterate all instructions in control-flow order"
-	| abstractInstruction |
 	"We must force inlining because of the block argument"
 	<inline: true>
-
-	<var: #abstractInstruction type: #'AbstractInstruction *'>
-	<var: #fixup type: #'BytecodeFixup *'>
-	0 to: opcodeIndex - 1 do: [:i|
-		abstractInstruction := self abstractInstructionAt: i.
-		aBlock value: abstractInstruction value: i ]
+	basicBlocks do: [ :eachBlock |
+		eachBlock blockInstructionsWithIndexDo: aBlock ]
 ]
 
 { #category : #'span functions' }

@@ -31,6 +31,16 @@ BasicBlock class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 ]
 
 { #category : #accessing }
+BasicBlock >> blockInstructionsWithIndexDo: aBlock [
+
+	<inline: true>
+	self firstInstructionIndex
+		to: self lastInstructionIndex
+		do: [ :i |
+			aBlock value: (cogit abstractInstructionAt: i) value: i ]
+]
+
+{ #category : #accessing }
 BasicBlock >> chain [
 
 	^ chain

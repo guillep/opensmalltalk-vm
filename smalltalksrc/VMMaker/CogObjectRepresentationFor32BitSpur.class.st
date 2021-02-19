@@ -212,11 +212,11 @@ CogObjectRepresentationFor32BitSpur >> genGetInlineCacheClassTagFrom: sourceReg 
 	<var: #jumpCompare type: #'AbstractInstruction *'>
 	forEntry
 		ifFalse:
-			[entryLabel := cogit Label.
+			[entryLabel := cogit BasicLabel.
 			 cogit AndCq: objectMemory tagMask R: sourceReg R: destReg.
-			 jumpNotImm := cogit JumpZero: 0.
+			 jumpNotImm := cogit BasicJumpZero: 0.
 			 cogit AndCq: 1 R: destReg.
-			 jumpCompare := cogit Jump: 0.
+			 jumpCompare := cogit BasicJump: 0.
 			 "Get least significant half of header word in destReg"
 			 self flag: #endianness.
 			 jumpNotImm jmpTarget:
@@ -225,18 +225,18 @@ CogObjectRepresentationFor32BitSpur >> genGetInlineCacheClassTagFrom: sourceReg 
 				(cogit AndCq: objectMemory classIndexMask R: destReg)]
 		ifTrue:
 			[cogit AlignmentNops: objectMemory wordSize.
-			 immLabel := cogit Label.
+			 immLabel := cogit BasicLabel.
 			 cogit AndCq: 1 R: destReg.
-			 jumpCompare := cogit Jump: 0.
+			 jumpCompare := cogit BasicJump: 0.
 			 cogit AlignmentNops: objectMemory wordSize.
-			 entryLabel := cogit Label.
+			 entryLabel := cogit BasicLabel.
 			 cogit AndCq: objectMemory tagMask R: sourceReg R: destReg.
-			 cogit JumpNonZero: immLabel.
+			 cogit BasicJumpNonZero: immLabel.
 			 self flag: #endianness.
 			 "Get least significant half of header word in destReg"
 			 cogit MoveMw: 0 r: sourceReg R: destReg.
 			 cogit AndCq: objectMemory classIndexMask R: destReg.
-			 jumpCompare jmpTarget: cogit Label].
+			 jumpCompare jmpTarget: cogit BasicLabel].
 	^entryLabel
 ]
 

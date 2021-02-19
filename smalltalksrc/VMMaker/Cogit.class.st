@@ -1630,6 +1630,14 @@ Cogit >> BasicJumpNonZero: jumpTarget [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> BasicJumpZero: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^self genBasicConditionalBranch: JumpZero operand: jumpTarget asInteger
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> BasicLabel [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
@@ -8053,9 +8061,8 @@ Cogit >> generateMapAt: addressOrNull start: startAddress [
 	<var: #instruction type: #'AbstractInstruction *'>
 	length := 0.
 	location := startAddress.
-	0 to: opcodeIndex - 1 do:
-		[:i| | instruction mcpc delta maxDelta mapEntry |
-		instruction := self abstractInstructionAt: i.
+	self instructionsWithIndexDo: [ :instruction :i |
+		| mcpc delta maxDelta mapEntry |
 		instruction annotation ifNotNil:
 			[:annotation|
 			 literalsManager assertValidAnnotation: annotation for: instruction.
@@ -8726,6 +8733,17 @@ Cogit >> innermostSubMethodFor: bcpc in: subMethods startingAt: index [
 					ifNotNil: [:innerSubMethod| innerSubMethod]]
 			ifFalse:
 				[self innermostSubMethodFor: bcpc in: subMethods startingAt: index + 1]]
+]
+
+{ #category : #'generate machine code' }
+Cogit >> instructionsWithIndexDo: aBlock [
+	"Store the generated machine code, answering the last address"
+	<inline: true>
+	<var: #abstractInstruction type: #'AbstractInstruction *'>
+	0 to: opcodeIndex - 1 do:
+		[:i| | abstractInstruction |
+		abstractInstruction := self abstractInstructionAt: i.
+		aBlock value: abstractInstruction value: i ]
 ]
 
 { #category : #'in-line cacheing' }
@@ -10369,9 +10387,7 @@ Cogit >> outputInstructionsAt: startAddress [
 	| absoluteAddress |
 	<var: #abstractInstruction type: #'AbstractInstruction *'>
 	absoluteAddress := startAddress.
-	0 to: opcodeIndex - 1 do:
-		[:i| | abstractInstruction |
-		abstractInstruction := self abstractInstructionAt: i.
+	self instructionsWithIndexDo: [ :abstractInstruction :i |
 		self assert: abstractInstruction address = absoluteAddress.
 		abstractInstruction outputMachineCodeAt: absoluteAddress.
 		absoluteAddress := absoluteAddress + abstractInstruction machineCodeSize].

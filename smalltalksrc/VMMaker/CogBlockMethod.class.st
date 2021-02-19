@@ -114,7 +114,7 @@ CogBlockMethod class >> initialize [
 
 	"see instVarNamesAndTypesForTranslationDo:"
 	CMMaxUsageCount		:= (2 raisedTo: 3) - 1.
-	MaxStackCheckOffset	:= (2 raisedTo: 12) - 1.
+	MaxStackCheckOffset	:= (2 raisedTo: 4 * 8 "an unsigned int") - 1.
 	MaxMethodSize		:= (2 raisedTo: 16) - 1
 
 	"{ CogBlockMethodSurrogate32 selectors reject: [:s| CogBlockMethod includesSelector: s].
@@ -149,8 +149,8 @@ CogBlockMethod class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 								['cmUsageCount']			-> [#(unsigned ' : 3')].		"See CMMaxUsageCount in initialize"
 								['cmUsesPenultimateLit']	-> [#(unsigned #Boolean ' : 1')].
 								['cbUsesInstVars']			-> [#(unsigned #Boolean ' : 1')].
-								['cmUnusedFlags']			-> [#(unsigned ' : 2')].
-								['stackCheckOffset']		-> [#(unsigned ' : 12')].	"See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
+								['cmUnusedFlags']			-> [#(unsigned ' : 14')].
+								['stackCheckOffset']		-> [#'unsigned int'].	"See MaxStackCheckOffset in initialize. a.k.a. cPICNumCases"
 								['blockSize']				-> [#'unsigned short'].		"See MaxMethodSize in initialize"
 								['blockEntryOffset']			-> [#'unsigned short'].
 								['homeOffset']				-> [#'unsigned short'].
