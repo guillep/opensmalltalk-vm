@@ -21,7 +21,7 @@ PettisHansenBottomUpSorter >> basicBlockEdgesOf: aListOfBasicBlocks [
 				| edge1 edge2 |
 				edge1 := self cCoerce: e1 to: #'PHEdge *'.
 				edge2 := self cCoerce: e2 to: #'PHEdge *'.
-				edge1 weight >= edge2 weight ].
+				edge1 weight > edge2 weight ].
 			 ] ].
 	^ sortedEdges
 ]

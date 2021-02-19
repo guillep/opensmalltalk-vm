@@ -3089,6 +3089,8 @@ BasicBlockCompiler >> genUpArrowReturn [
 						or: [regArgsHaveBeenPushed])
 							ifTrue: [methodOrBlockNumArgs + 1 * objectMemory wordSize]
 							ifFalse: [0])].
+	"Create from here a new unlinked basic block"
+	self newBasicBlock.
 	^0
 ]
 

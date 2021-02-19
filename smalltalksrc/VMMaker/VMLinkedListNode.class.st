@@ -60,6 +60,6 @@ VMLinkedListNode >> setElement: anObject [
 
 { #category : #accessing }
 VMLinkedListNode >> setNext: anObject [
-	<var: #aVMLinkedListNode type: #'LinkedListNode *'>
+	<var: #anObject type: #'LinkedListNode *'>
 	next := anObject
 ]
