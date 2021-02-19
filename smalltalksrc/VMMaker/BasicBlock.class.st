@@ -98,9 +98,29 @@ BasicBlock >> instructions [
 BasicBlock >> invertConditionalJump [
 	
 	| inverseOpcode targetA |
+	"Invert the conditional jump at the end of this block.
+	Pre-condition: this block is finished by a conditional jump.
+	
+	Conditional Jumps to blocks A, B are modeled with two Jumps, 
+		- a conditional Jump instruction to A if a condition is true
+		- a non-conditional Jump instruction to B in case the condition is false 
+	
+	Example
+	 Jump if equals B2
+	 Jump B3
+	
+	Inverting this jump transforms it by inverting the condition and the both branch targets.
+	
+	Example
+	 Jump if NOT equals B3
+	 Jump B2
+	"
+	
+	"Change Jump condition"
 	inverseOpcode := cogit inverseBranchFor: self instructionBeforeLastInstruction opcode.
 	self instructionBeforeLastInstruction opcode: inverseOpcode.
 	
+	"Swap Jump targets"
 	targetA := self instructionBeforeLastInstruction getJmpTarget.
 	self instructionBeforeLastInstruction jmpTarget: self lastInstruction getJmpTarget.
 	self lastInstruction jmpTarget: targetA
