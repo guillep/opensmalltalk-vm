@@ -37,7 +37,7 @@ BasicBlock >> blockInstructionsWithIndexDo: aBlock [
 	self firstInstructionIndex
 		to: self lastInstructionIndex
 		do: [ :i |
-			aBlock value: (cogit abstractInstructionAt: i) value: i ]
+			aBlock value: (self instructionAt: i) value: i ]
 ]
 
 { #category : #accessing }
@@ -89,6 +89,12 @@ BasicBlock >> id [
 BasicBlock >> index: anIndex [
 
 	index := anIndex
+]
+
+{ #category : #accessing }
+BasicBlock >> instructionAt: i [
+
+	^ cogit abstractInstructionAt: i
 ]
 
 { #category : #'as yet unclassified' }
