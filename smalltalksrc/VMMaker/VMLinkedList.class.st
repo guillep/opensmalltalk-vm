@@ -22,7 +22,7 @@ VMLinkedList class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 
 { #category : #adding }
 VMLinkedList >> add: anObject [
-	
+	<var: #anObject type: #'void *'>
 	| node |
 	node := self allocateNodeWith: anObject.
 	self addLastNode: node
@@ -30,7 +30,7 @@ VMLinkedList >> add: anObject [
 
 { #category : #adding }
 VMLinkedList >> addFirst: anObject [
-	
+	<var: #anObject type: #'void *'>
 	| node |
 	node := self allocateNodeWith: anObject.
 	self addFirstNode: node
@@ -40,7 +40,7 @@ VMLinkedList >> addFirst: anObject [
 VMLinkedList >> addFirstNode: aVMLinkedListNode [ 
 	
 	"Assumption: the node is orphan"
-	
+	<var: #aVMLinkedListNode type: #'LinkedListNode *'>	
 	aVMLinkedListNode setNext: firstNode.
 	firstNode := aVMLinkedListNode.
 	size := size + 1
@@ -48,7 +48,7 @@ VMLinkedList >> addFirstNode: aVMLinkedListNode [
 
 { #category : #'adding - private' }
 VMLinkedList >> addLastNode: aVMLinkedListNode [ 
-	
+	<var: #aVMLinkedListNode type: #'LinkedListNode *'>	
 	self isEmpty ifTrue: [ 
 		firstNode := aVMLinkedListNode.
 	] ifFalse: [
@@ -59,7 +59,7 @@ VMLinkedList >> addLastNode: aVMLinkedListNode [
 
 { #category : #allocation }
 VMLinkedList >> allocateNodeWith: anObject [ 
-
+	<var: #anObject type: #'void *'>
 	| node |
 	self cCode: [ 
 		node := self
@@ -154,7 +154,7 @@ VMLinkedList >> firstNode: anObject [
 
 { #category : #testing }
 VMLinkedList >> includes: anObject [
-	
+	<var: #anObject type: #'void *'>
 	self isEmpty ifTrue: [ ^ false ].
 	
 	^ firstNode nodeIncludes: anObject
@@ -170,7 +170,7 @@ VMLinkedList >> includesAll: aCollection [
 
 { #category : #inserting }
 VMLinkedList >> insert: anObject sortedBy: aCriterion [
-	
+	<var: #anObject type: #'void *'>
 	<inline: true>
 	| node currentNode |
 	self isEmpty ifTrue: [ 

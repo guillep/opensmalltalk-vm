@@ -490,6 +490,60 @@ BasicBlockCompiler >> Jump: jumpTarget [
 ]
 
 { #category : #'basic-blocks' }
+BasicBlockCompiler >> JumpFPEqual: jumpTarget [
+	<returnTypeC: #'AbstractInstruction *'>
+	| temp |
+	temp := super JumpFPEqual: jumpTarget.
+	temp jumpWeight: self defaultJumpWeight.
+	^ temp
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> JumpFPGreater: jumpTarget [
+	<returnTypeC: #'AbstractInstruction *'>
+	| temp |
+	temp := super JumpFPGreater: jumpTarget.
+	temp jumpWeight: self defaultJumpWeight.
+	^ temp
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> JumpFPGreaterOrEqual: jumpTarget [
+	<returnTypeC: #'AbstractInstruction *'>
+	| temp |
+	temp := super JumpFPGreaterOrEqual: jumpTarget.
+	temp jumpWeight: self defaultJumpWeight.
+	^ temp
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> JumpFPLess: jumpTarget [
+	<returnTypeC: #'AbstractInstruction *'>
+	| temp |
+	temp := super JumpFPLess: jumpTarget.
+	temp jumpWeight: self defaultJumpWeight.
+	^ temp
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> JumpFPLessOrEqual: jumpTarget [
+	<returnTypeC: #'AbstractInstruction *'>
+	| temp |
+	temp := super JumpFPLessOrEqual: jumpTarget.
+	temp jumpWeight: self defaultJumpWeight.
+	^ temp
+]
+
+{ #category : #'basic-blocks' }
+BasicBlockCompiler >> JumpFPNotEqual: jumpTarget [
+	<returnTypeC: #'AbstractInstruction *'>
+	| temp |
+	temp := super JumpFPNotEqual: jumpTarget.
+	temp jumpWeight: self defaultJumpWeight.
+	^ temp
+]
+
+{ #category : #'basic-blocks' }
 BasicBlockCompiler >> JumpNoOverflow: jumpTarget [
 
 	| jumpInstruction |
@@ -2017,6 +2071,9 @@ BasicBlockCompiler >> genJumpTo: targetBytecodePC [
 			fixup := self ensureFixupAt: eventualTarget].
 	deadCode := true. "can't fall through"
 	self Jump: fixup.
+	
+	"We need to start every new block by a label"
+	self Label.
 	^0
 ]
 

@@ -972,6 +972,10 @@ CoInterpreter >> attemptToSwitchToMachineCode: bcpc [
 	| cogMethod pc cls |
 	<inline: false>
 	<var: #cogMethod type: #'CogMethod *'>
+	
+	"Do not switch to machine code for now, we don't manage bc->mc mapping"
+	true ifTrue: [ ^self ].
+	
 	(self methodHasCogMethod: method)
 		ifFalse: 
 			[SistaV1BytecodeSet

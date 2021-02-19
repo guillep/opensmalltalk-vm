@@ -46,7 +46,7 @@ VMLinkedListNode >> next [
 
 { #category : #testing }
 VMLinkedListNode >> nodeIncludes: anObject [
-	
+	<var: #anObject type: #'void *'>
 	element = anObject ifTrue: [ ^ true ].
 	next ifNil: [ ^ false ].
 	^ next nodeIncludes: anObject
@@ -54,12 +54,12 @@ VMLinkedListNode >> nodeIncludes: anObject [
 
 { #category : #accessing }
 VMLinkedListNode >> setElement: anObject [
-
+<var: #anObject type: #'void *'>
 	element := anObject
 ]
 
 { #category : #accessing }
 VMLinkedListNode >> setNext: anObject [
-
+	<var: #aVMLinkedListNode type: #'LinkedListNode *'>
 	next := anObject
 ]
