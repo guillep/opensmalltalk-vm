@@ -128,7 +128,7 @@ UnicornSimulator >> classRegisterValue: aValue [
 { #category : #accessing }
 UnicornSimulator >> cogit [
 
-	^ memory interpreter cogit
+	^ memory cogit
 ]
 
 { #category : #initialization }

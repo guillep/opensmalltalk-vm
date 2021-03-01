@@ -253,6 +253,12 @@ UnicornProcessor >> rcx: anInteger [
 ]
 
 { #category : #registers }
+UnicornProcessor >> rdi: anInteger [ 
+
+	machineSimulator rdi: anInteger
+]
+
+{ #category : #registers }
 UnicornProcessor >> rdx: anInteger [ 
 	
 	machineSimulator rdx: anInteger
@@ -262,6 +268,12 @@ UnicornProcessor >> rdx: anInteger [
 UnicornProcessor >> retpcIn: aSpurSimulatedMemory [ 
 
 	^ machineSimulator retpcIn: aSpurSimulatedMemory 
+]
+
+{ #category : #registers }
+UnicornProcessor >> rsi: anInteger [ 
+	
+	machineSimulator rsi: anInteger
 ]
 
 { #category : #registers }

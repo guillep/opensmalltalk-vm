@@ -55,6 +55,13 @@ VMJitMethodTest >> setUpClosedPICPrototype [
 ]
 
 { #category : #tests }
+VMJitMethodTest >> tearDown [
+
+	GO := false.
+	super tearDown.
+]
+
+{ #category : #tests }
 VMJitMethodTest >> testComparingSmallIntegersThatNotFit [
 	| callingMethod parameter aSize bytesPerSlot desiredByteSize numberOfWordSizeSlots padding |
 	
@@ -136,6 +143,7 @@ VMJitMethodTest >> testMixedInlinedLiteralsSmokeTest [
 VMJitMethodTest >> testToDo [
 	
 	| method |
+	GO := true.
 	method := self jitMethod: (self findMethod: #todo).
 	
 	self 
