@@ -15,3 +15,21 @@ Integer >> disassembleWith: aLLVMDisassembler [
 	array integerAt: 1 put: self size: array size signed: false.
 	^ aLLVMDisassembler disassembleInstructionIn: array pc: 0
 ]
+
+{ #category : #'*VMMaker-Tools' }
+Integer >> inpectionNumberRepresentations [
+	<inspectorPresentationOrder: 35 title: 'Integer Representations'>
+
+	| associations |
+	associations :=	{
+		'decimal' -> self printString.
+		'hex' -> self printStringHex.
+		'octal' -> (self printStringBase: 8).
+		'binary' -> (self printStringBase: 2) } asOrderedCollection.
+
+	^ SpTablePresenter new
+		items: associations;
+		addColumn: (SpStringTableColumn title: 'Representation' evaluated: [ :assoc | assoc key ]);
+		addColumn: (SpStringTableColumn title: 'Value' evaluated: [ :assoc | assoc value ]);	
+		yourself
+]
