@@ -514,11 +514,12 @@ CogAbstractInstruction >> availableRegisterOrNoneFor: liveRegsMask [
 { #category : #'as yet unclassified' }
 CogAbstractInstruction >> basicBlock: aBasicBlock [ 
 
+	<var: 'aBasicBlock' type: #'BasicBlock *'>
 	"Pre-condition: this is a lable instruction"
 	self assert: opcode = Label.
 	
-	"Operand 0 is the label id, operand 1 is its basic block"
-	^ self operands at: 1 put: aBasicBlock
+	"Operand 0 is the label id, operand 1 is its bytecode PC, operand 2 its basic block"
+	^ self operands at: 2 put: aBasicBlock
 ]
 
 { #category : #accessing }
@@ -986,8 +987,8 @@ CogAbstractInstruction >> getBasicBlock [
 	"Pre-condition: this is a lable instruction"
 	self assert: opcode = Label.
 	
-	"Operand 0 is the label id, operand 1 is its basic block"
-	^ self operands at: 1
+	"Operand 0 is the label id, operand 1 is its bytecode PC, operand 2 its basic block"
+	^ self operands at: 2
 ]
 
 { #category : #accessing }

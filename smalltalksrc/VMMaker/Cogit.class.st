@@ -478,7 +478,7 @@ Cogit class >> cog: aCompiledMethod selector: aSelector [
 
 { #category : #'in-image compilation' }
 Cogit class >> cog: aCompiledMethod selectorOrNumCopied: selectorOrNumCopied options: optionsDictionaryOrArray [
-	"StackToRegisterMappingCogit cog: (Integer >> #benchFib) selector: #benchFib options: #(COGMTVM false)"
+	"StackToRegisterMappingCogit cog: (Integer >> #benchFib) selectorOrNumCopied: #benchFib options: #(COGMTVM false)"
 	| cogit coInterpreter |
 	cogit := self initializedInstanceForTests: optionsDictionaryOrArray.
 	coInterpreter := cogit coInterpreter.

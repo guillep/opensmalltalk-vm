@@ -189,6 +189,9 @@ BasicBlock >> newEdgeFrom: fromBasicBlock to: toBasicBlock weight: weight [
 
 	| edge |
 	<var: 'edge' type: #'PHEdge *'>
+	<var: 'fromBasicBlock' type: #'BasicBlock *'>
+	<var: 'toBasicBlock' type: #'BasicBlock *'>
+	
 
 	self cCode: [ 
 		edge := self
