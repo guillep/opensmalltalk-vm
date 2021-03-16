@@ -854,9 +854,13 @@ CogObjectRepresentationFor64BitSpur >> genJumpNotSmallFloatValueBits: reg scratc
 { #category : #'compile abstract instructions' }
 CogObjectRepresentationFor64BitSpur >> genJumpNotSmallInteger: reg [
 	"Generate a compare and branch to test if aRegister contains other than a SmallInteger."
-	^cogit
-		TstCq: objectMemory smallIntegerTag R: reg;
-		JumpZero: 0
+	| jump |
+	cogit TstCq: objectMemory smallIntegerTag R: reg.
+	jump := cogit JumpZero: 0.
+	
+	"If it is not a small integer, this is very probably for a slow case"
+	jump jumpWeight: 0.
+	^ jump
 ]
 
 { #category : #'compile abstract instructions' }

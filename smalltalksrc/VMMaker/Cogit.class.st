@@ -2058,7 +2058,10 @@ Cogit >> JumpMultiplyOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^ backEnd genJumpMultiplyOverflow: jumpTarget
+	| jump |
+	jump :=  backEnd genJumpMultiplyOverflow: jumpTarget.
+	jump jumpWeight: 0.
+	^ jump
 ]
 
 { #category : #'abstract instructions' }
@@ -2106,7 +2109,10 @@ Cogit >> JumpOverflow: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>
 	<var: #jumpTarget type: #'void *'>
-	^self genConditionalBranch: JumpOverflow operand: jumpTarget asInteger
+	| jump |
+	jump := self genConditionalBranch: JumpOverflow operand: jumpTarget asInteger.
+	jump jumpWeight: 0.
+	^ jump
 ]
 
 { #category : #'abstract instructions' }
