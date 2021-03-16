@@ -2005,7 +2005,7 @@ BasicBlockCompiler >> genJumpBackTo: targetBytecodePC [
 { #category : #'basic-blocks' }
 BasicBlockCompiler >> genJumpIf: boolean to: targetBytecodePC [
 	<inline: false>
-	| desc fixup ok eventualTarget |
+	| desc fixup ok eventualTarget jumpIfFalse |
 	<var: #desc type: #'CogSimStackEntry *'>
 	<var: #fixup type: #'BytecodeFixup *'>
 	<var: #ok type: #'AbstractInstruction *'>
@@ -2031,7 +2031,8 @@ BasicBlockCompiler >> genJumpIf: boolean to: targetBytecodePC [
 	 their distance send mustBeBoolean."
 	self assert: (objectMemory objectAfter: objectMemory falseObject) = objectMemory trueObject.
 	self genSubConstant: boolean R: TempReg.
-	self JumpZero: (self ensureFixupAt: eventualTarget).
+	jumpIfFalse := self JumpZero: (self ensureFixupAt: eventualTarget).
+	jumpIfFalse jumpWeight: 90.
 	
 	self extASpecifiesNoMustBeBoolean ifTrue: 
 		[ extA := 0. 
@@ -2053,7 +2054,7 @@ BasicBlockCompiler >> genJumpIf: boolean to: targetBytecodePC [
 
 { #category : #'bytecode generator support' }
 BasicBlockCompiler >> genJumpTo: targetBytecodePC [
-	| eventualTarget generator fixup |
+	| eventualTarget generator fixup explicitJump |
 	eventualTarget := self eventualTargetOf: targetBytecodePC.
 	(eventualTarget > bytecodePC
 	 and: [self stackTopIsBoolean
@@ -2072,7 +2073,8 @@ BasicBlockCompiler >> genJumpTo: targetBytecodePC [
 			[self ssFlushTo: simStackPtr.
 			fixup := self ensureFixupAt: eventualTarget].
 	deadCode := true. "can't fall through"
-	self Jump: fixup.
+	explicitJump := self Jump: fixup.
+	explicitJump jumpWeight: 90.
 	
 	"We need to start every new block by a label"
 	self Label.
