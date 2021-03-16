@@ -1985,15 +1985,17 @@ BasicBlockCompiler >> genInlinedIdenticalOrNotIf: orNot [
 
 { #category : #'bytecode generator support' }
 BasicBlockCompiler >> genJumpBackTo: targetBytecodePC [
+	| backJump |
 	self ssFlushTo: simStackPtr.
 	deadCode := true. "can't fall through"
 	
 	self MoveAw: coInterpreter stackLimitAddress R: TempReg.
 	self CmpR: TempReg R: SPReg. "N.B. FLAGS := SPReg - TempReg"
-	self
+	backJump := self
 		genConditionalBranch: JumpAboveOrEqual
 		operand: (self fixupAt: targetBytecodePC)
 		withFallthroughWeight: 0.
+	backJump jumpWeight: self defaultJumpWeight * 2.
 	self CallRT: ceCheckForInterruptTrampoline.
 	self annotateBytecode: self Label.
 	self Jump: (self fixupAt: targetBytecodePC).
