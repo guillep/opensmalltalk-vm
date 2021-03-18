@@ -149,6 +149,12 @@ SpurSimulatedMemory >> memoryObject [
 	^ memoryObject
 ]
 
+{ #category : #replacing }
+SpurSimulatedMemory >> replaceFrom: start to: stop with: replacement startingAt: repStart [ 
+	
+	memoryObject replaceFrom: start to: stop with: replacement memoryObject startingAt: repStart
+]
+
 { #category : #accessing }
 SpurSimulatedMemory >> size [
 

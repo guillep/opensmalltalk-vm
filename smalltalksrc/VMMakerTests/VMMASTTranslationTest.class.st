@@ -368,9 +368,8 @@ VMMASTTranslationTest >> testMethodWithoutExplicitReturnInOtherMethodReturnsVoid
 	translation := (CoInterpreterPrimitives >> #doWaitSemaphore:reEnterInterpreter: ) asTranslationMethodOfClass: TMethod.
 	
 	codeGenerator := CCodeGeneratorGlobalStructure new.
-	codeGenerator vmMaker: (VMMaker new
-		vmmakerConfiguration: VMMakerConfiguration;
-		yourself).
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.
 
@@ -386,9 +385,8 @@ VMMASTTranslationTest >> testMethodWithoutExplicitReturnReturnsVoid [
 	translation := (InterpreterPrimitives >> #doWaitSemaphore: ) asTranslationMethodOfClass: TMethod.
 	
 	codeGenerator := CCodeGeneratorGlobalStructure new.
-	codeGenerator vmMaker: (VMMaker new
-		vmmakerConfiguration: VMMakerConfiguration;
-		yourself).
+	codeGenerator vmMaker: VMMaker new.
+	codeGenerator vmMaker vmmakerConfiguration: VMMakerConfiguration.
 	codeGenerator addMethod: translation.
 	codeGenerator doInlining: true.
 

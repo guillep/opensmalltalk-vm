@@ -4,6 +4,9 @@ I am an abstract superclass for all classes in the VM that want to maintain a so
 Class {
 	#name : #VMClass,
 	#superclass : #SlangClass,
+	#instVars : [
+		'memoryManager'
+	],
 	#classVars : [
 		'DefaultBase',
 		'InitializationOptions'
@@ -171,6 +174,8 @@ VMClass class >> initializeMiscConstants [
 	"Use ifAbsentPut: so that they will get copied back to the
 	 VMMaker's options and dead code will likely be eliminated."
 	PharoVM := InitializationOptions at: #PharoVM ifAbsentPut: [false].
+	FEATURE_FFI := InitializationOptions at: #FEATURE_FFI ifAbsentPut: [false].
+	FEATURE_THREADED_FFI := InitializationOptions at: #FEATURE_THREADED_FFI ifAbsentPut: [false].
 	SistaVM := InitializationOptions at: #SistaVM ifAbsentPut: [false].
 	TempVectReadBarrier := InitializationOptions at: #TempVectReadBarrier ifAbsentPut: [false].
 	MULTIPLEBYTECODESETS := InitializationOptions at: #MULTIPLEBYTECODESETS ifAbsentPut: [false].
@@ -751,6 +756,18 @@ VMClass >> majorVersion [
 ]
 
 { #category : #'C library simulation' }
+VMClass >> malloc: size [
+	<doNotGenerate>
+	| address region |
+	address := memoryManager allocate: size.
+	region := memoryManager regionAtAddress: address.
+	^ CNewArrayAccessor new
+		setObject: region;
+		address: address;
+		yourself
+]
+
+{ #category : #'C library simulation' }
 VMClass >> memcpy: dest _: src _: bytes [
 	<doNotGenerate>
 	"implementation of memcpy(3). N.B. If ranges overlap, must use memmove."
@@ -815,6 +832,18 @@ VMClass >> memmove: destAddress _: sourceAddress _: bytes [
 		ifFalse:
 			[0 to: bytes - 4 by: 4 do:
 				[:i| self longAt: dst + i put: (self longAt: src + i)]]
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager [
+	<doNotGenerate>
+	^ memoryManager
+]
+
+{ #category : #accessing }
+VMClass >> memoryManager: aMemoryManager [
+	<doNotGenerate>
+	memoryManager := aMemoryManager
 ]
 
 { #category : #'simulation support' }
@@ -991,6 +1020,13 @@ VMClass >> promptNum: string [
 	s := s withBlanksTrimmed.
 	^s notEmpty ifTrue:
 		[Number readFrom: s readStream]
+]
+
+{ #category : #'C library simulation' }
+VMClass >> realloc: originalAddress _: desiredSize [
+
+	<doNotGenerate>
+	^ memoryManager reallocate: originalAddress withSize: desiredSize
 ]
 
 { #category : #arithmetic }
