@@ -1,6 +1,6 @@
 Class {
 	#name : #PettisHansenBottomUpSorter,
-	#superclass : #VMClass,
+	#superclass : #BasicBlockSorter,
 	#category : #'VMMaker-JIT'
 }
 

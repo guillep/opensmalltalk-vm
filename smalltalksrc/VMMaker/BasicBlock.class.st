@@ -6,7 +6,8 @@ Class {
 		'lastInstructionIndex',
 		'index',
 		'chain',
-		'cogit'
+		'cogit',
+		'isPushDownBlock'
 	],
 	#category : #'VMMaker-JIT'
 }
@@ -25,6 +26,7 @@ BasicBlock class >> instVarNamesAndTypesForTranslationDo: aBinaryBlock [
 		 aBinaryBlock
 			value: ivn
 			value: (ivn caseOf: {
+						['isPushDownBlock'] -> [#usqInt].
 						['firstInstructionIndex'] -> [#usqInt].
 						['lastInstructionIndex'] -> [#usqInt].
 						['chain'] -> [#'PHChain *'] })]
@@ -164,6 +166,18 @@ BasicBlock >> isJumpingConditionallyOnTrueBranchToBlock: aBasicBlock [
 	^ instructionBeforeLast isJump
 		and: [ instructionBeforeLast getJmpTarget = aBasicBlock label ]
 	
+]
+
+{ #category : #testing }
+BasicBlock >> isPushDownBlock [
+
+	^ isPushDownBlock
+]
+
+{ #category : #accessing }
+BasicBlock >> isPushDownBlock: anObject [
+
+	isPushDownBlock := anObject
 ]
 
 { #category : #accessing }

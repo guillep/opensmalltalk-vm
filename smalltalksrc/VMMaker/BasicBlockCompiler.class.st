@@ -550,6 +550,7 @@ BasicBlockCompiler >> JumpNoOverflow: jumpTarget [
 	"If no overflow case, normal jump priority.
 	If overflow case (fallthough) give less priority"
 	jumpInstruction := self genConditionalBranch: JumpNoOverflow operand: jumpTarget withFallthroughWeight: 0.
+	self currentBasicBlock isPushDownBlock: true.
 	^ jumpInstruction
 ]
 
@@ -1995,6 +1996,7 @@ BasicBlockCompiler >> genJumpBackTo: targetBytecodePC [
 		genConditionalBranch: JumpAboveOrEqual
 		operand: (self fixupAt: targetBytecodePC)
 		withFallthroughWeight: 0.
+	self currentBasicBlock isPushDownBlock: true.
 	backJump jumpWeight: self defaultJumpWeight * 2.
 	self CallRT: ceCheckForInterruptTrampoline.
 	self annotateBytecode: self Label.
@@ -2047,6 +2049,7 @@ BasicBlockCompiler >> genJumpIf: boolean to: targetBytecodePC [
 	
 	"We want the ok case to have high priority, but the fallthrough branch to have higher priority during generation"
 	ok := self genConditionalBranch: JumpZero operand: 0 withFallthroughWeight: 0.
+	self currentBasicBlock isPushDownBlock: true.
 	self genCallMustBeBooleanFor: boolean.
 	ok jmpTarget: (self annotateBytecode: self Label).
 	^0
@@ -2767,7 +2770,8 @@ BasicBlockCompiler >> genSpecialSelectorArithmetic [
 			[
 			"If receiver or argument are not small integers, fall to slow case, so give less priority"
 			jumpNotSmallInts jumpWeight: 0.
-			jumpNotSmallInts jmpTarget: self Label].
+			jumpNotSmallInts jmpTarget: self Label.
+			self currentBasicBlock isPushDownBlock: true.].
 	argIsConst ifTrue:
 		[self MoveCq: argInt R: Arg0Reg].
 	index := byte0 - self firstSpecialSelectorBytecodeOffset.
@@ -2858,6 +2862,7 @@ BasicBlockCompiler >> genSpecialSelectorComparison [
 	"If receiver or argument are not small integers, fall to slow case, so give less priority"
 	jumpNotSmallInts jumpWeight: 0.
 	jumpNotSmallInts jmpTarget: self Label.
+	self currentBasicBlock isPushDownBlock: true.
 	argIsIntConst ifTrue:
 		[self MoveCq: argInt R: Arg0Reg].
 	index := byte0 - self firstSpecialSelectorBytecodeOffset.
@@ -3840,6 +3845,7 @@ BasicBlockCompiler >> newBasicBlock [
 		block index: basicBlocks size.
 		block compiler: self.
 	].
+	block isPushDownBlock: false.
 	block setFirstInstructionIndex: opcodeIndex.
 	block setLastInstructionIndex: opcodeIndex - 1 "initially empty".
 	self addBasicBlock: block.
