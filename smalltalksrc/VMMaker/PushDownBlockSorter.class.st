@@ -23,6 +23,10 @@ PushDownBlockSorter >> sort: aListOfBasicBlocks [
 				Could be implemented better by just remembering the block from the last loop iteration"
 				finalOrder notEmpty ifTrue: [
 					previousBlock := finalOrder last.
+					
+					(previousBlock isJumpingConditionallyOnTrueBranchToBlock: basicBlock)
+						ifTrue: [ previousBlock invertConditionalJump ].
+					
 					(previousBlock isFallingThroughBlock: basicBlock)
 						ifTrue: [ previousBlock removeEndingJump ].
 				].	
