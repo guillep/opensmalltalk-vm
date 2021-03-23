@@ -52,7 +52,8 @@ Class {
 BasicBlockCompiler class >> ancilliaryClasses [
 
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedListNode. VMLinkedList . PHChain . BasicBlock . self sorterClasses }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedListNode. VMLinkedList . PHChain . BasicBlock },
+		self sorterClasses
 ]
 
 { #category : #documentation }
