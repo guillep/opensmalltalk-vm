@@ -7,7 +7,9 @@ Class {
 { #category : #sorting }
 PushDownBlockSorter >> sort: aListOfBasicBlocks [
 
+	<var: #basicBlock type: #'BasicBlock *'>
 	| finalOrder pendingBlocks |
+	
 	finalOrder := self newLinkedList.
 	pendingBlocks := self newLinkedList.
 	
