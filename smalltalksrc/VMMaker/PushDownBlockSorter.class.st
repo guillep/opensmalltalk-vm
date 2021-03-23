@@ -24,7 +24,7 @@ PushDownBlockSorter >> sort: aListOfBasicBlocks [
 				finalOrder notEmpty ifTrue: [
 					previousBlock := finalOrder last.
 					(previousBlock isFallingThroughBlock: basicBlock)
-						ifTrue: [ previousBlock last removeEndingJump ].
+						ifTrue: [ previousBlock removeEndingJump ].
 				].	
 				finalOrder add: basicBlock ] ].
 		
