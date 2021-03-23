@@ -76,6 +76,15 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 ]
 
 { #category : #'as yet unclassified' }
+PharoVMMaker >> generateBasicBlockPushDownVM [
+
+	self
+		generate: CoInterpreter
+		memoryManager: #Spur64BitCoMemoryManager
+		compilerClass: BasicBlockPushDownCompiler
+]
+
+{ #category : #'as yet unclassified' }
 PharoVMMaker >> generateBasicBlockVM [
 
 	self

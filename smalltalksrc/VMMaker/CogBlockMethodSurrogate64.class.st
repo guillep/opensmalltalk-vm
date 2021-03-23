@@ -140,16 +140,14 @@ CogBlockMethodSurrogate64 >> padToWord: aValue [
 
 { #category : #accessing }
 CogBlockMethodSurrogate64 >> stackCheckOffset [
-	^((memory unsignedShortAt: address + 2 + baseHeaderSize) bitShift: -4) bitAnd: 16rFFF
+	^memory unsignedLongAt: address + 4 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogBlockMethodSurrogate64 >> stackCheckOffset: aValue [
-	self assert: (aValue between: 0 and: 16rFFF).
-	memory
-		unsignedShortAt: address + baseHeaderSize + 2
-		put: ((memory unsignedShortAt: address + baseHeaderSize + 2) bitAnd: 16rF) + (aValue bitShift: 4).
-	^aValue
+	^memory
+		unsignedLongAt: address + baseHeaderSize + 4
+		put: aValue
 ]
 
 { #category : #accessing }

@@ -6,7 +6,7 @@ Class {
 
 { #category : #accessing }
 CogSistaMethodSurrogate64 class >> alignedByteSize [
-	^40 + self baseHeaderSize
+	^48 + self baseHeaderSize
 ]
 
 { #category : #accessing }
@@ -19,12 +19,12 @@ CogSistaMethodSurrogate64 class >> offsetOf: aByteSymbol [
 
 { #category : #accessing }
 CogSistaMethodSurrogate64 >> counters [
-	^memory unsignedLong64At: address + 33 + baseHeaderSize
+	^memory unsignedLong64At: address + 36 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogSistaMethodSurrogate64 >> counters: aValue [
 	^memory
-		unsignedLong64At: address + baseHeaderSize + 33
+		unsignedLong64At: address + baseHeaderSize + 36
 		put: aValue
 ]

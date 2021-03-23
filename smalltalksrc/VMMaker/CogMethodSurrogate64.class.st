@@ -29,7 +29,7 @@ Class {
 
 { #category : #accessing }
 CogMethodSurrogate64 class >> alignedByteSize [
-	^32 + self baseHeaderSize
+	^40 + self baseHeaderSize
 ]
 
 { #category : #accessing }
@@ -47,60 +47,60 @@ CogMethodSurrogate64 class >> offsetOf: aByteSymbol [
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockEntryOffset [
-	^memory unsignedShortAt: address + 6 + baseHeaderSize
+	^memory unsignedShortAt: address + 10 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockEntryOffset: aValue [
 	^memory
-		unsignedShortAt: address + baseHeaderSize + 6
+		unsignedShortAt: address + baseHeaderSize + 10
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockSize [
-	^memory unsignedShortAt: address + 4 + baseHeaderSize
+	^memory unsignedShortAt: address + 8 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> blockSize: aValue [
 	^memory
-		unsignedShortAt: address + baseHeaderSize + 4
+		unsignedShortAt: address + baseHeaderSize + 8
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodHeader [
-	^memory unsignedLong64At: address + 16 + baseHeaderSize
+	^memory unsignedLong64At: address + 20 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodHeader: aValue [
 	^memory
-		unsignedLong64At: address + baseHeaderSize + 16
+		unsignedLong64At: address + baseHeaderSize + 20
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodObject [
-	^memory unsignedLong64At: address + 8 + baseHeaderSize
+	^memory unsignedLong64At: address + 12 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> methodObject: aValue [
 	^memory
-		unsignedLong64At: address + baseHeaderSize + 8
+		unsignedLong64At: address + baseHeaderSize + 12
 		put: aValue
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> selector [
-	^memory unsignedLong64At: address + 24 + baseHeaderSize
+	^memory unsignedLong64At: address + 28 + baseHeaderSize
 ]
 
 { #category : #accessing }
 CogMethodSurrogate64 >> selector: aValue [
 	^memory
-		unsignedLong64At: address + baseHeaderSize + 24
+		unsignedLong64At: address + baseHeaderSize + 28
 		put: aValue
 ]

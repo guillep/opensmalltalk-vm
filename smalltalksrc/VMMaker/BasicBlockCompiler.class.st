@@ -52,7 +52,7 @@ Class {
 BasicBlockCompiler class >> ancilliaryClasses [
 
 	^super ancilliaryClasses,
-	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedListNode. VMLinkedList . PHChain . BasicBlock . PHBottomUpSorterNoDeadCode superclass.PHBottomUpSorterNoDeadCode . PHEdge }
+	  { self basicNew simStackEntryClass. self basicNew bytecodeFixupClass. CogSSOptStatus . VMLinkedListNode. VMLinkedList . PHChain . BasicBlock . self sorterClasses }
 ]
 
 { #category : #documentation }
@@ -394,6 +394,12 @@ BasicBlockCompiler class >> shouldGenerateTypedefFor: aStructClass [
 { #category : #translation }
 BasicBlockCompiler class >> simStackSlots [
 	^ self basicNew simStackSlots
+]
+
+{ #category : #translation }
+BasicBlockCompiler class >> sorterClasses [
+
+	^ { PHBottomUpSorterNoDeadCode superclass . PHBottomUpSorterNoDeadCode . PHEdge }
 ]
 
 { #category : #documentation }
