@@ -8,6 +8,7 @@ Class {
 PushDownBlockSorter >> sort: aListOfBasicBlocks [
 
 	<var: #basicBlock type: #'BasicBlock *'>
+	<var: #previousBlock type: #'BasicBlock *'>
 	| finalOrder pendingBlocks |
 	
 	finalOrder := self newLinkedList.
@@ -16,7 +17,15 @@ PushDownBlockSorter >> sort: aListOfBasicBlocks [
 	aListOfBasicBlocks do: [ :basicBlock |
 		basicBlock isPushDownBlock
 			ifTrue: [ pendingBlocks add: basicBlock ]
-			ifFalse: [ finalOrder add: basicBlock ] ].
+			ifFalse: [ | previousBlock |
+
+				"When deciding the final order of blocks, remove redundant jumps to fall through branches.
+				Could be implemented better by just remembering the block from the last loop iteration"
+				previousBlock := finalOrder last.
+				(previousBlock isFallingThroughBlock: basicBlock)
+					ifTrue: [ previousBlock last removeEndingJump ].
+				
+				finalOrder add: basicBlock ] ].
 		
 	pendingBlocks do: [ :pendingBlock | finalOrder add: pendingBlock ].
 	^ finalOrder

@@ -2003,10 +2003,13 @@ BasicBlockCompiler >> genJumpBackTo: targetBytecodePC [
 		genConditionalBranch: JumpAboveOrEqual
 		operand: (self fixupAt: targetBytecodePC)
 		withFallthroughWeight: 0.
-	self currentBasicBlock isPushDownBlock: true.
 	backJump jumpWeight: self defaultJumpWeight * 2.
+
+	"New basic block, managing stack overflow and calling trampoline"
+	self currentBasicBlock isPushDownBlock: true.
 	self CallRT: ceCheckForInterruptTrampoline.
 	self annotateBytecode: self Label.
+
 	self Jump: (self fixupAt: targetBytecodePC).
 	^0
 ]
@@ -2056,8 +2059,11 @@ BasicBlockCompiler >> genJumpIf: boolean to: targetBytecodePC [
 	
 	"We want the ok case to have high priority, but the fallthrough branch to have higher priority during generation"
 	ok := self genConditionalBranch: JumpZero operand: 0 withFallthroughWeight: 0.
+	
+	"Basic block managing the must be boolean"
 	self currentBasicBlock isPushDownBlock: true.
 	self genCallMustBeBooleanFor: boolean.
+	
 	ok jmpTarget: (self annotateBytecode: self Label).
 	^0
 ]
@@ -2783,6 +2789,8 @@ BasicBlockCompiler >> genSpecialSelectorArithmetic [
 		[self MoveCq: argInt R: Arg0Reg].
 	index := byte0 - self firstSpecialSelectorBytecodeOffset.
 	self genMarshalledSend: index negated - 1 numArgs: 1 sendTable: ordinarySendTrampolines.
+	
+	"Place to jump when the fast path succeeded"
 	jumpContinue jmpTarget: self Label.
 	^0
 ]

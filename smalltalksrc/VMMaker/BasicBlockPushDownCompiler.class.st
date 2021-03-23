@@ -9,3 +9,10 @@ BasicBlockPushDownCompiler class >> sorterClasses [
 
 	^ { PushDownBlockSorter }
 ]
+
+{ #category : #initialization }
+BasicBlockPushDownCompiler >> initialize [
+	<doNotGenerate>
+	super initialize.
+	sorter := PushDownBlockSorter new
+]
