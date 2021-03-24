@@ -4760,7 +4760,7 @@ Cogit >> cogExtendPIC: cPIC CaseNMethod: caseNMethod tag: caseNTag isMNUCase: is
 
 	self assert: (objectRepresentation inlineCacheTagIsYoung: caseNTag) not.
 	"Caller patches to open pic if caseNMethod is young."
-	self assert: (caseNMethod notNil and: [(objectMemory isYoung: caseNMethod) not]).
+	self assert: (caseNMethod notNil and: [(objectMemory gc isYoung: caseNMethod) not]).
 	(isMNUCase not and: [coInterpreter methodHasCogMethod: caseNMethod])
 		ifTrue: "this isn't an MNU and we have an already cogged method to jump to"
 			[operand := 0.
@@ -5014,7 +5014,7 @@ Cogit >> cogPICSelector: selector numArgs: numArgs Case0Method: case0CogMethod C
 	<var: #case0CogMethod type: #'CogMethod *'>
 	<returnTypeC: #'CogMethod *'>
 	| startAddress |
-	(objectMemory isYoung: selector) ifTrue:
+	(objectMemory gc isYoung: selector) ifTrue:
 		[^self cCoerceSimple: YoungSelectorInPIC to: #'CogMethod *'].
 	coInterpreter
 		compilationBreak: selector
@@ -5551,8 +5551,8 @@ Cogit >> compileCogFullBlockMethod: numCopied [
 Cogit >> compileCogMethod: selector [
 	<returnTypeC: #'CogMethod *'>
 	| numBytecodes numBlocks numCleanBlocks result extra |
-	hasYoungReferent := (objectMemory isYoungObject: methodObj)
-						  or: [objectMemory isYoung: selector].
+	hasYoungReferent := (objectMemory gc isYoungObject: methodObj)
+						  or: [objectMemory gc isYoung: selector].
 	methodOrBlockNumArgs := coInterpreter argumentCountOf: methodObj.
 	inBlock := 0.
 	postCompileHook := nil.
@@ -5901,7 +5901,7 @@ Cogit >> configureCPIC: cPIC Case0: case0CogMethod Case1Method: case1Method tag:
 			[operand := 0.
 			 targetEntry := (coInterpreter cogMethodOf: case1Method) asInteger + cmNoCheckEntryOffset]
 		ifFalse: "We do not scavenge PICs, hence we cannot cache the MNU method if it is in new space."
-			[operand := (case1Method isNil or: [objectMemory isYoungObject: case1Method])
+			[operand := (case1Method isNil or: [objectMemory gc isYoungObject: case1Method])
 							ifTrue: [0]
 							ifFalse: [case1Method].
 			 targetEntry := case1Method ifNil: [cPIC asInteger + (self sizeof: CogMethod)] ifNotNil: [cPIC asInteger + self picInterpretAbortOffset]].
@@ -6514,7 +6514,7 @@ Cogit >> fillInCPICHeader: pic numArgs: numArgs numCases: numCases hasMNUCase: h
 	<returnTypeC: #'CogMethod *'>
 	<var: #pic type: #'CogMethod *'>
 	<inline: true>
-	self assert: (objectMemory isYoung: selector) not.
+	self assert: (objectMemory gc isYoung: selector) not.
 	pic cmType: CMClosedPIC.
 	pic objectHeader: 0.
 	pic blockSize: closedPICSize.
@@ -6597,7 +6597,7 @@ Cogit >> fillInOPICHeader: pic numArgs: numArgs selector: selector [
 	pic methodHeader: 0.
 	pic selector: selector.
 	pic cmNumArgs: numArgs.
-	(pic cmRefersToYoung: (objectMemory isYoung: selector)) ifTrue:
+	(pic cmRefersToYoung: (objectMemory gc isYoung: selector)) ifTrue:
 		[methodZone addToYoungReferrers: pic].
 	pic cmUsageCount: self initialOpenPICUsageCount.
 	pic cpicHasMNUCase: false.
@@ -7316,7 +7316,7 @@ Cogit >> genLoadInlineCacheWithSelector: selectorIndex [
 							ifTrue: [(coInterpreter specialSelector: -1 - selectorIndex)]
 							ifFalse: [self getLiteral: selectorIndex].
 			 self assert: (objectMemory addressCouldBeOop: selector).
-			 (objectMemory isYoung: selector) ifTrue:
+			 (objectMemory gc isYoung: selector) ifTrue:
 				[hasYoungReferent := true].
 			 cacheValue := selector].
 
@@ -11906,7 +11906,7 @@ Cogit >> simulatedTrampolineFor: selectorOrAddress [
 											ifTrue: [objectMemory]
 											ifFalse: [(backEnd respondsTo: selectorOrAddress)
 												ifTrue:[backEnd]
-												ifFalse:[self notify: 'cannot find receiver for ', selectorOrAddress]]]])
+												ifFalse:[self error: 'cannot find receiver for ', selectorOrAddress]]]])
 				selector: selectorOrAddress
 				arguments: (1 to: selectorOrAddress numArgs) asArray].
 	^address

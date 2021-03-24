@@ -191,7 +191,7 @@ VMClass class >> initializeMiscConstants [
 	SPURVM
 		ifTrue:
 			[(TempVectReadBarrier not
-			  and: [{SpurMemoryManager compactorClass}, (SpurMemoryManager compactorClass ancilliaryClasses) anySatisfy:
+			  and: [{SpurGenerationalGC compactorClass}, (SpurGenerationalGC compactorClass ancilliaryClasses) anySatisfy:
 						[:c| c == SpurSelectiveCompactor]]) ifTrue:
 				[self error: 'Selective compactor requires read barrier']]
 		ifFalse:

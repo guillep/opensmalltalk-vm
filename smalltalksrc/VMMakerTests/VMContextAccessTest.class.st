@@ -79,7 +79,7 @@ VMContextAccessTest >> testCloningTopContextHasCorrectPCAfterFullGC [
 	contextOop := self pushActiveContext.
 
 	CloneOnGC := false.	
-	memory fullGC.
+	memory gc fullGC.
 	
 	interpreter primitiveClone.
 

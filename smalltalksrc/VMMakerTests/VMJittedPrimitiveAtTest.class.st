@@ -519,7 +519,7 @@ VMJittedPrimitiveAtTest >> testPrimitiveAtFixedObjectWithInstanceVariablesShould
 	
 	| objectWithInstanceVariables |
 	
-	objectWithInstanceVariables := memory
+	objectWithInstanceVariables := memory gc
 		allocateNewSpaceSlots: 3 "It has slots, but we should not access them"
 		format: 1 "object with instance variables"
 		classIndex: self nextOrdinaryClassIndex.

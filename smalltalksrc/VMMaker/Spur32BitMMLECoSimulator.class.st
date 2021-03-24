@@ -61,18 +61,13 @@ Spur32BitMMLECoSimulator >> byteSwapped64IfBigEndian: w [
 Spur32BitMMLECoSimulator >> coInterpreter: aCoInterpreter cogit: aCogit [
 	coInterpreter := aCoInterpreter.
 	cogit := aCogit.
-	scavenger coInterpreter: aCoInterpreter.
-	compactor coInterpreter: aCoInterpreter
+	gc scavenger coInterpreter: aCoInterpreter.
+	gc compactor coInterpreter: aCoInterpreter
 ]
 
 { #category : #'simulation only' }
 Spur32BitMMLECoSimulator >> cogCodeBase [
 	^Cogit guardPageSize
-]
-
-{ #category : #'debug support' }
-Spur32BitMMLECoSimulator >> eek [
-	self halt
 ]
 
 { #category : #'memory access' }
@@ -127,17 +122,6 @@ Spur32BitMMLECoSimulator >> firstIndexableField: objOop [
 				ifFalse: ["byte objects (including CompiledMethod" #'char *'])
 ]
 
-{ #category : #'spur bootstrap' }
-Spur32BitMMLECoSimulator >> freeLists [
-	^freeLists
-]
-
-{ #category : #accessing }
-Spur32BitMMLECoSimulator >> freeStart [
-	"freeStart = 16r1163E0 ifTrue: [self halt]."
-	^super freeStart
-]
-
 { #category : #'gc - global' }
 Spur32BitMMLECoSimulator >> globalGarbageCollect [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
@@ -147,7 +131,7 @@ Spur32BitMMLECoSimulator >> globalGarbageCollect [
 		 CloneOnGC ifTrue:
 			[coInterpreter cloneSimulation objectMemory globalGarbageCollect.
 			 Smalltalk garbageCollect]].
-	^super globalGarbageCollect
+	^self gc globalGarbageCollect
 ]
 
 { #category : #'growing/shrinking memory' }
@@ -276,14 +260,6 @@ Spur32BitMMLECoSimulator >> mapOopsFrom: segStart to: segAddr outPointers: outPo
 	^super mapOopsFrom: segStart to: segAddr outPointers: outPointerArray outHashes: savedOutHashes
 ]
 
-{ #category : #'gc - global' }
-Spur32BitMMLECoSimulator >> markAndTrace: objOop [
-	"objOop = 16rB26020 ifTrue: [self halt].
-	objOop = 16rB25FD8 ifTrue: [self halt].
-	objOop = 16rB26010 ifTrue: [self halt]."
-	^super markAndTrace: objOop
-]
-
 { #category : #snapshot }
 Spur32BitMMLECoSimulator >> memoryBaseForImageRead [
 	"Answer the address to read the image into.  Override so that when bootstrapping,
@@ -307,11 +283,6 @@ Spur32BitMMLECoSimulator >> nextWord32From: aStream [
 	^aStream nextLittleEndianNumber: 4
 ]
 
-{ #category : #'spur bootstrap' }
-Spur32BitMMLECoSimulator >> numClassTablePages [
-	^numClassTablePages
-]
-
 { #category : #accessing }
 Spur32BitMMLECoSimulator >> parent [
 
@@ -331,17 +302,6 @@ Spur32BitMMLECoSimulator >> return: errCode restoringObjectsIn: firstArray saved
 	^super return: errCode restoringObjectsIn: firstArray savedFirstFields: savedFirstFields and: secondArray savedHashes: savedHashes
 ]
 
-{ #category : #'debug support' }
-Spur32BitMMLECoSimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
-]
-
 { #category : #'gc - global' }
 Spur32BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
@@ -352,7 +312,7 @@ Spur32BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 		 CloneOnScavenge ifTrue:
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
-	^super scavengingGCTenuringIf: tenuringCriterion
+	^self gc scavengingGCTenuringIf: tenuringCriterion
 ]
 
 { #category : #'free space' }

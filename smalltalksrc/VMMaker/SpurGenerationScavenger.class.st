@@ -291,8 +291,8 @@ SpurGenerationScavenger >> copyAndForward: survivor [
 	 then corpse is threaded onto the weakList for later treatment."
 	<inline: false>
 	| bytesInObj format tenure newLocation |
-	self assert: ((manager isInEden: survivor) "cog methods should be excluded."
-				or: [manager isInPastSpace: survivor]).
+	self assert: ((manager gc isInEden: survivor) "cog methods should be excluded."
+				or: [manager gc isInPastSpace: survivor]).
 	bytesInObj := manager bytesInObject: survivor.
 	format := manager formatOf: survivor.
 	tenure := self shouldBeTenured: survivor. "Allow Slang to inline."
@@ -316,8 +316,8 @@ SpurGenerationScavenger >> copyAndForwardMourner: mourner [
 	 Also, don't repeat any of the ephemeron processing."
 	<inline: false>
 	| bytesInObj format tenure newLocation |
-	self assert: ((manager isInEden: mourner) "cog methods should be excluded."
-				or: [manager isInPastSpace: mourner]).
+	self assert: ((manager gc isInEden: mourner) "cog methods should be excluded."
+				or: [manager gc isInPastSpace: mourner]).
 	bytesInObj := manager bytesInObject: mourner.
 	format := manager formatOf: mourner.
 	tenure := self shouldMournerBeTenured: mourner. "Allow Slang to inline."
@@ -360,10 +360,10 @@ SpurGenerationScavenger >> copyToOldSpace: survivor bytes: bytesInObject format:
 						and: [(manager isRemembered: survivor) not]]]]).
 	nTenures := statTenures.
 	startOfSurvivor := manager startOfObject: survivor.
-	newStart := manager allocateOldSpaceChunkOfBytes: bytesInObject.
+	newStart := manager gc allocateOldSpaceChunkOfBytes: bytesInObject.
 	newStart ifNil:
-		[manager growOldSpaceByAtLeast: 0. "grow by growHeadroom"
-		 newStart := manager allocateOldSpaceChunkOfBytes: bytesInObject.
+		[manager gc growOldSpaceByAtLeast: 0. "grow by growHeadroom"
+		 newStart := manager gc allocateOldSpaceChunkOfBytes: bytesInObject.
 		 newStart ifNil:
 			[self error: 'out of memory']].
 	"manager checkFreeSpace."
@@ -396,7 +396,7 @@ SpurGenerationScavenger >> corpseForCorpseOffset: corpseOffset [
 	 non-future newSpace and use this to implement lists for weak array and
 	 ephemeron processing.  27 bits of 8 byte allocationUnits units is 2 ^ 30
 	 bytes, or 1Gb, big enough for newSpace for a good few years yet."
-	^corpseOffset - 1 << manager shiftForAllocationUnit + manager newSpaceStart
+	^corpseOffset - 1 << manager shiftForAllocationUnit + manager  gc newSpaceStart
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -408,7 +408,7 @@ SpurGenerationScavenger >> corpseOffsetOf: corpse [
 	 bytes or 1Gb, big enough for newSpace for a good few years yet.  Add
 	 one to ensure that a corpse offset is always non-zero, even when it is
 	 that of the first object in newSpace."
-	^corpse - manager newSpaceStart >> manager shiftForAllocationUnit + 1
+	^corpse - manager gc newSpaceStart >> manager shiftForAllocationUnit + 1
 ]
 
 { #category : #accessing }
@@ -507,7 +507,7 @@ SpurGenerationScavenger >> fireEphemeronsOnEphemeronList [
 	oldList := ephemeronList.
 	ephemeronList := nil.
 	[ephemeronCorpse notNil] whileTrue:
-		[self assert: ((manager isYoung: ephemeronCorpse) and: [manager isForwarded: ephemeronCorpse]).
+		[self assert: ((manager gc isYoung: ephemeronCorpse) and: [manager isForwarded: ephemeronCorpse]).
 		 ephemeron := manager followForwarded: ephemeronCorpse.
 		 key := manager keyOfMaybeFiredEphemeron: ephemeron.
 		 (self isScavengeSurvivor: key) ifFalse:
@@ -642,7 +642,7 @@ SpurGenerationScavenger >> growRememberedSet [
 	| obj numSlots newObj base |
 	<inline: false> "Don't ruin locality in remember:"
 	<var: #base type: #'sqInt *'>
-	obj := manager rememberedSetObj.
+	obj := manager gc rememberedSetObj.
 	numSlots := manager numSlotsOf: obj.
 	self assert: numSlots >= 1024.
 	newObj := manager allocatePinnedSlots: numSlots * 2.
@@ -651,7 +651,7 @@ SpurGenerationScavenger >> growRememberedSet [
 		 newObj ifNil:
 			[(manager growOldSpaceByAtLeast: numSlots + 1024) ifNil: [self error: 'could not grow remembered set'].
 			 newObj := manager allocatePinnedSlots: numSlots + 1024. "cannot fail"]].
-	manager rememberedSetObj: newObj.
+	manager gc rememberedSetObj: newObj.
 	base := manager firstIndexableField: newObj.
 	0 to: rememberedSetSize - 1 do:
 		[:i| base at: i put: (rememberedSet at: i)].
@@ -660,7 +660,7 @@ SpurGenerationScavenger >> growRememberedSet [
 		[manager
 			setIsMarkedOf: newObj to: true;
 			setIsMarkedOf: obj to: false].
-	manager freeObject: obj.
+	manager gc freeObject: obj.
 	rememberedSet := base.
 	rememberedSetLimit := manager numSlotsOf: newObj.
 	self setRememberedSetRedZone
@@ -698,11 +698,11 @@ SpurGenerationScavenger >> initialize [
 { #category : #initialization }
 SpurGenerationScavenger >> initializeRememberedSet [
 	| obj |
-	obj := manager rememberedSetObj.
+	obj := manager gc rememberedSetObj.
 	obj = manager nilObject
 		ifTrue:
 			[obj := manager allocatePinnedSlots: 1024.
-			 manager rememberedSetObj: obj]
+			 manager gc rememberedSetObj: obj]
 		ifFalse: "The Spur32to64BitBootstrap failed to set the type of rememberedSetObj to 64-bit indexability.
 				 This is unimportant except for simulation; rememberedSet is declared as sqInt *, but in to have
 				 firstIndexableField: below answer a suitable type the format must be wordIndexableFormat."
@@ -749,12 +749,12 @@ SpurGenerationScavenger >> isMaybeOldScavengeSurvivor: oop [
 			 (manager isImmediate: oop) ifTrue:
 				[^true]]
 		ifFalse: [target := oop].
-	^(manager isOldObject: target)
+	^(manager gc isOldObject: target)
 		ifTrue:
 			[tenureCriterion ~= MarkOnTenure
 			 or: [manager isMarked: target]]
 		ifFalse:
-			[manager isInFutureSpace: target]
+			[manager gc isInFutureSpace: target]
 ]
 
 { #category : #'weakness and ephemerality' }
@@ -775,7 +775,7 @@ SpurGenerationScavenger >> isScavengeSurvivor: oop [
 		ifTrue: [target := manager followForwarded: oop]
 		ifFalse: [target := oop].
 	^(manager isReallyYoung: target) not
-	  or: [manager isInFutureSpace: target]
+	  or: [manager gc isInFutureSpace: target]
 ]
 
 { #category : #logging }
@@ -798,8 +798,8 @@ SpurGenerationScavenger >> logScavenge [
 SpurGenerationScavenger >> logStartScavenge [
 	<inline: #always>
 	scavengeLogRecord
-		sEdenBytes: manager freeStart - eden start;
-		sPastBytes: manager pastSpaceStart - pastSpace start;
+		sEdenBytes: manager gc freeStart - eden start;
+		sPastBytes: manager gc pastSpaceStart - pastSpace start;
 		sRememberedSetSize: rememberedSetSize;
 		sRememberedSetRedZone: rememberedSetRedZone;
 		sRememberedSetLimit: rememberedSetLimit;
@@ -853,7 +853,7 @@ SpurGenerationScavenger >> newSpaceStart: startAddress newSpaceBytes: totalBytes
 				+ (self futureSpace limit \\ manager allocationUnit) = 0.
 
 	self initFutureSpaceStart.
-	manager initSpaceForAllocationCheck: (self addressOf: eden) limit: eden limit.
+	manager gc initSpaceForAllocationCheck: (self addressOf: eden) limit: eden limit.
 
 	tenuringProportion := 0.9
 ]
@@ -874,7 +874,7 @@ SpurGenerationScavenger >> nextCorpseOrNil: corpse [
 	"corpse is the corpse of a weak array that has been added to the weakList.
 	 Answer the next object on the list, or nil if none."
 	| listOffset |
-	self assert: (manager isYoung: corpse).
+	self assert: (manager gc isYoung: corpse).
 	listOffset := self nextCorpseOffset: corpse.
 	^listOffset ~= 0 ifTrue:
 		[self corpseForCorpseOffset: listOffset]
@@ -981,7 +981,7 @@ SpurGenerationScavenger >> processWeakSurvivor: weakObj [
 					 manager storePointerUnchecked: i ofObject: weakObj withValue: referent].
 				(self isMaybeOldScavengeSurvivor: referent)
 					ifTrue:
-						[(manager isYoungObject: referent) ifTrue:
+						[(manager gc isYoungObject: referent) ifTrue:
 							[hasYoungReferents := true]]
 					ifFalse:
 						[weakObjShouldMourn := true.
@@ -1023,7 +1023,7 @@ SpurGenerationScavenger >> processWeaklings [
 			 weakObj := manager followForwarded: weakCorpse.
 			 "weakObj may have been tenured..."
 			 ((self processWeakSurvivor: weakObj)
-			  and: [(manager isOldObject: weakObj)
+			  and: [(manager gc isOldObject: weakObj)
 			  and: [(manager isRemembered: weakObj) not]]) ifTrue:
 				[self remember: weakObj].
 			 weakCorpse := self nextCorpseOrNil: weakCorpse].
@@ -1059,7 +1059,7 @@ SpurGenerationScavenger >> referenceCountRememberedReferents: population [
 { #category : #'remembered set' }
 SpurGenerationScavenger >> relocateRememberedSet [
 	"For SpurPlanningCompactor"
-	rememberedSet := manager firstIndexableField: manager rememberedSetObj
+	rememberedSet := manager firstIndexableField: manager gc rememberedSetObj
 ]
 
 { #category : #'store check' }
@@ -1069,7 +1069,7 @@ SpurGenerationScavenger >> remember: objOop [
 	<api>
 	<inline: false>
 	self assert: (manager isNonImmediate: objOop).
-	self deny: (manager isYoungObject: objOop).
+	self deny: (manager gc isYoungObject: objOop).
 	self deny: (manager isRemembered: objOop).
 	self deny: (self isInRememberedSet: objOop).
 	manager setIsRememberedOf: objOop to: true.
@@ -1077,7 +1077,7 @@ SpurGenerationScavenger >> remember: objOop [
 		[self growRememberedSet].
 	rememberedSet at: rememberedSetSize put: objOop.
 	(rememberedSetSize := rememberedSetSize + 1) >= rememberedSetRedZone ifTrue:
-		[manager scheduleScavenge].
+		[manager gc scheduleScavenge].
 	^objOop
 ]
 
@@ -1175,8 +1175,8 @@ SpurGenerationScavenger >> scavengeLoop [
 	 previousRememberedSetSize := rememberedSetSize.
 	 firstTime ifTrue:
 		[coInterpreter mapInterpreterOops.
-		 manager mapMournQueue.
-		 manager mapExtraRoots.
+		 manager gc mapMournQueue.
+		 manager gc mapExtraRoots.
 		 firstTime := false].
 	 "if nothing more copied and forwarded (or remembered by mapInterpreterOops)
 	  to scavenge, and no ephemerons to process, scavenge is done."
@@ -1228,11 +1228,11 @@ SpurGenerationScavenger >> scavengeReferentsOf: referrer [
 				[referent := manager followForwarded: referent].
 			 (manager isReallyYoungObject: referent)
 				ifTrue: "if target is already in future space forwarding pointer was due to a become:."
-					[(manager isInFutureSpace: referent)
+					[(manager gc isInFutureSpace: referent)
 						ifTrue: [newLocation := referent. foundNewReferentOrIsWeakling := true]
 						ifFalse:
 							[newLocation := self copyAndForward: referent.
-							 (manager isYoung: newLocation) ifTrue:
+							 (manager gc isYoung: newLocation) ifTrue:
 								[foundNewReferentOrIsWeakling := true]].
 					 manager storePointerUnchecked: i ofMaybeForwardedObject: referrer withValue: newLocation]
 				ifFalse:
@@ -1371,7 +1371,7 @@ SpurGenerationScavenger >> setCorpseOffsetOf: corpse to: offset [
 	 and use this to implement the list.  27 bits of 8 byte allocationUnits units is
 	 2 ^ 30 bytes or 1Gb, big enough for newSpace for a good few years yet."
 	<inline: true>
-	self assert: (manager isYoung: corpse).
+	self assert: (manager gc isYoung: corpse).
 	self assert: (manager isForwarded: corpse).
 	manager wordSize = 4
 		ifTrue: "On 64-bit gcc 4.4.7-4 the following is miscompiled at -O2; the first assignment is lost"

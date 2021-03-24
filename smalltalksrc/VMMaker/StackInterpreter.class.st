@@ -2476,7 +2476,7 @@ StackInterpreter >> bereaveAllMarriedContextsForSnapshotFlushingExternalPrimitiv
 	 that the snapshot contains only single contexts.  This allows the test for being
 	 married to avoid checking for a context's frame pointer being in bounds.  If
 	 flushExtPrims is true, flush references to external primitives in methods."
-	objectMemory allObjectsDo:
+	objectMemory gc allObjectsDo:
 		[:obj| | fmt |
 		fmt := objectMemory formatOf: obj.
 		(fmt = objectMemory indexablePointersFormat
@@ -6756,9 +6756,8 @@ StackInterpreter >> findUnwindThroughContext: homeContext [
 { #category : #finalization }
 StackInterpreter >> fireEphemeron: ephemeron [
 	<option: #SpurObjectMemory>
-	objectMemory
-		queueMourner: ephemeron;
-		setFormatOf: ephemeron to: objectMemory nonIndexablePointerFormat.
+	objectMemory gc queueMourner: ephemeron.
+	objectMemory setFormatOf: ephemeron to: objectMemory nonIndexablePointerFormat.
 	self signalFinalization: ephemeron
 ]
 
@@ -9387,7 +9386,7 @@ StackInterpreter >> longPrintOop: oop [
 	((objectMemory isImmediate: oop)
 	 or: [(objectMemory addressCouldBeObj: oop) not
 	 or: [(oop bitAnd: objectMemory allocationUnit - 1) ~= 0
-	 or: [(objectMemory isFreeObject: oop)
+	 or: [(objectMemory gc isFreeObject: oop)
 	 or: [objectMemory isForwarded: oop]]]]) ifTrue:
 		[self printOop: oop.
 		 ^self].
@@ -9941,7 +9940,7 @@ StackInterpreter >> mapStackPages [
 						put: (objectMemory remapObj: (self frameContext: theFP))].
 				 "With SqueakV3 objectMemory or SpurPlanningCompactor can't assert since object body is yet to move."
 				 (objectMemory hasSpurMemoryManagerAPI
-				  and: [objectMemory slidingCompactionInProgress not]) ifTrue:
+				  and: [objectMemory gc slidingCompactionInProgress not]) ifTrue:
 					[self assert: ((self isMarriedOrWidowedContext: (self frameContext: theFP))
 								  and: [(self frameOfMarriedContext: (self frameContext: theFP)) = theFP])]].
 			 (objectMemory shouldRemapObj: (self frameMethod: theFP)) ifTrue:
@@ -10156,15 +10155,15 @@ StackInterpreter >> markAndTraceInterpreterOops: fullGCFlag [
 	self markAndTraceStackPages: fullGCFlag.
 	self markAndTraceTraceLog.
 	self markAndTracePrimTraceLog.
-	objectMemory markAndTrace: objectMemory specialObjectsOop. "also covers nilObj, trueObj, falseObj, and compact classes"
+	objectMemory gc markAndTrace: objectMemory specialObjectsOop. "also covers nilObj, trueObj, falseObj, and compact classes"
 	(objectMemory isImmediate: newMethod) ifFalse:
-		[objectMemory markAndTrace: newMethod].
+		[objectMemory gc markAndTrace: newMethod].
 	self traceProfileState.
-	tempOop = 0 ifFalse: [objectMemory markAndTrace: tempOop].
-	tempOop2 = 0 ifFalse: [objectMemory markAndTrace: tempOop2].
+	tempOop = 0 ifFalse: [objectMemory gc markAndTrace: tempOop].
+	tempOop2 = 0 ifFalse: [objectMemory gc markAndTrace: tempOop2].
 
 	"V3 memory manager support"
-	1 to: objectMemory remapBufferCount do:
+	1 to: objectMemory gc remapBufferCount do:
 		[:i | 
 		oop := objectMemory remapBuffer at: i.
 		(objectMemory isImmediate: oop) ifFalse: [objectMemory markAndTrace: oop]].
@@ -12473,7 +12472,7 @@ StackInterpreter >> printOop: oop [
 						ifTrue: [' is misaligned']
 						ifFalse: [self whereIs: oop]); cr. ^self].
 					
-	(objectMemory isFreeObject: oop) ifTrue:
+	(objectMemory gc isFreeObject: oop) ifTrue:
 		[self print: ' is a free chunk of size '; printNum: (objectMemory sizeOfFree: oop).
 		 objectMemory hasSpurMemoryManagerAPI ifTrue:
 			[self print: ' 0th: '; printHex: (objectMemory fetchPointer: 0 ofFreeChunk: oop).
@@ -14581,7 +14580,7 @@ StackInterpreter >> shortPrint: oop [
 		[^(oop bitAnd: objectMemory allocationUnit - 1) ~= 0
 			ifTrue: [' is misaligned']
 			ifFalse: [self whereIs: oop]].
-	(objectMemory isFreeObject: oop) ifTrue:
+	(objectMemory gc isFreeObject: oop) ifTrue:
 		[^' is a free chunk of size ', (objectMemory sizeOfFree: oop) printString,
 			(objectMemory hasSpurMemoryManagerAPI
 				ifTrue: [' 0th: ', (objectMemory fetchPointer: 0 ofFreeChunk: oop) hex]
@@ -15927,9 +15926,9 @@ StackInterpreter >> thisClassIndex [
 StackInterpreter >> traceProfileState [
 	objectMemory hasSpurMemoryManagerAPI ifTrue:
 		[self followForwardingPointersInProfileState].
-	objectMemory markAndTrace: profileProcess.
-	objectMemory markAndTrace: profileMethod.
-	objectMemory markAndTrace: profileSemaphore.
+	objectMemory gc markAndTrace: profileProcess.
+	objectMemory gc markAndTrace: profileMethod.
+	objectMemory gc markAndTrace: profileSemaphore.
 
 	"The longRunningPrimitiveCheckMethod (LRPCM) is sampled in an interrupt.  Be very careful with it.
 	  If longRunningPrimitiveCheckSequenceNumber (LRPCSN) = statCheckForEvents then LRPCM has
@@ -16791,7 +16790,7 @@ StackInterpreter >> writeImageFileIOSimulation [
 			 self putWord32: headerSize toFile: file.
 			{
 		objectMemory imageSizeToWrite.
-		objectMemory baseAddressOfImage.
+		objectMemory gc baseAddressOfImage.
 		objectMemory specialObjectsOop.
 		objectMemory lastHash.
 		self ioScreenSize.
@@ -16812,7 +16811,7 @@ StackInterpreter >> writeImageFileIOSimulation [
 		ifTrue:
 			[| bytesWritten |
 			 self putLong: objectMemory firstSegmentBytes toFile: file.
-			 self putLong: objectMemory bytesLeftInOldSpace toFile: file.
+			 self putLong: objectMemory gc bytesLeftInOldSpace toFile: file.
 			 2 timesRepeat: [self putLong: 0 toFile: file] "Pad the rest of the header.".
 			 objectMemory wordSize = 8 ifTrue:
 				[3 timesRepeat: [self putLong: 0 toFile: file]].

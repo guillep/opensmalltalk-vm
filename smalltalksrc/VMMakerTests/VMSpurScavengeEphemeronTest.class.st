@@ -18,10 +18,10 @@ VMSpurScavengeEphemeronTest >> testDequeueMournerWithOnlyOneEphemeronShouldEmpty
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
-	memory dequeueMourner.
-	self assert: memory dequeueMourner equals: nil
+	memory gc dequeueMourner.
+	self assert: memory gc dequeueMourner equals: nil
 	
 ]
 
@@ -43,7 +43,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberdSetBecomesNormalO
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	"Move ephemeron to old space"
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	
 	nonEphemeronObjectOop := self newZeroSizedObject.
@@ -52,7 +52,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberdSetBecomesNormalO
 		ofObject: ephemeronObjectOop
 		withValue: nonEphemeronObjectOop.
 	
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	self
 		assert: (memory formatOf: ephemeronObjectOop)
 		equals: memory nonIndexablePointerFormat
@@ -66,7 +66,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	"Move ephemeron to old space"
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 
 	nonEphemeronObjectOop := self newZeroSizedObject.
@@ -75,9 +75,9 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 		ofObject: ephemeronObjectOop
 		withValue: nonEphemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: ephemeronObjectOop
 ]
 
@@ -89,7 +89,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	"Move ephemeron to old space"
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 
 	nonEphemeronObjectOop := self newZeroSizedObject.
@@ -102,7 +102,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	self
 		assert: memory coInterpreter pendingFinalizationSignals
 		equals: oldFinalization + 1
@@ -116,7 +116,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	"Move ephemeron to old space"
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 
 	nonEphemeronObjectOop := self newZeroSizedObject.
@@ -129,7 +129,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingDy
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	self
 		assert: (memory hashBitsOf: nonEphemeronObjectOop)
 		equals: nonEphemeronObjectHash
@@ -143,7 +143,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingSu
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	"Move ephemeron to old space"
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 
 	nonEphemeronObjectOop := self newZeroSizedObject.
@@ -157,7 +157,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronInRememberedSetReferencingSu
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: nonEphemeronObjectOop.
 	
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	self
 		assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: ephemeronObjectOop))
 		equals: nonEphemeronObjectHash
@@ -177,7 +177,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectBecomesNormalObjectAft
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	self
 		assert:
@@ -200,10 +200,10 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObject
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: ephemeronObjectOop
 ]
 
@@ -222,7 +222,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObject
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	self
 		assert: memory coInterpreter pendingFinalizationSignals
@@ -244,7 +244,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingDyingObject
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	nonEphemeronObjectOop := memory remapObj: nonEphemeronObjectOop.
 	self
 		assert: (memory hashBitsOf: nonEphemeronObjectOop)
@@ -267,7 +267,7 @@ VMSpurScavengeEphemeronTest >> testScavengeEphemeronObjectReferencingSurvivorSho
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: nonEphemeronObjectOop.
 	
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	self
 		assert:
@@ -298,15 +298,15 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingDiffere
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: anotherEphemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	anotherEphemeronObjectOop := memory remapObj: anotherEphemeronObjectOop.
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: ephemeronObjectOop.
 
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: anotherEphemeronObjectOop.
 ]
 
@@ -334,22 +334,22 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingDiffere
 	self keepObjectInVMVariable3: anotherNonEphemeronObjectOop.
 
 	"Scavence once so all three objects are moved from eden to past space"
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	anotherEphemeronObjectOop := memory remapObj: anotherEphemeronObjectOop.
 	anotherNonEphemeronObjectOop := memory remapObj: anotherNonEphemeronObjectOop.
 	
 	self forgetObject3.
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	anotherEphemeronObjectOop := memory remapObj: anotherEphemeronObjectOop.
 
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: anotherEphemeronObjectOop.
 
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: ephemeronObjectOop.
 ]
 
@@ -375,14 +375,14 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: anotherEphemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	anotherEphemeronObjectOop := memory remapObj: anotherEphemeronObjectOop.
 
 	"Consume the first mourner"
-	memory dequeueMourner.
+	memory gc dequeueMourner.
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: nil
 ]
 
@@ -408,12 +408,12 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: anotherEphemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	anotherEphemeronObjectOop := memory remapObj: anotherEphemeronObjectOop.
 
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: anotherEphemeronObjectOop.
 ]
 
@@ -439,18 +439,18 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: anotherEphemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 
 	"The second ephemeron changed format, now it keeps the key strongly.
 	Nil the ephemeron key to allow the next ephemeron to be finalized too"
-	memory storePointer: 0 ofObject: memory dequeueMourner withValue: memory nilObject.
+	memory storePointer: 0 ofObject: memory gc dequeueMourner withValue: memory nilObject.
 	
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 
 	self
-		assert: memory dequeueMourner
+		assert: memory gc dequeueMourner
 		equals: ephemeronObjectOop
 ]
 
@@ -476,7 +476,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: anotherEphemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	anotherEphemeronObjectOop := memory remapObj: anotherEphemeronObjectOop.
 
@@ -505,7 +505,7 @@ VMSpurScavengeEphemeronTest >> testScavengeTwoEphemeronObjectsReferencingSameDyi
 	self keepObjectInVMVariable1: ephemeronObjectOop.
 	self keepObjectInVMVariable2: anotherEphemeronObjectOop.
 
-	memory doScavenge: 1.	"TenureByAge"
+	memory gc doScavenge: 1.	"TenureByAge"
 	ephemeronObjectOop := memory remapObj: ephemeronObjectOop.
 	anotherEphemeronObjectOop := memory remapObj: anotherEphemeronObjectOop.
 

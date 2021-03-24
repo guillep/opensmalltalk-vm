@@ -82,17 +82,17 @@ Spur64BitMemoryManager >> allocateSlots: numSlots format: formatField classIndex
 		ifTrue:
 			[numSlots >> 56 > 0 ifTrue:
 				[^nil]. "overflow size must fit in 56-bits"
-			 newObj := freeStart + self baseHeaderSize.
+			 newObj := self gc freeStart + self baseHeaderSize.
 			 numBytes := self largeObjectBytesForSlots: numSlots]
 		ifFalse:
-			[newObj := freeStart.
+			[newObj := self gc freeStart.
 			 numBytes := self smallObjectBytesForSlots: numSlots].
 	
-	hasToScheduleScavenge := freeStart + numBytes > scavengeThreshold.
+	hasToScheduleScavenge := self gc freeStart + numBytes > self gc scavengeThreshold.
 	
 	(hasToScheduleScavenge or: [isPinned]) ifTrue:
 		[ hasToScheduleScavenge 
-			ifTrue: [needGCFlag 	ifFalse: [self scheduleScavenge]].
+			ifTrue: [gc needGCFlag 	ifFalse: [self gc scheduleScavenge]].
 		
 		  isPinned 
 			ifTrue: [ 
@@ -107,13 +107,13 @@ Spur64BitMemoryManager >> allocateSlots: numSlots format: formatField classIndex
 	numSlots >= self numSlotsMask
 		ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
 			[self flag: #endianness.
-			 self longAt: freeStart put: self numSlotsMask << self numSlotsFullShift + numSlots.
+			 self longAt: self gc freeStart put: self numSlotsMask << self numSlotsFullShift + numSlots.
 			 self longAt: newObj put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)]
 		ifFalse:
 			[self longAt: newObj put: (self headerForSlots: numSlots format: formatField classIndex: classIndex)].
 	self assert: numBytes \\ self allocationUnit = 0.
 	self assert: newObj \\ self allocationUnit = 0.
-	freeStart := freeStart + numBytes.
+	self gc freeStart: self gc freeStart + numBytes.
 	^newObj
 ]
 
@@ -125,10 +125,10 @@ Spur64BitMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: tot
 	<var: #totalBytes type: #usqInt>
 	<inline: false>
 	| chunk |
-	chunk := self allocateOldSpaceChunkOfBytes: totalBytes
+	chunk := self gc allocateOldSpaceChunkOfBytes: totalBytes
 				   suchThat: [:f| (segmentManager segmentContainingObj: f) containsPinned].
 	chunk ifNil:
-		[chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
+		[chunk := self gc allocateOldSpaceChunkOfBytes: totalBytes.
 		 chunk ifNil:
 			[^nil].
 		 (segmentManager segmentContainingObj: chunk) containsPinned: true].
@@ -138,12 +138,12 @@ Spur64BitMemoryManager >> allocateSlotsForPinningInOldSpace: numSlots bytes: tot
 		 self longAt: chunk + self baseHeaderSize
 			put: ((self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex)
 					bitOr: 1 << self pinnedBitShift).
-		 self checkFreeSpace: GCModeNewSpace.
+		 self gc checkFreeSpace: GCModeNewSpace.
 		 ^chunk + self baseHeaderSize].
 	self longAt: chunk
 		put: ((self headerForSlots: numSlots format: formatField classIndex: classIndex)
 				bitOr: 1 << self pinnedBitShift).
-	self checkFreeSpace: GCModeNewSpace.
+	self gc checkFreeSpace: GCModeNewSpace.
 	^chunk
 ]
 
@@ -154,7 +154,7 @@ Spur64BitMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes fo
 	<var: #totalBytes type: #usqInt>
 	<inline: false>
 	| chunk |
-	chunk := self allocateOldSpaceChunkOfBytes: totalBytes.
+	chunk := self gc allocateOldSpaceChunkOfBytes: totalBytes.
 	chunk ifNil:
 		[^nil].
 	numSlots >= self numSlotsMask ifTrue: "for header parsing we put a saturated slot count in the prepended overflow size word"
@@ -162,11 +162,11 @@ Spur64BitMemoryManager >> allocateSlotsInOldSpace: numSlots bytes: totalBytes fo
 			put: numSlots + (self numSlotsMask << self numSlotsFullShift).
 		 self longAt: chunk + self baseHeaderSize
 			put: (self headerForSlots: self numSlotsMask format: formatField classIndex: classIndex).
-		 self checkFreeSpace: GCModeNewSpace.
+		 self gc checkFreeSpace: GCModeNewSpace.
 		 ^chunk + self baseHeaderSize].
 	self longAt: chunk
 		put: (self headerForSlots: numSlots format: formatField classIndex: classIndex).
-	self checkFreeSpace: GCModeNewSpace.
+	self gc checkFreeSpace: GCModeNewSpace.
 	^chunk
 ]
 
@@ -449,12 +449,6 @@ Spur64BitMemoryManager >> floatValueOf: oop [
 	^0.0
 ]
 
-{ #category : #accessing }
-Spur64BitMemoryManager >> freeLists [
-	<doNotGenerate>
-	^ freeLists
-]
-
 { #category : #'interpreter access' }
 Spur64BitMemoryManager >> hasSixtyFourBitImmediates [
 	"The V3 64-bit memory manager has 64-bit oops, but its SmallIntegers only have
@@ -513,7 +507,7 @@ Spur64BitMemoryManager >> initSegmentBridgeWithBytes: numBytes at: address [
 		ifTrue: "short bridge for adjacent segments"
 			[self longAt: address
 					put:    (1 << self pinnedBitShift)
-						+ (1 << self markedBitFullShift)
+						+ (1 << self gc markedBitFullShift)
 						+ (self wordIndexableFormat << self formatShift)
 						+ self segmentBridgePun]
 		ifFalse: "long bridge"
@@ -710,7 +704,7 @@ Spur64BitMemoryManager >> isLilliputianSize: chunkBytes [
 { #category : #'header access' }
 Spur64BitMemoryManager >> isMarked: objOop [
 	<api>
-	^((self longAt: objOop) >> self markedBitFullShift bitAnd: 1) ~= 0
+	^((self longAt: objOop) >> self gc markedBitFullShift bitAnd: 1) ~= 0
 ]
 
 { #category : #'interpreter access' }
@@ -881,14 +875,6 @@ Spur64BitMemoryManager >> newInputEventAccessorOfSize: numElements [
 					obj at: pidx2 + 2 put: (val >> 32 bitAnd: 16rFFFFFFFF).
 					val];
 		objectSize: 8
-]
-
-{ #category : #'free space' }
-Spur64BitMemoryManager >> numFreeLists [
-	"Answer the number of free lists.  We use freeListsMask, a bitmap, to avoid
-	 reading empty list heads.  This should fit in a machine word to end up in a
-	 register during free chunk allocation."
-	^64
 ]
 
 { #category : #allocation }
@@ -1105,11 +1091,11 @@ Spur64BitMemoryManager >> setIsImmutableOf: objOop to: aBoolean [
 
 { #category : #'header access' }
 Spur64BitMemoryManager >> setIsMarkedOf: objOop to: aBoolean [
-	self assert: (self isFreeObject: objOop) not.
+	self assert: (self gc isFreeObject: objOop) not.
 	self longAt: objOop
 		put: (aBoolean
-				ifTrue: [(self longAt: objOop) bitOr: 1 << self markedBitFullShift]
-				ifFalse: [(self longAt: objOop) bitAnd: (1 << self markedBitFullShift) bitInvert64])
+				ifTrue: [(self longAt: objOop) bitOr: 1 << self gc markedBitFullShift]
+				ifFalse: [(self longAt: objOop) bitAnd: (1 << self gc markedBitFullShift) bitInvert64])
 ]
 
 { #category : #'header access' }

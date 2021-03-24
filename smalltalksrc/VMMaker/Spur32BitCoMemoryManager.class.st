@@ -127,15 +127,15 @@ Spur32BitCoMemoryManager >> freeStart: aValue [
 Spur32BitCoMemoryManager >> freeStartAddress [
 	<api>
 	<returnTypeC: #usqInt>
-	^self cCode: [(self addressOf: freeStart) asUnsignedInteger]
-		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #freeStart in: self]
+	^self cCode: [(self addressOf: gc freeStart) asUnsignedInteger]
+		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #freeStart in: self gc]
 ]
 
 { #category : #'cog jit support' }
 Spur32BitCoMemoryManager >> getScavengeThreshold [
 	<api>
 	<returnTypeC: #usqInt>
-	^scavengeThreshold
+	^gc scavengeThreshold
 ]
 
 { #category : #'garbage collection' }
@@ -213,8 +213,8 @@ Spur32BitCoMemoryManager >> isReallyYoungObject: objOop [
 	<api>
 	"Answer if obj is young. Require that obj is non-immediate. Override to filter-out Cog methods"
 	self assert: (self isNonImmediate: objOop).
-	^(self oop: objOop isLessThan: newSpaceLimit)
-	  and: [self oop: objOop isGreaterThanOrEqualTo: newSpaceStart]
+	^(super isReallyYoungObject: objOop)
+	  and: [self oop: objOop isGreaterThanOrEqualTo: gc newSpaceStart]
 ]
 
 { #category : #compaction }
@@ -240,7 +240,7 @@ Spur32BitCoMemoryManager >> methodHeaderOf: methodObj [
 	^(self isIntegerObject: header)
 		ifTrue: [header]
 		ifFalse:
-			[self assert: header asUnsignedInteger < newSpaceStart.
+			[self assert: header asUnsignedInteger < cogit methodZone effectiveLimit.
 			 self assert: (coInterpreter cCoerceSimple: header to: #'CogMethod *') objectHeader
 						= self nullHeaderForMachineCodeMethod.
 			(coInterpreter cCoerceSimple: header to: #'CogMethod *') methodHeader]
@@ -259,7 +259,7 @@ Spur32BitCoMemoryManager >> nullHeaderForMachineCodeMethod [
 	<api>
 	<returnTypeC: #sqLong>
 	^(self firstLongFormat << self formatShift)
-	+ (1 << self markedBitFullShift)
+	+ (1 << self gc markedBitFullShift)
 	+ ClassBitmapCompactIndex
 ]
 

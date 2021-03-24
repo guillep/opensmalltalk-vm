@@ -57,30 +57,17 @@ Spur64BitMMLECoSimulator >> byteSwapped64IfBigEndian: w [
 	^w bitAnd: 16rFFFFFFFFFFFFFFFF
 ]
 
-{ #category : #'debug support' }
-Spur64BitMMLECoSimulator >> checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	"Almost all of the time spent in SourMemoryManager>>checkHeapIntegrity:classIndicesShouldBeValid: used to go into the asserts in fetchPointer:ofObject: in the simulator class overrides.
-	 Since we know here the indices used are valid we temporarily remove them to claw back that poerformance."
-	^self withSimulatorFetchPointerMovedAsideDo:
-		[super checkHeapIntegrity: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid]
-]
-
 { #category : #initialization }
 Spur64BitMMLECoSimulator >> coInterpreter: aCoInterpreter cogit: aCogit [
 	coInterpreter := aCoInterpreter.
 	cogit := aCogit.
-	scavenger coInterpreter: aCoInterpreter.
-	compactor coInterpreter: aCoInterpreter
+	gc scavenger coInterpreter: aCoInterpreter.
+	gc compactor coInterpreter: aCoInterpreter
 ]
 
 { #category : #'simulation only' }
 Spur64BitMMLECoSimulator >> cogCodeBase [
 	^ memory initialAddress + Cogit guardPageSize
-]
-
-{ #category : #'debug support' }
-Spur64BitMMLECoSimulator >> eek [
-	self halt
 ]
 
 { #category : #'memory access' }
@@ -135,12 +122,6 @@ Spur64BitMMLECoSimulator >> firstIndexableField: objOop [
 				ifFalse: ["byte objects (including CompiledMethod" #'char *'])
 ]
 
-{ #category : #accessing }
-Spur64BitMMLECoSimulator >> freeStart [
-	"freeStart = 16r328C68 ifTrue: [self halt]."
-	^super freeStart
-]
-
 { #category : #'gc - global' }
 Spur64BitMMLECoSimulator >> globalGarbageCollect [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
@@ -150,7 +131,7 @@ Spur64BitMMLECoSimulator >> globalGarbageCollect [
 		 CloneOnGC ifTrue:
 			[coInterpreter cloneSimulation objectMemory globalGarbageCollect.
 			 Smalltalk garbageCollect]].
-	^super globalGarbageCollect
+	^self gc globalGarbageCollect
 ]
 
 { #category : #'growing/shrinking memory' }
@@ -277,14 +258,6 @@ Spur64BitMMLECoSimulator >> mapOopsFrom: segStart to: segAddr outPointers: outPo
 	^super mapOopsFrom: segStart to: segAddr outPointers: outPointerArray outHashes: savedOutHashes
 ]
 
-{ #category : #'gc - global' }
-Spur64BitMMLECoSimulator >> markAndTrace: objOop [
-	"objOop = 16rB26020 ifTrue: [self halt].
-	objOop = 16rB25FD8 ifTrue: [self halt].
-	objOop = 16rB26010 ifTrue: [self halt]."
-	^super markAndTrace: objOop
-]
-
 { #category : #snapshot }
 Spur64BitMMLECoSimulator >> memoryBaseForImageRead [
 	"Answer the address to read the image into.  Override so that when bootstrapping,
@@ -327,17 +300,6 @@ Spur64BitMMLECoSimulator >> return: errCode restoringObjectsIn: firstArray saved
 	^super return: errCode restoringObjectsIn: firstArray savedFirstFields: savedFirstFields and: secondArray savedHashes: savedHashes
 ]
 
-{ #category : #'debug support' }
-Spur64BitMMLECoSimulator >> runLeakCheckerFor: gcModes excludeUnmarkedObjs: excludeUnmarkedObjs classIndicesShouldBeValid: classIndicesShouldBeValid [
-	(coInterpreter displayView isNil
-	 and: [gcModes anyMask: checkForLeaks]) ifTrue:
-		[coInterpreter transcript nextPutAll: 'leak-checking...'; flush].
-	^super
-		runLeakCheckerFor: gcModes
-		excludeUnmarkedObjs: excludeUnmarkedObjs
-		classIndicesShouldBeValid: classIndicesShouldBeValid
-]
-
 { #category : #'gc - global' }
 Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
@@ -348,7 +310,7 @@ Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 		 CloneOnScavenge ifTrue:
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
-	^super scavengingGCTenuringIf: tenuringCriterion
+	^self gc scavengingGCTenuringIf: tenuringCriterion
 ]
 
 { #category : #'free space' }

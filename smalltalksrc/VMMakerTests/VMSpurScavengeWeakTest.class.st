@@ -59,7 +59,7 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNewSurvivorShouldN
 	"Force object to not be collected by putting them in special variables"
 	memory coInterpreter newMethod: weakObjectOop.
 	
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	weakObjectOop := memory remapObj: weakObjectOop.
 	ourWeakClass := (memory remapObj: ourWeakClass).
 	nonWeakObjectOop := self newZeroSizedObject.
@@ -69,7 +69,7 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNewSurvivorShouldN
 	"Force object to not be collected by putting them in special variables"
 	memory coInterpreter profileSemaphore: nonWeakObjectOop.
 
-	memory doScavenge: 1 "TenureByAge".	
+	memory gc doScavenge: 1 "TenureByAge".	
 	
 	self
 		assert: memory coInterpreter pendingFinalizationSignals
@@ -85,7 +85,7 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldB
 
 	"Force object to not be collected by putting them in special variables"
 	memory coInterpreter newMethod: weakObjectOop.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	weakObjectOop := memory remapObj: weakObjectOop.
 
 	nonWeakObjectOop := self newZeroSizedObject.
@@ -93,7 +93,7 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldB
 	memory storePointer: 0 ofObject: weakObjectOop withValue: nonWeakObjectOop.
 	
 	nilHash := memory hashBitsOf: memory nilObject.
-	memory doScavenge: 1 "TenureByAge".	
+	memory gc doScavenge: 1 "TenureByAge".	
 	
 	self
 		assert: (memory hashBitsOf: (memory fetchPointer: 0 ofObject: weakObjectOop))
@@ -110,7 +110,7 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldF
 	"Force object to not be collected by putting them in special variables"
 	memory coInterpreter newMethod: weakObjectOop.
 	
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	weakObjectOop := memory remapObj: weakObjectOop.
 	ourWeakClass := (memory remapObj: ourWeakClass).
 
@@ -118,7 +118,7 @@ VMSpurScavengeWeakTest >> testScavengeOldWeakObjectReferencingNonSurvivorShouldF
 	nonWeakObjectHash := memory hashBitsOf: nonWeakObjectOop.
 	memory storePointer: 0 ofObject: weakObjectOop withValue: nonWeakObjectOop.
 	
-	memory doScavenge: 1 "TenureByAge".	
+	memory gc doScavenge: 1 "TenureByAge".	
 	
 	self
 		assert: memory coInterpreter pendingFinalizationSignals
@@ -137,7 +137,7 @@ VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingNonSurvivorShouldBeNi
 	"Force object to not be collected by putting them in special variables"
 	memory coInterpreter newMethod: weakObjectOop.
 	nilHash := memory hashBitsOf: memory nilObject.
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	weakObjectOop := memory remapObj: weakObjectOop.	
 	
 	self
@@ -156,7 +156,7 @@ VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingNonSurvivorShouldFire
 	
 	"Force object to not be collected by putting them in special variables"
 	memory coInterpreter newMethod: weakObjectOop.
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 		
 	self
 		assert: memory coInterpreter pendingFinalizationSignals
@@ -177,7 +177,7 @@ VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingSurvivorShouldLeaveWe
 	memory coInterpreter newMethod: weakObjectOop.
 	memory coInterpreter profileSemaphore: nonWeakObjectOop.
 
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	weakObjectOop := memory remapObj: weakObjectOop.	
 	
 	self
@@ -199,7 +199,7 @@ VMSpurScavengeWeakTest >> testScavengeWeakObjectReferencingSurvivorShouldNotFire
 	memory coInterpreter newMethod: weakObjectOop.
 	memory coInterpreter profileSemaphore: nonWeakObjectOop.
 
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	weakObjectOop := memory remapObj: weakObjectOop.	
 	
 	self

@@ -4679,7 +4679,7 @@ CoInterpreter >> mapStackPages [
 						put: (objectMemory remapObj: (self frameContext: theFP))].
 				 "With SqueakV3 objectMemory or SpurPlanningCompactor can't assert since object body is yet to move."
 				 (objectMemory hasSpurMemoryManagerAPI
-				  and: [objectMemory slidingCompactionInProgress not]) ifTrue:
+				  and: [objectMemory gc slidingCompactionInProgress not]) ifTrue:
 					[self assert: ((self isMarriedOrWidowedContext: (self frameContext: theFP))
 								and: [(self frameOfMarriedContext: (self frameContext: theFP)) = theFP])]].
 			(self isMachineCodeFrame: theFP) ifFalse:
@@ -4839,14 +4839,14 @@ CoInterpreter >> markAndTraceStackPage: thePage [
 			[oop := objectMemory followForwarded: oop.
 			 stackPages longAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
-			[objectMemory markAndTrace: oop].
+			[objectMemory gc markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize].
 	(self frameHasContext: theFP) ifTrue:
 		[self assert: (objectMemory isContext: (self frameContext: theFP)).
-		 objectMemory markAndTrace: (self frameContext: theFP)].
+		 objectMemory gc markAndTrace: (self frameContext: theFP)].
 	(self isMachineCodeFrame: theFP)
 		ifTrue: [self markAndTraceMachineCodeMethod: (self mframeCogMethod: theFP)]
-		ifFalse: [objectMemory markAndTrace: (self iframeMethod: theFP)].
+		ifFalse: [objectMemory gc markAndTrace: (self iframeMethod: theFP)].
 	(callerFP := self frameCallerFP: theFP) ~= 0] whileTrue:
 		[theSP := theFP + FoxCallerSavedIP + objectMemory wordSize.
 		 theFP := callerFP].
@@ -4857,7 +4857,7 @@ CoInterpreter >> markAndTraceStackPage: thePage [
 			[oop := objectMemory followForwarded: oop.
 			 stackPages longAt: theSP put: oop].
 		 (objectMemory isImmediate: oop) ifFalse:
-			[objectMemory markAndTrace: oop].
+			[objectMemory gc markAndTrace: oop].
 		 theSP := theSP + objectMemory wordSize]
 ]
 

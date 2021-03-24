@@ -28,7 +28,7 @@ MethodBuilderTest >> testAllocatingMethodDoesntOverflows [
 	"When filling the method with bytecodes/literals, we are writing the memory directly"
 	"We need to not overflow and corrupt the next memory"
 	"This first assertion checks that we didn't corrupt the next memory"
-	memory assertInnerValidFreeObject: (memory freeLists at: 0).
+	memory gc assertInnerValidFreeObject: (memory gc freeLists at: 0).
 	"And if we didn't corrupt the memory, we should be able to instantiate another one !"
 	self shouldnt:[ methodBuilder newMethod; buildMethod ] raise: AssertionFailure
 ]

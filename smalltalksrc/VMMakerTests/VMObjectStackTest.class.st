@@ -9,7 +9,7 @@ VMObjectStackTest >> testGrowingMournQueueUpdatesVMGlobalVariable [
 
 	
 	self testPushObjects: memory objectStackPageLimit + 1 inStackAtIndex: 4098"MournQueueRootIndex".
-	self assert: memory mournQueue equals: (memory objStackAt: 4098"MournQueueRootIndex")
+	self assert: memory gc mournQueue equals: (memory objStackAt: 4098"MournQueueRootIndex")
 ]
 
 { #category : #tests }

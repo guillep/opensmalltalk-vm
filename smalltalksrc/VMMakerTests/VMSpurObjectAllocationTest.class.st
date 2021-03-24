@@ -8,21 +8,21 @@ Class {
 VMSpurObjectAllocationTest >> testAllocateObjectInNewSpaceMovesFreeStart [
 
 	| oldFreeStart |
-	oldFreeStart := memory freeStart.
+	oldFreeStart := memory gc freeStart.
 	memory allocateSlots: 0 format: memory arrayFormat classIndex: memory arrayClassIndexPun.
 	
-	self assert: memory freeStart > oldFreeStart
+	self assert: memory gc freeStart > oldFreeStart
 ]
 
 { #category : #tests }
 VMSpurObjectAllocationTest >> testAllocateObjectInOldSpaceMovesFreeStart [
 
 	| oldFreeStart |
-	oldFreeStart := memory freeStart.
+	oldFreeStart := memory gc freeStart.
 	memory
-		allocateSlots: (memory scavengeThreshold / memory wordSize) floor + (memory wordSize * 2)
+		allocateSlots: (memory gc scavengeThreshold / memory wordSize) floor + (memory wordSize * 2)
 		format: memory arrayFormat
 		classIndex: memory arrayClassIndexPun.
 	
-	self assert: memory freeStart equals: oldFreeStart
+	self assert: memory gc freeStart equals: oldFreeStart
 ]

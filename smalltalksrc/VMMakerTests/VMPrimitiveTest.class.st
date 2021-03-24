@@ -595,7 +595,7 @@ VMPrimitiveTest >> testPrimitiveNewCreatesTheObjectInYoungSpace [
 	interpreter primitiveNew.
 
 	self deny: interpreter failed.
-	self assert: (memory isYoung: interpreter stackTop)
+	self assert: (memory gc isYoung: interpreter stackTop)
 ]
 
 { #category : #'tests - primitiveNew' }
@@ -614,7 +614,7 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 	| class |
 	"Allocate enough space to generate a full new space"
 	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
+				allocateSlots: (memory gc scavengeThreshold - memory gc freeStart) // self wordSize - 1
 				format: memory arrayFormat
 				classIndex: memory arrayClassIndexPun) isNotNil.
 
@@ -623,7 +623,7 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceAllocatesInOldSpace [
 	interpreter primitiveNew.
 	
 	self deny: interpreter failed.
-	self deny: (memory isYoung: interpreter stackTop)
+	self deny: (memory gc isYoung: interpreter stackTop)
 ]
 
 { #category : #'tests - primitiveNew' }
@@ -631,7 +631,7 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceScheduleGC [
 	| class |
 	"Allocate enough space to generate a full new space"
 	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
+				allocateSlots: (memory gc scavengeThreshold - memory gc freeStart) // self wordSize - 1
 				format: memory arrayFormat
 				classIndex: memory arrayClassIndexPun) isNotNil.
 	
@@ -640,7 +640,7 @@ VMPrimitiveTest >> testPrimitiveNewInFullNewSpaceScheduleGC [
 	interpreter push: class.
 	interpreter primitiveNew.
 
-	self assert: memory needGCFlag
+	self assert: memory gc needGCFlag
 ]
 
 { #category : #'tests - primitiveNewWithArgs' }
@@ -663,7 +663,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedCreatesTheObjectInOldSpace [
 	interpreter primitiveNewPinned.
 
 	self deny: interpreter failed.
-	self deny: (memory isYoung: interpreter stackTop)
+	self deny: (memory gc isYoung: interpreter stackTop)
 ]
 
 { #category : #'tests - primitiveNewPinned' }
@@ -673,17 +673,17 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectInFullNewSpaceIsSchedulingGC [
 
 	"Allocate enough space to generate a full new space"
 	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 3
+				allocateSlots: (memory gc scavengeThreshold - memory gc freeStart) // self wordSize - 3
 				format: memory arrayFormat
 				classIndex: memory arrayClassIndexPun) isNotNil.
 
-	self deny: memory needGCFlag.
+	self deny: memory gc needGCFlag.
 	
 	interpreter push: class.
 	interpreter primitiveNewPinned.
 
 	self deny: interpreter failed.
-	self assert: memory needGCFlag 
+	self assert: memory gc needGCFlag 
 ]
 
 { #category : #'tests - primitiveNewPinned' }
@@ -695,7 +695,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedObjectIsNotSchedulingGC [
 	interpreter primitiveNewPinned.
 
 	self deny: interpreter failed.
-	self deny: memory needGCFlag 
+	self deny: memory gc needGCFlag 
 ]
 
 { #category : #'tests - primitiveNewPinned' }
@@ -720,7 +720,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsCreatesTheObjectInOldSpace [
 	interpreter primitiveNewWithArgPinned.
 
 	self deny: interpreter failed.
-	self deny: (memory isYoung: interpreter stackTop)
+	self deny: (memory gc isYoung: interpreter stackTop)
 ]
 
 { #category : #'tests - primitiveNewPinned' }
@@ -733,7 +733,7 @@ VMPrimitiveTest >> testPrimitiveNewPinnedWithArgsObjectIsNotSchedulingGC [
 	interpreter primitiveNewWithArgPinned.
 
 	self deny: interpreter failed.
-	self deny: memory needGCFlag 
+	self deny: memory gc needGCFlag 
 ]
 
 { #category : #'tests - primitiveNewPinned' }
@@ -763,7 +763,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgCreatesTheObjectInYoungSpace [
 	newObj := interpreter stackTop.
 
 	self deny: interpreter failed.
-	self assert: (memory isYoung: newObj)
+	self assert: (memory gc isYoung: newObj)
 ]
 
 { #category : #'tests - primitiveNewWithArgs' }
@@ -788,7 +788,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 
 	"Allocate enough space to generate a full new space"
 	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
+				allocateSlots: (memory gc scavengeThreshold - memory gc freeStart) // self wordSize - 1
 				format: memory arrayFormat
 				classIndex: memory arrayClassIndexPun) isNotNil.
 
@@ -801,7 +801,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceAllocatesInOldSpace [
 
 	newObj := interpreter stackTop.
 
-	self assert: (memory isOldObject: newObj)
+	self assert: (memory gc isOldObject: newObj)
 ]
 
 { #category : #'tests - primitiveNewWithArgs' }
@@ -810,7 +810,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceScheduleGC [
 
 	"Allocate enough space to generate a full new space"
 	self assert: (memory
-				allocateSlots: (memory scavengeThreshold - memory freeStart) // self wordSize - 1
+				allocateSlots: (memory gc scavengeThreshold - memory gc freeStart) // self wordSize - 1
 				format: memory arrayFormat
 				classIndex: memory arrayClassIndexPun) isNotNil.
 
@@ -821,7 +821,7 @@ VMPrimitiveTest >> testPrimitiveNewWithArgInFullNewSpaceScheduleGC [
 
 	interpreter primitiveNewWithArg.
 
-	self assert: memory needGCFlag
+	self assert: memory gc needGCFlag
 ]
 
 { #category : #'tests - primitiveNewWithArgs' }

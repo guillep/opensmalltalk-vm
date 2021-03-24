@@ -93,8 +93,8 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 
 	| ourArrayClass |
 
-	memory markStack: memory nilObject.
-	memory weaklingStack: memory nilObject.
+	memory gc markStack: memory nilObject.
+	memory gc weaklingStack: memory nilObject.
 	
 	ourArrayClass := self newObjectWithSlots: 3.
 	memory
@@ -104,10 +104,10 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForFullGC [
 	memory ensureBehaviorHash: ourArrayClass.
 	
 	memory storePointer: 16 ofObject: memory classTableFirstPage withValue: ourArrayClass.
-	memory shrinkThreshold: 0.
-	memory growHeadroom: 10*1024*1024.
+	memory gc shrinkThreshold: 0.
+	memory gc growHeadroom: 10*1024*1024.
 	
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 ]
 
 { #category : #helpers }
@@ -117,10 +117,10 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	memory coInterpreter bootstrapping: true.
 
 	"Initialize old space with free list, class table, hidden roots and remembered set to be able to scavenge"
-	memory initializeFreeList.
+	memory gc initializeFreeList.
 	memory segmentManager collapseSegmentsPostSwizzle.
-	memory updateFreeLists.
-	memory initializeOldSpaceFirstFree: memory freeOldSpaceStart.
+	memory gc updateFreeLists.
+	memory gc initializeOldSpaceFirstFree: memory gc freeOldSpaceStart.
 
 	"Create a nil object required to initialize several fields"
 	memory nilObject: (self newOldSpaceObjectWithSlots: 0).
@@ -140,16 +140,16 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	memory coInterpreter profileProcess: memory nilObject.
 	memory coInterpreter profileMethod: memory nilObject.
 	memory coInterpreter profileSemaphore: memory nilObject.
-	memory mournQueue: memory nilObject.
+	memory gc mournQueue: memory nilObject.
 	memory specialObjectsOop: memory nilObject.
 		
-	freeListOop := memory initializeFreeListInOldSpace: true.
-	memory initializeFreeSpacePostLoad: freeListOop.
-	memory computeFreeSpacePostSwizzle.
+	freeListOop := memory gc initializeFreeListInOldSpace: true.
+	memory gc initializeFreeSpacePostLoad: freeListOop.
+	memory gc computeFreeSpacePostSwizzle.
 		
-	memory endOfMemory: memory endOfMemory + memory bridgeSize.
+	memory gc endOfMemory: memory gc endOfMemory + memory gc bridgeSize.
 	
-	memory initializeOldSpaceFirstFree: (memory addressAfter: freeListOop).
+	memory gc initializeOldSpaceFirstFree: (memory addressAfter: freeListOop).
 	
 	memory allocateClassTable.
 	
@@ -161,7 +161,7 @@ VMSpurMemoryManagerTest >> initializeOldSpaceForScavenger [
 	memory specialObjectsOop: (self newObjectWithSlots: 60).
 	
 	memory scavengingGCTenuringIf: 1.
-	self deny: memory needGCFlag.
+	self deny: memory gc needGCFlag.
 ]
 
 { #category : #accessor }
@@ -389,7 +389,7 @@ VMSpurMemoryManagerTest >> newString: aString [
 { #category : #helpers }
 VMSpurMemoryManagerTest >> newZeroSizedObject [
 	
-	^ memory
+	^ memory gc
 		allocateNewSpaceSlots: 0
 		format: 0 "zero sized object"
 		classIndex: self zeroSizedObjectClassIndex.
@@ -475,11 +475,12 @@ VMSpurMemoryManagerTest >> setUp [
 	memory := interpreter objectMemory.
 	memory memoryManager: memoryManager.	
 	memory coInterpreter: interpreter.
+	memory gc memoryManager: memoryManager.
 	interpreter objectMemory: memory.
 	
 	memory bootstrapping: true.
 	
-	memory
+	memory gc
 		allocateMemoryOfSize: oldSpaceSize
 		newSpaceSize: newSpaceSize
 		stackSize: stackSpaceSize
@@ -488,12 +489,12 @@ VMSpurMemoryManagerTest >> setUp [
 		primitiveTraceLogSize: (self roundToPageSize: self primitiveTraceLogSize)
 		rumpCStackSize: rumpCStackSize
 		initialAddress: initialAddress.
-	memory initializePostBootstrap.
-	memory setHeapSizeAtPreviousGC.
+	memory gc initializePostBootstrap.
+	memory gc setHeapSizeAtPreviousGC.
 	memory segmentManager collapseSegmentsPostSwizzle.
 	
 	"Schedule a GC, so it does not try to schedule one"
-	memory needGCFlag: 1.
+	memory gc needGCFlag: 1.
 	
 	methodBuilder := VMMethodBuilder new
 		interpreter: interpreter; 

@@ -77,7 +77,7 @@ VMJittedPrimitivesTest >> newBitIndexableOfSize: aSize bytesPerSlot: bytesPerSlo
 	desiredByteSize := aSize * bytesPerSlot roundUpTo: self wordSize.
 	numberOfWordSizeSlots := desiredByteSize / self wordSize.
 	padding := desiredByteSize / bytesPerSlot - aSize.
-	^ memory
+	^ memory gc
 		  allocateNewSpaceSlots: numberOfWordSizeSlots
 		  format: format + padding
 		  classIndex: self nextOrdinaryClassIndex

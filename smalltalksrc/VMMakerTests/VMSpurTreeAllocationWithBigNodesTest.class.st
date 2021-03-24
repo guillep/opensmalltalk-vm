@@ -28,14 +28,14 @@ VMSpurTreeAllocationWithBigNodesTest >> setUp [
 	
 	chunkAddresses := Dictionary new.
 	#(1024 2048 6144) do: [ :size |
-		chunkAddresses at: size put: (memory allocateOldSpaceChunkOfBytes: size)
+		chunkAddresses at: size put: (memory gc allocateOldSpaceChunkOfBytes: size)
 	].
 	"Allocate the rest of the memory so it does not bother our test."
-	memory allocateOldSpaceChunkOfBytes: memory totalFreeListBytes.
+	memory gc allocateOldSpaceChunkOfBytes: memory gc totalFreeListBytes.
 
 	sizesInBreadthFirstOrder := #( 2048 1024 6144 ).
 	sizesInBreadthFirstOrder do: [ :e |
-		memory freeChunkWithBytes: e at: (chunkAddresses at: e) ].
+		memory gc freeChunkWithBytes: e at: (chunkAddresses at: e) ].
 	
 	
 	parent := self freeTreeRootOop.
@@ -54,7 +54,7 @@ VMSpurTreeAllocationWithBigNodesTest >> sizeOfChildInBreadthFirstOrder: anIntege
 { #category : #tests }
 VMSpurTreeAllocationWithBigNodesTest >> test01LargeLeftoverSmallerThanRootShouldBeInsertedInSmaller [
 
-	memory allocateOldSpaceChunkOfBytes: 16.
+	memory gc allocateOldSpaceChunkOfBytes: 16.
 	
 	 "Allocating 16 should choose the smaller 1024 node and leave a remainder of 1008 as smaller"
 	self assert: (memory bytesInObject: (self smallerNodeOf: self freeTreeRootOop)) equals: 1008
@@ -63,7 +63,7 @@ VMSpurTreeAllocationWithBigNodesTest >> test01LargeLeftoverSmallerThanRootShould
 { #category : #tests }
 VMSpurTreeAllocationWithBigNodesTest >> test02LargeLeftoverSmallerThanLargerShouldBeInsertedInLarger [
 
-	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) + 16.
+	memory gc allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) + 16.
 	
 	"Allocating root + 16 should choose the larger 6144 node and leave a remainder of 4080 as larger"
 	self assert: (memory bytesInObject: (self largerNodeOf: self freeTreeRootOop)) equals: 4080
@@ -72,7 +72,7 @@ VMSpurTreeAllocationWithBigNodesTest >> test02LargeLeftoverSmallerThanLargerShou
 { #category : #tests }
 VMSpurTreeAllocationWithBigNodesTest >> test03LargeLeftoverSmallerThanRootShouldBeInsertedInSmaller [
 
-	memory allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) * 2 + 16.
+	memory gc allocateOldSpaceChunkOfBytes: (self sizeOfChildInBreadthFirstOrder: 1) * 2 + 16.
 
 	"Allocating root * 2 + 16 should choose the larger 6144 node and leave a remainder of 2032 as smaller"
 	self assert: (memory bytesInObject: (self largerNodeOf: (self smallerNodeOf: self freeTreeRootOop))) equals: 2032

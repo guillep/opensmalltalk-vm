@@ -7,8 +7,8 @@ Class {
 { #category : #asserting }
 VMSpurScavengerTest >> assertPastSpaceIsEmpty [
 	self
-		assert: memory pastSpaceStart
-		equals: memory scavenger pastSpace start
+		assert: memory gc pastSpaceStart
+		equals: memory gc scavenger pastSpace start
 ]
 
 { #category : #helpers }
@@ -63,30 +63,30 @@ VMSpurScavengerTest >> makeBaseFrameWithMethod: aMethodOop context: aContextOop 
 VMSpurScavengerTest >> testAllocatingObjectsBelowThresholdDoesNotScheduleScavenge [
 
 	| times |
-	times := ((memory scavengeThreshold - memory freeStart) / 16) floor.
+	times := ((memory gc scavengeThreshold - memory gc freeStart) / 16) floor.
 	
 	times timesRepeat: [ self newZeroSizedObject ].
 	
 	"We are just below the threshold and we do not need a GC"
-	self deny: memory needGCFlag
+	self deny: memory gc needGCFlag
 ]
 
 { #category : #'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testAllocatingObjectsBelowThresholdShouldBeYoung [
 
 	| times anObjectOop |
-	times := ((memory scavengeThreshold - memory freeStart) / 16) floor.
+	times := ((memory gc scavengeThreshold - memory gc freeStart) / 16) floor.
 	
 	times timesRepeat: [ anObjectOop := self newZeroSizedObject ].
 	
-	self assert: (memory isYoungObject: anObjectOop)
+	self assert: (memory gc isYoungObject: anObjectOop)
 ]
 
 { #category : #'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldBeOld [
 
 	| times anObject |
-	times := ((memory scavengeThreshold - memory freeStart) / 16) floor.
+	times := ((memory gc scavengeThreshold - memory gc freeStart) / 16) floor.
 	times timesRepeat: [ self newZeroSizedObject ].
 	
 	"We are just below the threshold and we do not need a GC"
@@ -97,14 +97,14 @@ VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldBeOld [
 		format: 0 "zero sized object"
 		classIndex: self zeroSizedObjectClassIndex.
 		
-	self assert: (memory isOldObject: anObject)
+	self assert: (memory gc isOldObject: anObject)
 ]
 
 { #category : #'tests-4-scavenge-stack' }
 VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldScheduleScavenge [
 
 	| times |
-	times := ((memory scavengeThreshold - memory freeStart) / 16) floor.
+	times := ((memory gc scavengeThreshold - memory gc freeStart) / 16) floor.
 	times timesRepeat: [ self newZeroSizedObject ].
 	
 	"We are just below the threshold and we do not need a GC"
@@ -115,7 +115,7 @@ VMSpurScavengerTest >> testAllocatingObjectsOverThresholdShouldScheduleScavenge 
 		format: 0 "zero sized object"
 		classIndex: self zeroSizedObjectClassIndex.
 		
-	self assert: memory needGCFlag
+	self assert: memory gc needGCFlag
 ]
 
 { #category : #'tests-4-scavenge-stack' }
@@ -132,7 +132,7 @@ VMSpurScavengerTest >> testArgumentInStackShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -152,7 +152,7 @@ VMSpurScavengerTest >> testContextInStackShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -171,7 +171,7 @@ VMSpurScavengerTest >> testInterpreterMethodShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -190,7 +190,7 @@ VMSpurScavengerTest >> testInterpreterNewMethodShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -209,7 +209,7 @@ VMSpurScavengerTest >> testInterpreterProfileMethodShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -228,7 +228,7 @@ VMSpurScavengerTest >> testInterpreterProfileProcessShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -247,7 +247,7 @@ VMSpurScavengerTest >> testInterpreterProfileSemaphoreShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -267,7 +267,7 @@ VMSpurScavengerTest >> testMethodInStackShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -290,7 +290,7 @@ VMSpurScavengerTest >> testMovingReferencedObjectShouldUpdateReference [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newRootObjectAddress := memory remapObj: rootObjectAddress.
@@ -313,7 +313,7 @@ VMSpurScavengerTest >> testObjectInStackShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -328,7 +328,7 @@ VMSpurScavengerTest >> testOldObjectIsNotRemembered [
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	self deny: (memory isRemembered: oldObjectAddress).
@@ -342,7 +342,7 @@ VMSpurScavengerTest >> testOldObjectReferenceToYoungObjectShouldBeRemappedAfterS
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	"Create a young object and reference it from the old object"
@@ -354,7 +354,7 @@ VMSpurScavengerTest >> testOldObjectReferenceToYoungObjectShouldBeRemappedAfterS
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	maybeMappedReferenceToYoungObject := memory fetchPointer: 0 ofObject: oldObjectAddress.
@@ -379,7 +379,7 @@ VMSpurScavengerTest >> testOverflowRememberedSetShouldMakeItGrow [
 
 	"Flush them to the old space"
 	memory coInterpreter method: oldObjectRootAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	
 	"Make old objects reference a young object"
 	youngObjectAddress := self newZeroSizedObject.
@@ -389,7 +389,7 @@ VMSpurScavengerTest >> testOverflowRememberedSetShouldMakeItGrow [
 			ofObject: oldObjectAddress
 			withValue: youngObjectAddress ].
 
-	self assert: memory scavenger rememberedSetLimit equals: originalLimit * 2
+	self assert: memory gc scavenger rememberedSetLimit equals: originalLimit * 2
 ]
 
 { #category : #'tests-4-scavenge-stack' }
@@ -405,7 +405,7 @@ VMSpurScavengerTest >> testReceiverInStackShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newObjectAddress := memory remapObj: newObjectOop.
@@ -429,7 +429,7 @@ VMSpurScavengerTest >> testReferencedObjectShouldSurviveScavenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newRootObjectAddress := memory remapObj: rootObjectAddress.
@@ -446,7 +446,7 @@ VMSpurScavengerTest >> testRememberedObjectShouldSurviveScanvenge [
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	"Create a young object and reference it from the old object"
@@ -458,7 +458,7 @@ VMSpurScavengerTest >> testRememberedObjectShouldSurviveScanvenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	"Remap our object address to its new location"
 	newRememberedObjectAddress := memory remapObj: rememberedObjectAddress.
@@ -472,7 +472,7 @@ VMSpurScavengerTest >> testScavengeEmptyMemoryShouldExchangePastAndFutureSpaces 
 	oldPastSpaceStart := memory scavenger pastSpace start.
 	oldFutureSpaceStart := memory scavenger futureSpace start.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assert: memory scavenger pastSpace start equals: oldFutureSpaceStart.
 	self assert: memory scavenger futureSpace start equals: oldPastSpaceStart.
@@ -484,9 +484,9 @@ VMSpurScavengerTest >> testScavengeNonSurvivorShouldEmptyEden [
 	"A new object not referenced should not survive."
 	self newZeroSizedObject.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
-	self assert: memory freeStart equals: memory scavenger eden start
+	self assert: memory gc freeStart equals: memory gc scavenger eden start
 ]
 
 { #category : #'tests-3-scavenge-basic' }
@@ -496,7 +496,7 @@ VMSpurScavengerTest >> testScavengeNonSurvivorShouldOnlyCopySurvivorObjectToPast
 	"A new object not referenced should not survive."
 	self newObjectWithSlots: 1.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assertPastSpaceIsEmpty
 ]
@@ -508,7 +508,7 @@ VMSpurScavengerTest >> testScavengeObjectInRememberedSetShouldBeInvertedToBeBefo
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	"Instantiate first the object in the stack, then the object in the remembered set.
@@ -521,7 +521,7 @@ VMSpurScavengerTest >> testScavengeObjectInRememberedSetShouldBeInvertedToBeBefo
 		
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: objectInRememberedSet.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assert: (memory remapObj: objectInRememberedSet) < (memory remapObj: objectInTheStack)
 ]
@@ -533,7 +533,7 @@ VMSpurScavengerTest >> testScavengeObjectInRemembererdSetShouldBeBeforeObjectInS
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	"Instantiate first the object in the remembered set, then the object in the stack.
@@ -546,7 +546,7 @@ VMSpurScavengerTest >> testScavengeObjectInRemembererdSetShouldBeBeforeObjectInS
 	
 	memory storePointer: 0 ofObject: oldObjectAddress withValue: objectInRememberedSet.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assert: (memory remapObj: objectInRememberedSet) < (memory remapObj: objectInTheStack)
 ]
@@ -563,7 +563,7 @@ VMSpurScavengerTest >> testScavengeObjectInStackShouldBeBeforeObjectInSpecialVar
 		
 	memory coInterpreter method: objectInSpecialVariable.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assert: (memory remapObj: objectInTheStack) < (memory remapObj: objectInSpecialVariable)
 ]
@@ -580,7 +580,7 @@ VMSpurScavengerTest >> testScavengeObjectInStackShouldBeInvertedToBeBeforeObject
 		
 	memory coInterpreter method: objectInSpecialVariable.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assert: (memory remapObj: objectInTheStack) < (memory remapObj: objectInSpecialVariable)
 ]
@@ -589,7 +589,7 @@ VMSpurScavengerTest >> testScavengeObjectInStackShouldBeInvertedToBeBeforeObject
 VMSpurScavengerTest >> testScavengeShouldCopySurvivorObjectToPastSpace [	
 	"Nil should survive.
 	It is referenced by the roots because many of their slots are nilled."
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assertPastSpaceIsEmpty
 ]
@@ -597,9 +597,9 @@ VMSpurScavengerTest >> testScavengeShouldCopySurvivorObjectToPastSpace [
 { #category : #'tests-3-scavenge-basic' }
 VMSpurScavengerTest >> testScavengeSurvivorShouldEmptyEden [
 
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
-	self assert: memory freeStart equals: memory scavenger eden start
+	self assert: memory gc freeStart equals: memory gc scavenger eden start
 ]
 
 { #category : #'tests-3-scavenge-basic' }
@@ -609,10 +609,10 @@ VMSpurScavengerTest >> testScavengeTwiceShouldExchangePastAndFutureSpacesBackAnd
 	oldPastSpaceStart := memory scavenger pastSpace start.
 	oldFutureSpaceStart := memory scavenger futureSpace start.
 	
-	2 timesRepeat: [ memory doScavenge: 1 "TenureByAge" ].
+	2 timesRepeat: [ memory gc doScavenge: 1 "TenureByAge" ].
 	
-	self assert: memory scavenger pastSpace start equals: oldPastSpaceStart.
-	self assert: memory scavenger futureSpace start equals: oldFutureSpaceStart.
+	self assert: memory gc scavenger pastSpace start equals: oldPastSpaceStart.
+	self assert: memory gc scavenger futureSpace start equals: oldFutureSpaceStart.
 ]
 
 { #category : #'tests-7-scavenge-order' }
@@ -628,7 +628,7 @@ VMSpurScavengerTest >> testScavengedObjectsShouldBeCopiedInInstanceVariableOrder
 	
 	memory coInterpreter method: rootObjectAddress.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assert: (memory remapObj: objectThatShouldGoFirst) < (memory remapObj: objectThatShouldGoSecond)
 ]
@@ -646,7 +646,7 @@ VMSpurScavengerTest >> testScavengedRootObjectsShouldBeCopiedBeforeOtherObjects 
 	memory coInterpreter method: firstRootObjectAddress.
 	memory coInterpreter newMethod: secondRootObjectAddress.
 	
-	memory doScavenge: 1 "TenureByAge".
+	memory gc doScavenge: 1 "TenureByAge".
 	
 	self assert: (memory remapObj: secondRootObjectAddress) < (memory remapObj: nonRootObjectAddress)
 ]
@@ -659,7 +659,7 @@ VMSpurScavengerTest >> testStoreOldObjectInYoungObjectShouldNotRememberOldObject
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	"Create a young object and reference it from the old object"
@@ -677,7 +677,7 @@ VMSpurScavengerTest >> testStoreOldObjectInYoungObjectShouldNotRememberYoungObje
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	"Create a young object and reference it from the old object"
@@ -695,7 +695,7 @@ VMSpurScavengerTest >> testStoreYoungObjectInOldObjectShouldRememberOldObject [
 	"Create an object, reference it, and move it to old space"
 	oldObjectAddress := self newObjectWithSlots: 1.
 	memory coInterpreter newMethod: oldObjectAddress.
-	memory flushNewSpace.
+	memory gc flushNewSpace.
 	oldObjectAddress := memory remapObj: oldObjectAddress.
 
 	"Create a young object and reference it from the old object"
@@ -722,7 +722,7 @@ VMSpurScavengerTest >> testUnreferencedObjectCycleShouldNotSurviveScavenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1. "TenureByAge"
+	memory gc doScavenge: 1. "TenureByAge"
 	
 	self assertPastSpaceIsEmpty
 ]
@@ -740,7 +740,7 @@ VMSpurScavengerTest >> testUnreferencedObjectGraphShouldNotSurviveScavenge [
 	"Nil should survive, but newObjectOop should survive too.
 	Nil is referenced by the roots because many of their slots are nilled.
 	newObjectOop is referenced by the stack"
-	memory doScavenge: 1. "TenureByAge"
+	memory gc doScavenge: 1. "TenureByAge"
 	
 	self assertPastSpaceIsEmpty
 ]

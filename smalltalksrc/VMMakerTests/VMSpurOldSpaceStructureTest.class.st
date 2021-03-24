@@ -15,11 +15,11 @@ VMSpurOldSpaceStructureTest >> testNewMemoryOldSpaceSingleSegmentShouldBeHaveSam
 
 	self
 		assert: memory segmentManager segments first segSize
-		equals: memory oldSpaceSize
+		equals: memory gc oldSpaceSize
 ]
 
 { #category : #tests }
 VMSpurOldSpaceStructureTest >> testNewMemoryOldSpaceSizeShouldBeAskedMemory [
 
-	self assert: memory oldSpaceSize equals: oldSpaceSize
+	self assert: memory gc oldSpaceSize equals: oldSpaceSize
 ]

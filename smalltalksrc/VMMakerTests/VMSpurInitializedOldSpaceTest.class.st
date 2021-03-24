@@ -33,8 +33,8 @@ VMSpurInitializedOldSpaceTest >> createEphemeronClass [
 VMSpurInitializedOldSpaceTest >> createFreeChunkOfSize: aSize [
 
 	| address |
-	address := memory allocateOldSpaceChunkOfBytes: aSize.
-	memory freeChunkWithBytes: aSize at: address.
+	address := memory gc allocateOldSpaceChunkOfBytes: aSize.
+	memory gc freeChunkWithBytes: aSize at: address.
 	^ address
 ]
 
@@ -52,7 +52,7 @@ VMSpurInitializedOldSpaceTest >> forgetObject3 [
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> freeListForSize: allocationSize [
 	
-	^ memory freeLists at: allocationSize / memory allocationUnit
+	^ memory gc freeLists at: allocationSize / memory allocationUnit
 ]
 
 { #category : #helpers }
@@ -65,7 +65,7 @@ VMSpurInitializedOldSpaceTest >> freeTreeRootOop [
 	
 	The root of the free tree has no child nodes"
 
-	^ memory freeLists at: 0
+	^ memory gc freeLists at: 0
 ]
 
 { #category : #helpers }
@@ -82,8 +82,8 @@ VMSpurInitializedOldSpaceTest >> freeTreeRootStartAddress [
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> largerNodeOf: aNode [
 
-	^ memory
-		fetchPointer: memory freeChunkLargerIndex
+	^ memory gc
+		fetchPointer: memory gc freeChunkLargerIndex
 		ofFreeChunk: aNode
 ]
 
@@ -101,24 +101,24 @@ VMSpurInitializedOldSpaceTest >> newEphemeronObject [
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> nextNodeOf: aNode [
 
-	^ memory
-		fetchPointer: memory freeChunkNextIndex
+	^ memory gc
+		fetchPointer: memory gc freeChunkNextIndex
 		ofFreeChunk: aNode
 ]
 
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> parentNodeOf: aNode [
 
-	^ memory
-		fetchPointer: memory freeChunkParentIndex
+	^ memory gc
+		fetchPointer: memory gc freeChunkParentIndex
 		ofFreeChunk: aNode
 ]
 
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> previousNodeOf: aNode [
 
-	^ memory
-		fetchPointer: memory freeChunkPrevIndex
+	^ memory gc
+		fetchPointer: memory gc freeChunkPrevIndex
 		ofFreeChunk: aNode
 ]
 
@@ -134,7 +134,7 @@ VMSpurInitializedOldSpaceTest >> setUp [
 { #category : #helpers }
 VMSpurInitializedOldSpaceTest >> smallerNodeOf: aNode [
 
-	^ memory
-		fetchPointer: memory freeChunkSmallerIndex
+	^ memory gc
+		fetchPointer: memory gc freeChunkSmallerIndex
 		ofFreeChunk: aNode
 ]

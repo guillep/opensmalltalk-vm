@@ -748,7 +748,7 @@ VMSimpleStackBasedCogitAbstractTest >> setUp [
 	cogit minCallAddress: initialAddress.
 	cogit cogCodeBase: initialAddress.
 	memory coInterpreter cogCodeSize: self initialCodeSize.
-	memory coInterpreter heapBase: memory newSpaceStart.
+	memory coInterpreter heapBase: memory gc newSpaceStart.
 	cogit initializeProcessor.
 	
 	machineSimulator := cogit processor machineSimulator.

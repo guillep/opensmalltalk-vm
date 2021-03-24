@@ -18,9 +18,9 @@ VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [
 	"The planning compactor frees object by sliding, and therefore does not reclaim memory if there is only dead objects in the oldspace."
 	
 	"We allocate objects during the setup"
-	memory fullGC. 
+	memory gc fullGC. 
 	
-	initialSpace := memory totalFreeListBytes.
+	initialSpace := memory gc totalFreeListBytes.
 	
 	aBlock value.
 	
@@ -28,9 +28,9 @@ VMSpurOldSpaceGarbageCollectorTest >> assertObjectWereReclaimed: aBlock [
 	self keepObjectInVMVariable1: firstObjectToBeRemembered.
 	sizeOfObject := memory bytesInObject: firstObjectToBeRemembered.
 	
-	memory fullGC.
+	memory gc fullGC.
 	
-	self assert: initialSpace - sizeOfObject equals: memory totalFreeListBytes
+	self assert: initialSpace - sizeOfObject equals: memory gc totalFreeListBytes
 ]
 
 { #category : #ephemerons }
@@ -64,7 +64,7 @@ VMSpurOldSpaceGarbageCollectorTest >> setUp [
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpace [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace / memory wordSize.
+	slotsNumber := memory gc totalFreeOldSpace / memory wordSize.
 	
 	anObjectOop := self newObjectWithSlots: slotsNumber.
 
@@ -75,18 +75,18 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpac
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectBiggerThanSizeOfFreeSpaceShouldPlanifyGC [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace / memory wordSize.
+	slotsNumber := memory gc totalFreeOldSpace / memory wordSize.
 	
 	anObjectOop := self newObjectWithSlots: slotsNumber.
 
-	self assert: memory needGCFlag
+	self assert: memory gc needGCFlag
 ]
 
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
+	slotsNumber := memory gc totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
 	
 	anObjectOop := self newOldSpaceObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 
@@ -97,22 +97,22 @@ VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSize [
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldBeZero [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
+	slotsNumber := memory gc totalFreeOldSpace - (objectHeaderSize * 2) / memory wordSize.
 	
 	anObjectOop := self newObjectWithSlots: slotsNumber. "Big object have 2 wordSize of header"
 	
-	self assert: memory totalFreeOldSpace equals: 0
+	self assert: memory gc totalFreeOldSpace equals: 0
 ]
 
 { #category : #'tests-OldSpaceSize' }
 VMSpurOldSpaceGarbageCollectorTest >> testAllocateObjectWithFreeSpaceSizeShouldPlanifyGC [
 
 	| anObjectOop slotsNumber |
-	slotsNumber := memory totalFreeOldSpace / memory wordSize.
+	slotsNumber := memory gc totalFreeOldSpace / memory wordSize.
 	
 	anObjectOop := self newObjectWithSlots: slotsNumber - 2. "Big object have 2 wordSize of header"
 	
-	self assert: memory needGCFlag
+	self assert: memory gc needGCFlag
 ]
 
 { #category : #'tests-OldSpaceSize' }
@@ -138,8 +138,8 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollec
 	count on.
 	This is a ""feature"" of the compactor. Changing the compactor strategy may change this behavior."
 	
-	memory fullGC.
-	oldFreeSpaceSize := memory totalFreeListBytes.
+	memory gc fullGC.
+	oldFreeSpaceSize := memory gc totalFreeListBytes.
 	
 	self newOldSpaceObjectWithSlots: 0.	
 	obj2 := self newOldSpaceObjectWithSlots: 0.
@@ -147,23 +147,23 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectNotReferencedShouldBeCollec
 	self keepObjectInVMVariable1: obj2.
 	keptObjectSize := memory bytesInObject: obj2.
 	
-	memory fullGC.
+	memory gc fullGC.
 	
-	self assert: memory totalFreeListBytes equals: oldFreeSpaceSize - keptObjectSize.
+	self assert: memory gc totalFreeListBytes equals: oldFreeSpaceSize - keptObjectSize.
 ]
 
 { #category : #tests }
 VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableShouldBeKept [
 	| anObjectOop |
-	memory fullGC.
+	memory gc fullGC.
 	
 	anObjectOop := self newOldSpaceObjectWithSlots: 0.
 
 	self keepObjectInVMVariable1: anObjectOop.
 	
-	memory fullGC.
+	memory gc fullGC.
 	
-	self deny: (memory isFreeObject: anObjectOop)
+	self deny: (memory gc isFreeObject: anObjectOop)
 ]
 
 { #category : #tests }
@@ -177,7 +177,7 @@ VMSpurOldSpaceGarbageCollectorTest >> testAnOldObjectReferencedFromVMVariableSho
 	self keepObjectInVMVariable1: anObjectOop.
 	hash := memory hashBitsOf: anObjectOop.
 		
-	memory fullGC.
+	memory gc fullGC.
 	"after this point anObjectOop cannot be used anymore as it has been moved by the compacting phase.
 	We have to use the hash instead."
 	
@@ -212,12 +212,13 @@ VMSpurOldSpaceGarbageCollectorTest >> testEphemeronOverflowUnscannedEphemeronQue
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronContainer.
 
-	self assert: memory validObjStacks.
-	memory unscannedEphemeronsQueueInitialSize: numberJustOverLimit - 1.
-	memory fullGC.
+	self assert: memory gc validObjStacks.
+	memory gc unscannedEphemeronsQueueInitialSize: numberJustOverLimit - 1.
+	memory gc compactor recordMovements.
+	memory gc fullGC.
 
 	mourned := 0.
-	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	[ memory gc dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
 	self
 		assert: mourned
 		equals: numberJustOverLimit
@@ -251,11 +252,11 @@ VMSpurOldSpaceGarbageCollectorTest >> testMultiPageMournQueue [
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronContainer.
 
-	self assert: memory validObjStacks.
-	memory fullGC.
+	self assert: memory gc validObjStacks.
+	memory gc fullGC.
 
 	mourned := 0.
-	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	[ memory gc dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
 	self
 		assert: mourned
 		equals: numberJustOverLimit
@@ -290,12 +291,12 @@ VMSpurOldSpaceGarbageCollectorTest >> testPageLimitMournQueue [
 	"Force object to not be collected by putting them in special variables"
 	self keepObjectInVMVariable1: ephemeronContainer.
 
-	self assert: memory validObjStacks.
-	memory compactor recordMovements.
-	memory fullGC.
+	self assert: memory gc validObjStacks.
+	memory gc compactor recordMovements.
+	memory gc fullGC.
 
 	mourned := 0.
-	[ memory dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
+	[ memory gc dequeueMourner notNil ] whileTrue: [ mourned := mourned + 1 ].
 	self
 		assert: mourned
 		equals: objStackLimit

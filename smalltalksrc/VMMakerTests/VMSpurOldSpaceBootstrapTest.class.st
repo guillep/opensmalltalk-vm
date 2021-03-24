@@ -10,11 +10,11 @@ VMSpurOldSpaceBootstrapTest >> testClassTableHasTablePagesAndHiddenRoots [
 	| tableRoot |
 	memory nilObject: self newZeroSizedObject.
 	"Initialize old space with free list, class table, hidden roots and remembered set to be able to scavenge"
-	memory initializeFreeList.
+	memory gc initializeFreeList.
 	memory segmentManager collapseSegmentsPostSwizzle.
-	memory updateFreeLists.
-	memory computeFreeSpacePostSwizzle.
-	memory initializeOldSpaceFirstFree: memory freeOldSpaceStart.
+	memory gc updateFreeLists.
+	memory gc computeFreeSpacePostSwizzle.
+	memory gc initializeOldSpaceFirstFree: memory gc freeOldSpaceStart.
 
 	tableRoot := memory allocateClassTable.
 	
@@ -27,16 +27,16 @@ VMSpurOldSpaceBootstrapTest >> testClassTableHasTablePagesAndHiddenRoots [
 VMSpurOldSpaceBootstrapTest >> testFreeListHasAsManySlotsAsRequiredByTheVM [
 
 	| freeListOop |
-	freeListOop := memory initializeFreeList.
+	freeListOop := memory gc initializeFreeList.
 
-	self assert: (memory numSlotsOf: freeListOop) equals: memory numFreeLists
+	self assert: (memory numSlotsOf: freeListOop) equals: memory gc numFreeLists
 ]
 
 { #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testFreeListIsWordIndexable [
 
 	| freeListOop |
-	freeListOop := memory initializeFreeList.
+	freeListOop := memory gc initializeFreeList.
 
 	self assert: (memory formatOf: freeListOop) equals: memory wordIndexableFormat
 ]
@@ -45,22 +45,22 @@ VMSpurOldSpaceBootstrapTest >> testFreeListIsWordIndexable [
 VMSpurOldSpaceBootstrapTest >> testNewFreeListHasAllSlotsInitializedInZero [
 
 	| freeListOop |
-	freeListOop := memory initializeFreeList.
+	freeListOop := memory gc initializeFreeList.
 
-	0 to: memory numFreeLists - 1 do: [ :i |
+	0 to: memory gc numFreeLists - 1 do: [ :i |
 		self assert: (memory fetchPointer: i ofObject: freeListOop) equals: 0 ]
 ]
 
 { #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testNewFreeListIsValid [
 
-	memory initializeFreeList.
-	memory validFreeTree
+	memory gc initializeFreeList.
+	memory gc validFreeTree
 ]
 
 { #category : #'tests-memory-bootstrap' }
 VMSpurOldSpaceBootstrapTest >> testNewFreeListIsValid2 [
 
-	memory initializeFreeList.
-	memory totalFreeListBytes
+	memory gc initializeFreeList.
+	memory gc totalFreeListBytes
 ]
