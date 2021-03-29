@@ -74,15 +74,15 @@ Spur32BitCoMemoryManager >> checkMemoryMap [
 	 Being young would cause them to be scavenged.
 	 Being old would cause them to be remembered if stored into (but wait, they don't get stored into)."
 
-	self assert: (self isYoungObject: newSpaceStart).
-	self assert: (self isYoungObject: newSpaceLimit - self wordSize).
-	self assert: (self isOldObject: newSpaceStart) not.
-	self assert: (self isOldObject: newSpaceLimit - self wordSize) not.
-	self assert: (self isYoungObject: newSpaceLimit) not.
-	self assert: (self isYoungObject: oldSpaceStart) not.
-	self assert: (self isYoungObject: endOfMemory) not.
-	self assert: (self isOldObject: oldSpaceStart).
-	self assert: (self isOldObject: endOfMemory).
+	self assert: (self isYoungObject: gc newSpaceStart).
+	self assert: (self isYoungObject: gc newSpaceLimit - self wordSize).
+	self assert: (self isOldObject: gc newSpaceStart) not.
+	self assert: (self isOldObject: gc newSpaceLimit - self wordSize) not.
+	self assert: (self isYoungObject: gc newSpaceLimit) not.
+	self assert: (self isYoungObject: gc oldSpaceStart) not.
+	self assert: (self isYoungObject: gc endOfMemory) not.
+	self assert: (self isOldObject: gc oldSpaceStart).
+	self assert: (self isOldObject: gc endOfMemory).
 
 	"we would like the following to be true, but we either choose one boundary check for
 	 cogMethods vs objects (isMachineCodeFrame: et al) or one boundary check for
@@ -166,23 +166,23 @@ Spur32BitCoMemoryManager >> ifAProxy: objOop updateCopy: copy [
 Spur32BitCoMemoryManager >> initializeFreeSpaceForFacadeFrom: base to: limit [
 	"c.f. initializeFreeSpacePostLoad: freeListObj."
 	| freeListObj freeBytes |
-	newSpaceLimit := oldSpaceStart := freeStart := base.
-	endOfMemory := limit.
-	scavengeThreshold := limit * 3 // 4.
+	gc newSpaceLimit: (gc oldSpaceStart: (gc freeStart: base)).
+	gc endOfMemory: limit.
+	gc scavengeThreshold: limit * 3 // 4.
 	segmentManager initSegmentForInImageCompilationFrom: base to: limit.
 	freeListObj := self allocateSlots: self numFreeLists
 						format: self wordIndexableFormat
 						classIndex: self wordSizeClassIndexPun.
-	freeLists := self firstIndexableField: freeListObj.
-	freeListsMask := 0.
+	gc freeLists: self firstIndexableField: freeListObj.
+	gc freeListsMask: 0.
 	0 to: self numFreeLists - 1 do:
 		[:i|
-		(freeLists at: i) ~= 0 ifTrue:
-			[freeListsMask := freeListsMask bitOr: (1 << i).
-			 freeLists at: i put: (segmentManager swizzleObj: (freeLists at: i))]].
-	freeBytes := segmentManager lastSegment segLimit - self bridgeSize - freeStart.
-	freeLists at: 0 put: (self initFreeChunkWithBytes: freeBytes at: freeStart).
-	totalFreeOldSpace := freeBytes
+		(gc freeLists at: i) ~= 0 ifTrue:
+			[gc freeListsMask: gc freeListsMask bitOr: (1 << i).
+			 gc freeLists at: i put: (segmentManager swizzleObj: (gc freeLists at: i))]].
+	freeBytes := segmentManager lastSegment segLimit - self bridgeSize - gc freeStart.
+	gc freeLists at: 0 put: (self initFreeChunkWithBytes: freeBytes at: gc freeStart).
+	gc totalFreeOldSpace: freeBytes
 ]
 
 { #category : #'class table' }
@@ -250,8 +250,8 @@ Spur32BitCoMemoryManager >> methodHeaderOf: methodObj [
 Spur32BitCoMemoryManager >> needGCFlagAddress [
 	<api>
 	<returnTypeC: #usqInt>
-	^self cCode: [(self addressOf: needGCFlag) asUnsignedInteger]
-		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #needGCFlag in: self]
+	^self cCode: [(self addressOf: gc needGCFlag) asUnsignedInteger]
+		inSmalltalk: [cogit simulatedReadWriteVariableAddress: #needGCFlag in: self gc]
 ]
 
 { #category : #'garbage collection' }

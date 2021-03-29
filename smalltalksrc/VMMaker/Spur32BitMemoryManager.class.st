@@ -998,7 +998,7 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 	<inline: false>
 	<api>
 	| numSlots bytesBefore delta copy freeChunk |
-	self assert: (self oop: (self addressAfter: objOop) isLessThanOrEqualTo: endOfMemory).
+	self assert: (self oop: (self addressAfter: objOop) isLessThanOrEqualTo: gc endOfMemory).
 	numSlots := self numSlotsForShortening: objOop toIndexableSize: indexableSize.
 	numSlots = (self numSlotsOf: objOop) ifTrue:
 		[^0].
@@ -1017,7 +1017,7 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 				ofObject: copy
 				withValue: (self fetchPointer: i ofObject: objOop)].
 		 (self isRemembered: objOop) ifTrue:
-			[scavenger remember: copy].
+			[gc scavenger remember: copy].
 		 self forward: objOop to: copy.
 		 ^0].
 
@@ -1030,17 +1030,17 @@ Spur32BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 			[self assert: numSlots < self numSlotsMask.
 			 self rawNumSlotsOf: objOop put: numSlots].
 
-	self assert: (self oop: (self addressAfter: objOop) + delta isLessThanOrEqualTo: endOfMemory).
+	self assert: (self oop: (self addressAfter: objOop) + delta isLessThanOrEqualTo: gc endOfMemory).
 	"Since the 32-bit system rounds objects up to 64-bits, loosing
 	 a slot may not actually change the bytes occupied by the object."
 	delta = 0 ifTrue:
 		[^0].
 
 	freeChunk := self initFreeChunkWithBytes: delta at: (self addressAfter: objOop).
-	self assert: (self addressAfter: freeChunk) <= endOfMemory.
+	self assert: (self addressAfter: freeChunk) <= gc endOfMemory.
 	(self isInOldSpace: objOop)
 		ifTrue:
-			[totalFreeOldSpace := totalFreeOldSpace + delta.
+			[gc totalFreeOldSpace: gc totalFreeOldSpace + delta.
 			 self addToFreeList: freeChunk bytes: delta]
 		ifFalse:
 			[self

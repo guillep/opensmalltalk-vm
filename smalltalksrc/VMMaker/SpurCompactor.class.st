@@ -97,13 +97,6 @@ SpurCompactor >> postSwizzleAction [
 	"do nothing"
 ]
 
-{ #category : #debugging }
-SpurCompactor >> printTheBogons: aBogon [
-	<inline: true>
-	coInterpreter
-		print: 'bogon '; printHexnp: aBogon; cr
-]
-
 { #category : #api }
 SpurCompactor >> remapObj: objOop [
 	<api>

@@ -1153,7 +1153,7 @@ Spur64BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 				ofObject: copy
 				withValue: (self fetchPointer: i ofObject: objOop)].
 		 (self isRemembered: objOop) ifTrue:
-			[scavenger remember: copy].
+			[gc scavenger remember: copy].
 		 self forward: objOop to: copy.
 		 ^0].
 
@@ -1167,10 +1167,10 @@ Spur64BitMemoryManager >> shorten: objOop toIndexableSize: indexableSize [
 			 self rawNumSlotsOf: objOop put: numSlots].
 
 	freeChunk := self initFreeChunkWithBytes: delta at: (self addressAfter: objOop).
-	self assert: (self addressAfter: freeChunk) <= endOfMemory.
+	self assert: (self addressAfter: freeChunk) <= gc endOfMemory.
 	(self isInOldSpace: objOop)
 		ifTrue:
-			[totalFreeOldSpace := totalFreeOldSpace + delta.
+			[gc totalFreeOldSpace: gc totalFreeOldSpace + delta.
 			 self addToFreeList: freeChunk bytes: delta]
 		ifFalse:
 			[self

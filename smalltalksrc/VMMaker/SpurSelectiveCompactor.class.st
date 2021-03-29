@@ -218,6 +218,55 @@ SpurSelectiveCompactor >> findOrAllocateSegmentToFill [
 	
 ]
 
+{ #category : #'selective compaction' }
+SpurSelectiveCompactor >> followClassTable [
+	"In addition to postBecomeScanClassTable:, I follow the pages in the class table.
+	 Because hiddenRootsObj follows nil, false, true and the freeLists, it can never be forwarded."
+	self deny: (self isForwarded: hiddenRootsObj).
+	0 to: numClassTablePages - 1 do:
+		[:i| | page |
+		page := self followField: i ofObject: hiddenRootsObj.
+		0 to: (self numSlotsOf: page) - 1 do:
+			[:j| | classOrNil |
+			classOrNil := self fetchPointer: j ofObject: page.
+			classOrNil ~= nilObj ifTrue:
+				[(self isForwarded: classOrNil) ifTrue:
+					[classOrNil := self followForwarded: classOrNil.
+					 self storePointer: j ofObject: page withValue: classOrNil].
+				 (self rawHashBitsOf: classOrNil) = 0 ifTrue:
+					[self storePointerUnchecked: j ofObject: page withValue: nilObj.
+					 "If the removed class is before the classTableIndex, set the
+					  classTableIndex to point to the empty slot so as to reuse it asap."
+					 (i << self classTableMajorIndexShift + j) < classTableIndex ifTrue:
+						[classTableIndex := i << self classTableMajorIndexShift + j]]]]].
+	"classTableIndex must never index the first page, which is reserved for classes known to the VM."
+	self assert: classTableIndex >= (1 << self classTableMajorIndexShift).
+	self assert: self validClassTableRootPages
+]
+
+{ #category : #compaction }
+SpurSelectiveCompactor >> followForwardedObjStacks [
+	"Compaction will move objStack pages as well as ordinary objects.
+	 So they need their slots followed."
+	self followForwardedInObjStack: markStack atIndex: MarkStackRootIndex.
+	self followForwardedInObjStack: weaklingStack atIndex: WeaklingStackRootIndex.
+	self followForwardedInObjStack: mournQueue atIndex: MournQueueRootIndex
+]
+
+{ #category : #'selective compaction' }
+SpurSelectiveCompactor >> followProcessList [
+	"Eagerly patch all process related forwarders, except suspended contexts which are lazily patched in wakeHighestPriority"
+	| scheduler processLists processList proc |
+	scheduler := self followField: ValueIndex ofObject: (self splObj: SchedulerAssociation).
+	self followField: ActiveProcessIndex ofObject: scheduler.
+	processLists := self followField: ProcessListsIndex ofObject: scheduler.
+	0 to: (self numSlotsOf: processLists) - 1 do: [:i |
+		processList := self followField: i ofObject: processLists.
+		self followField: LastLinkIndex ofObject: processList.
+		proc := self followField: FirstLinkIndex ofObject: processList.
+		[proc = nilObj] whileFalse: [proc := self followField: NextLinkIndex ofObject: proc]].
+]
+
 { #category : #'segment access' }
 SpurSelectiveCompactor >> freePastSegmentsAndSetSegmentToFill [	
 	"The first segment being claimed met becomes the segmentToFill. The others are just freed."
@@ -363,9 +412,9 @@ SpurSelectiveCompactor >> postCompactionAction [
 	
 	"Special to selective, crazy objects can be forwarded..."
 	"manager postBecomeScanClassTable: allFlags. => Done in followClassTable"
-	manager followClassTable.
-	manager followProcessList.
-	manager followForwardedObjStacks.
+	self followClassTable.
+	self followProcessList.
+	self followForwardedObjStacks.
 	
 	"Not sure the following are needed...
 	coInterpreter mapInterpreterOops.

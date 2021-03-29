@@ -51,7 +51,6 @@ Class {
 	#name : #SpurPlanningCompactor,
 	#superclass : #SpurCompactor,
 	#instVars : [
-		'anomaly',
 		'biasForGC',
 		'firstFieldOfRememberedSet',
 		'firstFreeObject',
@@ -593,14 +592,6 @@ SpurPlanningCompactor >> planCompactSavingForwarders [
 	^true
 ]
 
-{ #category : #'debug support' }
-SpurPlanningCompactor >> printTheBogons: aBogon [
-	<inline: true>
-	coInterpreter
-		print: 'bogon '; printHexnp: aBogon; cr;
-		print: 'anomaly '; printHexnp: anomaly; cr
-]
-
 { #category : #private }
 SpurPlanningCompactor >> recordMovementOf: o to: toFinger savedFirstFieldPtr: savedFirstFieldPtr [
 	"No-op in the real class."
@@ -1064,7 +1055,6 @@ SpurPlanningCompactor >> validRelocationPlanInPass: onePass [
 	<var: 'destination' type: #usqInt>
 	nMobiles := 0.
 	toFinger := mobileStart.
-	anomaly := nil.
 	manager gc allOldSpaceEntitiesFrom: firstMobileObject do:
 		[:o| | destination |
 		 self check: o.
@@ -1073,10 +1063,10 @@ SpurPlanningCompactor >> validRelocationPlanInPass: onePass [
 				[nMobiles := nMobiles + 1.
 				 destination := manager fetchPointer: 0 ofObject: o.
 				 destination >= toFinger ifFalse:
-					[anomaly := o. ^1].
+					[^1].
 				 toFinger := toFinger + (manager bytesInObject: o).
 				 (self oop: o isGreaterThan: lastMobileObject) ifTrue:
-					[anomaly := o. ^2].
+					[^2].
 				 o = lastMobileObject ifTrue:
 					[^savedFirstFieldsSpace top + manager bytesPerOop - savedFirstFieldsSpace start / manager bytesPerOop
 					   = nMobiles

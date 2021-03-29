@@ -127,7 +127,7 @@ Spur64BitMMLECoSimulator >> globalGarbageCollect [
 	"If we're /not/ a clone, clone the VM and push it over the cliff.
 	 If it survives, destroy the clone and continue.  We should be OK until next time."
 	parent ifNil:
-		[coInterpreter cr; print: 'GC number '; print: statFullGCs; tab; flush.
+		[coInterpreter cr; print: 'GC number '; print: gc statFullGCs; tab; flush.
 		 CloneOnGC ifTrue:
 			[coInterpreter cloneSimulation objectMemory globalGarbageCollect.
 			 Smalltalk garbageCollect]].
@@ -171,11 +171,6 @@ Spur64BitMMLECoSimulator >> headerForSlots: numSlots format: formatField classIn
 	self assert: (formatField bitAnd: self formatMask) = formatField.
 	self assert: (classIndex bitAnd: self classIndexMask) = classIndex.
 	^super headerForSlots: numSlots format: formatField classIndex: classIndex
-]
-
-{ #category : #'debug support' }
-Spur64BitMMLECoSimulator >> heapMapAtWord: address [
-	^heapMap heapMapAtWord: address asInteger
 ]
 
 { #category : #initialization }
@@ -306,17 +301,11 @@ Spur64BitMMLECoSimulator >> scavengingGCTenuringIf: tenuringCriterion [
 	 If it survives, destroy the clone and continue.  We should be OK until next time."
 	(self leakCheckNewSpaceGC
 	 and: [parent isNil]) ifTrue:
-		[coInterpreter cr; print: 'scavenge '; print: statScavenges; tab; flush.
+		[coInterpreter cr; print: 'scavenge '; print: gc statScavenges; tab; flush.
 		 CloneOnScavenge ifTrue:
 			[coInterpreter cloneSimulation objectMemory scavengingGCTenuringIf: tenuringCriterion.
 			 Smalltalk garbageCollect]].
 	^self gc scavengingGCTenuringIf: tenuringCriterion
-]
-
-{ #category : #'free space' }
-Spur64BitMMLECoSimulator >> setFree: o [
-	"o = 16rB34D40 ifTrue: [self halt]."
-	super setFree: o
 ]
 
 { #category : #'header access' }

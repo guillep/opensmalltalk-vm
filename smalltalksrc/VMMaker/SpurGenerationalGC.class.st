@@ -53,16 +53,18 @@ Class {
 		'statCompactionUsecs',
 		'gcSweepEndUsecs',
 		'statSweepUsecs',
-		'statMarkUsecs'
+		'statMarkUsecs',
+		'heapGrowthToSizeGCRatio',
+		'maxOldSpaceSize',
+		'lowSpaceThreshold'
 	],
 	#classVars : [
-		'MarkStackRecord',
-		'MarkStackRootIndex',
 		'MournQueueRootIndex',
 		'RememberedSetRootIndex',
 		'WeaklingStackRootIndex'
 	],
 	#pools : [
+		'MarkGCConstants',
 		'SpurMemoryManagementConstants'
 	],
 	#category : #'VMMaker-SpurMemoryManager'
@@ -324,6 +326,26 @@ SpurGenerationalGC >> allExistingNewSpaceObjectsDo: aBlock [
 		 prevPrevObj := prevObj.
 		 prevObj := objOop.
 		 objOop := self objectAfter: objOop limit: limit].
+	self touch: prevPrevObj.
+	self touch: prevObj
+]
+
+{ #category : #'object enumeration' }
+SpurGenerationalGC >> allExistingOldSpaceObjectsDo: aBlock [
+	"Enumerate all old space objects, excluding any objects created
+	 during the execution of allExistingOldSpaceObjectsDo:."
+	<inline: true>
+	| oldSpaceLimit prevObj prevPrevObj objOop |
+	prevPrevObj := prevObj := nil.
+	objOop := self firstObject.
+	oldSpaceLimit := endOfMemory.
+	[self assert: objOop \\ self allocationUnit = 0.
+	 self oop: objOop isLessThan: oldSpaceLimit] whileTrue:
+		[(self isEnumerableObject: objOop) ifTrue:
+			[aBlock value: objOop].
+		 prevPrevObj := prevObj.
+		 prevObj := objOop.
+		 objOop := self objectAfter: objOop limit: oldSpaceLimit].
 	self touch: prevPrevObj.
 	self touch: prevObj
 ]
@@ -724,6 +746,27 @@ SpurGenerationalGC >> allUnscannedEphemeronsAreActive [
 		((objectRepresentation isImmediate: key) or: [objectRepresentation isMarked: key]) ifTrue:
 			[^false]].
 	^true
+]
+
+{ #category : #'free space' }
+SpurGenerationalGC >> allocateLargestFreeChunk [
+	"Answer the largest free chunk in the free lists."
+	<inline: false>
+	| freeChunk next |
+	"would like to use ifNotNil: but the ^next inside the ^blah ifNotNil: confused Slang"
+	freeChunk := self findLargestFreeChunk.
+	freeChunk ifNil: [^nil].
+	"This will be the node, not a list element.  Answer a list element in preference."
+	next := self fetchPointer: self freeChunkNextIndex ofFreeChunk: freeChunk.
+	next ~= 0 ifTrue:
+		[self assert: (self bytesInObject: freeChunk) >= self numFreeLists. "findLargestFreeChunk searches only the tree"
+		 self 
+			setNextFreeChunkOf: freeChunk 
+			withValue: (self fetchPointer: self freeChunkNextIndex ofFreeChunk: next) 
+			isLilliputianSize: false.
+		 ^next].
+	self unlinkSolitaryFreeTreeNode: freeChunk.
+	^freeChunk
 ]
 
 { #category : #testing }
@@ -1207,6 +1250,12 @@ SpurGenerationalGC >> beginSlidingCompaction [
 	gcPhaseInProgress := SlidingCompactionInProgress
 ]
 
+{ #category : #api }
+SpurGenerationalGC >> biasForGC [
+
+	compactor biasForGC
+]
+
 { #category : #'debug support' }
 SpurGenerationalGC >> bitsSetInFreeSpaceMaskForAllFreeLists [
 	0 to: self numFreeLists - 1 do:
@@ -1272,6 +1321,11 @@ SpurGenerationalGC >> checkForAvailableSlots: slots [
 		[^true].
 	needGCFlag := true.
 	^false
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> checkForLeaks [
+	^checkForLeaks
 ]
 
 { #category : #'debug support' }
@@ -1563,6 +1617,49 @@ SpurGenerationalGC >> checkMemoryMap [
 ]
 
 { #category : #'debug support' }
+SpurGenerationalGC >> checkOkayOop: oop [
+	"Verify that the given oop is legitimate. Check address, header, and size but not class.
+	 Answer true if OK.  Otherwise print reason and answer false."
+	<api>
+	<var: #oop type: #usqInt>
+	| classIndex fmt unusedBits unusedBitsInYoungObjects |
+	<var: #unusedBits type: #usqLong>
+
+	"address and size checks"
+	(self isImmediate: oop) ifTrue: [^true].
+	(self addressCouldBeObj: oop) ifFalse:
+		[self print: 'oop '; printHex: oop; print: ' is not a valid address'. ^false].
+
+	(self oop: (self addressAfter: oop) isLessThanOrEqualTo: endOfMemory) ifFalse:
+		[self print: 'oop '; printHex: oop; print: ' size would make it extend beyond the end of memory'. ^false].
+
+	"header type checks"
+	(classIndex := self classIndexOf: oop) >= self firstClassIndexPun ifFalse:
+		[self print: 'oop '; printHex: oop; print: ' is a free chunk, or bridge, not an object'. ^false].
+	((self rawNumSlotsOf: oop) = self numSlotsMask
+	 and: [(self rawNumSlotsOf: oop - self baseHeaderSize) ~= self numSlotsMask]) ifTrue:
+		[self print: 'oop '; printHex: oop; print: ' header has overflow header word, but overflow word does not have a saturated numSlots field'. ^false].
+
+	"format check"
+	fmt := self formatOf: oop.
+	(fmt = 6) | (fmt = 8) ifTrue:
+		[self print: 'oop '; printHex: oop; print: ' has an unknown format type'. ^false].
+	(fmt = self forwardedFormat) ~= (classIndex = self isForwardedObjectClassIndexPun) ifTrue:
+		[self print: 'oop '; printHex: oop; print: ' has mis-matched format/classIndex fields; only one of them is the isForwarded value'. ^false].
+
+	"specific header bit checks"
+	unusedBits := (1 << self classIndexFieldWidth)
+				   bitOr: (1 << (self identityHashFieldWidth + 32)).
+	((self long64At: oop) bitAnd: unusedBits) ~= 0 ifTrue:
+		[self print: 'oop '; printHex: oop; print: ' has some unused header bits set; should be zero'. ^false].
+
+	unusedBitsInYoungObjects := self newSpaceRefCountMask.
+	((self longAt: oop) bitAnd: unusedBitsInYoungObjects) ~= 0 ifTrue:
+		[self print: 'oop '; printHex: oop; print: ' has some header bits unused in young objects set; should be zero'. ^false].
+	^true
+]
+
+{ #category : #'debug support' }
 SpurGenerationalGC >> checkOkayYoungReferrer: obj [
 	"Verify that the given obj is a valid youngReferrer. Check remembered is set and
 	 is in remembered set.  Answer true if OK.  Otherwise print reason and answer false.
@@ -1583,6 +1680,26 @@ SpurGenerationalGC >> checkOkayYoungReferrer: obj [
 ]
 
 { #category : #'debug support' }
+SpurGenerationalGC >> checkOopIntegrity: obj named: name [
+	<inline: false>
+	<var: #name type: #'char *'>
+	(heapMap heapMapAtWord: (self pointerForOop: obj)) ~= 0 ifTrue:
+		[^true].
+	coInterpreter print: name; print: ' leak '; printHex: obj; cr.
+	^false
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> checkOopIntegrity: obj named: name index: i [
+	<inline: false>
+	<var: #name type: #'char *'>
+	(heapMap heapMapAtWord: (self pointerForOop: obj)) ~= 0 ifTrue:
+		[^true].
+	coInterpreter print: name; print: ' leak @ '; printNum: i; print: ' = '; printHex: obj; cr.
+	^false
+]
+
+{ #category : #'debug support' }
 SpurGenerationalGC >> clearLeakMapAndMapAccessibleFreeSpace [
 	"Perform an integrity/leak check using the heapMap.  Set a bit at each free chunk's header."
 	<inline: false>
@@ -1591,6 +1708,33 @@ SpurGenerationalGC >> clearLeakMapAndMapAccessibleFreeSpace [
 		do: [:objOop|
 			(self isFreeObject: objOop) ifTrue:
 				[heapMap heapMapAtWord: (self pointerForOop: objOop) Put: 1]]
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> clearLeakMapAndMapAccessibleObjects [
+	"Perform an integrity/leak check using the heapMap.  Set a bit at each object's header."
+	<inline: false>
+	heapMap clearHeapMap.
+	self allObjectsDo:
+		[:oop| heapMap heapMapAtWord: (self pointerForOop: oop) Put: 1]
+]
+
+{ #category : #'gc - global' }
+SpurGenerationalGC >> coallesceFreeChunk: objOop [
+	"Attempt to coallesce objOop with the following objects in memory.
+	 Answer the possibly changed start of objOop after coallescing."
+	| here next |
+	here := objOop.
+	self assert: (self isRemembered: here) not.
+	"Because lastBridge is marked loop below will terminate on reaching lastBridge."
+	self assert: (self isMarked: segmentManager lastBridge).
+	next := self objectAfter: here limit: endOfMemory.
+	[self isMarked: next] whileFalse: "coalescing; rare case"
+		[self assert: (self isRemembered: next) not.
+		 statCoalesces := statCoalesces + 1.
+		 here := self coalesce: here and: next.
+		 next := self objectAfter: here limit: endOfMemory].
+	^here
 ]
 
 { #category : #accessing }
@@ -1684,6 +1828,11 @@ SpurGenerationalGC >> doScavenge: tenuringCriterion [
 	self initSpaceForAllocationCheck: (self addressOf: scavenger eden) limit: scavengeThreshold.
 	gcPhaseInProgress := 0.
 	self resetAllocationAccountingAfterGC
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> edenBytes: bytes [
+	edenBytes := bytes
 ]
 
 { #category : #accessing }
@@ -1834,15 +1983,6 @@ SpurGenerationalGC >> flushNewSpaceInstancesOf: aClass [
 	scavenger tenuringClassIndex: classIndex.
 	self scavengingGCTenuringIf: TenureByClass.
 	self assert: (self existInstancesInNewSpaceOf: aClass) not
-]
-
-{ #category : #compaction }
-SpurGenerationalGC >> followForwardedObjStacks [
-	"Compaction will move objStack pages as well as ordinary objects.
-	 So they need their slots followed."
-	self followForwardedInObjStack: markStack atIndex: MarkStackRootIndex.
-	self followForwardedInObjStack: weaklingStack atIndex: WeaklingStackRootIndex.
-	self followForwardedInObjStack: mournQueue atIndex: MournQueueRootIndex
 ]
 
 { #category : #'free space' }
@@ -2011,6 +2151,29 @@ SpurGenerationalGC >> freeTreeNodesDo: aBlock [
 	 treeNode ~= 0] whileTrue
 ]
 
+{ #category : #'free space' }
+SpurGenerationalGC >> freeTreeOverlapCheck [
+	<doNotGenerate>
+	"Assumes no 2 consecutive free chunks"
+	self allObjectsInFreeTreeDo: [:freeNode1|
+		self allObjectsInFreeTreeDo: [:freeNode2|
+			freeNode1 == freeNode2
+				ifFalse: 
+					[|start1 start2 end1 end2|
+					start1 := self startOfObject: freeNode1.
+					start2 := self startOfObject: freeNode2.
+					end1 := start1 + (self bytesInObject: freeNode1).
+					end2 := start2 + (self bytesInObject: freeNode2).
+					"
+					Transcript 
+						show: '['; show: start1; show: ';'; 
+						show: end1; show: '];'; cr; show: '['; show: start2;
+						show: ';'; show: end2; show: ']'; cr.
+					"
+					self assert: (start2 > end1 or: [end2 < start1]).
+					self assert: (start1 > end2 or: [start1 < start2])]]].
+]
+
 { #category : #'gc - global' }
 SpurGenerationalGC >> freeUnscannedEphemerons [
 	"Free all the memory allocated to keep the unscanned ephemerons"
@@ -2034,6 +2197,31 @@ SpurGenerationalGC >> fullGC [
 	^(freeLists at: 0) ~= 0
 		ifTrue: [objectRepresentation bytesInObject: self findLargestFreeChunk]
 		ifFalse: [0]
+]
+
+{ #category : #'gc - global' }
+SpurGenerationalGC >> fullGCLock [
+	"Spur never has a need to lock GC because it does not move pinned objects."
+	^0
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> gcStartUsecs [
+	^gcStartUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> getHeapGrowthToSizeGCRatio [
+	<returnTypeC: #float>
+	^heapGrowthToSizeGCRatio
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> getMaxOldSpaceSize [
+	<api>
+
+	^ maxOldSpaceSize
+
 ]
 
 { #category : #'gc - global' }
@@ -2128,6 +2316,17 @@ SpurGenerationalGC >> growToAccomodateContainerWithNumSlots: numSlots [
 	self growOldSpaceByAtLeast: (growHeadroom max: delta)
 ]
 
+{ #category : #'debug support' }
+SpurGenerationalGC >> heapMap [
+	^heapMap
+]
+
+{ #category : #initialization }
+SpurGenerationalGC >> heapMapAtWord: address [
+
+	^heapMap heapMapAtWord: address asInteger
+]
+
 { #category : #'free space' }
 SpurGenerationalGC >> inFreeTreeReplace: treeNode with: newNode [
 	"Part of reorderReversedTreeList:.  Switch treeNode with newNode in
@@ -2176,6 +2375,11 @@ SpurGenerationalGC >> inLineRunLeakCheckerFor: gcModes excludeUnmarkedObjs: excl
 SpurGenerationalGC >> increaseFreeOldSpaceBy: bytes [ 
 	totalFreeOldSpace := totalFreeOldSpace + bytes
 
+]
+
+{ #category : #'gc - global' }
+SpurGenerationalGC >> incrementalGC [
+	self shouldNotImplement
 ]
 
 { #category : #allocation }
@@ -2239,6 +2443,18 @@ SpurGenerationalGC >> initialize [
 	
 	scavenger := SpurGenerationScavenger simulatorClass new.
 	compactor := self class compactorClass simulatorClass new.
+	
+	heapGrowthToSizeGCRatio := 0.333333. "By default GC after scavenge if heap has grown by a third since the last GC"
+	
+	"We can also initialize here anything that is only for simulation."
+	heapMap := CogCheck32BitHeapMap new.
+	
+	lowSpaceThreshold := 0.
+
+	"N.B. We *don't* initialize extraRoots because we don't simulate it."
+	maxOldSpaceSize := self class initializationOptions
+							ifNotNil: [:initOpts| initOpts at: #maxOldSpaceSize ifAbsent: [0]]
+							ifNil: [0]
 ]
 
 { #category : #bootstrap }
@@ -2500,6 +2716,57 @@ SpurGenerationalGC >> isYoungObject: objOop [
 	^self oop: objOop isLessThan: newSpaceLimit
 ]
 
+{ #category : #'compaction - analysis' }
+SpurGenerationalGC >> largeFreeChunkDistribution [
+	"This method answers a sorted collection of the free chunks >= 1,000,000 bytes long,
+	 sandwiched between nilObj and the end of memory (ignoring the large chunk often found at the end of the heap)."
+	<doNotGenerate>
+	| freeChunks |
+	freeChunks := SortedCollection new.
+	self allObjectsInFreeTreeDo:
+		[:f|
+		((self addressAfter: f) < endOfMemory
+		 and: [(self bytesInObject: f) >= 1000000]) ifTrue:
+			[freeChunks add: f]].
+	^{{nilObj hex. #nil}}, (freeChunks collect: [:f| {f hex. self bytesInObject: f}]), {{endOfMemory hex. #endOfMemory}}
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> leakCheckBecome [
+	<api>
+	^(checkForLeaks bitAnd: GCModeBecome) ~= 0
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> leakCheckFullGC [
+	<api>
+	^(checkForLeaks bitAnd: GCModeFull) ~= 0
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> leakCheckImageSegments [
+	^(checkForLeaks bitAnd: GCModeImageSegment) ~= 0
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> leakCheckIncremental [
+	<api>
+	^(checkForLeaks bitAnd: GCModeIncremental) ~= 0
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> leakCheckNewSpaceGC [
+	<api>
+	^(checkForLeaks bitAnd: GCModeNewSpace) ~= 0
+]
+
+{ #category : #'free space' }
+SpurGenerationalGC >> lilliputianChunkIndex [
+	"See isLilliputianSize:"
+	^(self baseHeaderSize + self allocationUnit) // self allocationUnit
+
+]
+
 { #category : #'free space' }
 SpurGenerationalGC >> lowSpaceThreshold: threshold [
 	lowSpaceThreshold := threshold.
@@ -2551,8 +2818,6 @@ SpurGenerationalGC >> markAccessibleObjectsAndFireEphemerons [
 	self assert: marking.
 	self assert: objectRepresentation validClassTableRootPages.
 	self assert: objectRepresentation segmentManager allBridgesMarked.
-	self cCode: [] "for debugging markAndTrace: set (MarkStackRecord := OrderedCollection new)"
-		inSmalltalk: [MarkStackRecord ifNotNil: [MarkStackRecord resetTo: 1]].
 
 	"This must come first to enable stack page reclamation.  It clears
 	  the trace flags on stack pages and so must precede any marking.
@@ -2908,6 +3173,12 @@ SpurGenerationalGC >> marking [
 	^ marking
 ]
 
+{ #category : #accessing }
+SpurGenerationalGC >> maxOldSpaceSize [
+	<cmacro: '() maxOldSpaceSize'>
+	^maxOldSpaceSize
+]
+
 { #category : #snapshot }
 SpurGenerationalGC >> memoryBaseForImageRead [
 	"Answer the address to read the image into."
@@ -2940,6 +3211,11 @@ SpurGenerationalGC >> needGCFlag: anInteger [
 	needGCFlag := anInteger ~= 0
 ]
 
+{ #category : #accessing }
+SpurGenerationalGC >> newSpaceBytes [
+	^edenBytes
+]
+
 { #category : #'gc - scavenging' }
 SpurGenerationalGC >> newSpaceIsEmpty [
 	^freeStart = scavenger eden start
@@ -2950,6 +3226,18 @@ SpurGenerationalGC >> newSpaceIsEmpty [
 SpurGenerationalGC >> newSpaceLimit [
 	<cmacro: '() GIV(newSpaceLimit)'>
 	^newSpaceLimit
+]
+
+{ #category : #'gc - scavenging' }
+SpurGenerationalGC >> newSpaceRefCountMask [
+	"The three bit field { isGrey, isPinned, isRemembered } is for bits
+	 that are never set in young objects.  This allows the remembered
+	 table to be pruned when full by using these bits as a reference
+	 count of newSpace objects from the remembered table. Objects
+	 with a high count should be tenured to prune the remembered table."
+	^1 << self greyBitShift
+	  bitOr: (1 << self pinnedBitShift
+	  bitOr: 1 << self rememberedBitShift)
 ]
 
 { #category : #accessing }
@@ -3137,6 +3425,52 @@ SpurGenerationalGC >> objectsReachableFromRoots: arrayOfRoots [
 	^freeChunk
 ]
 
+{ #category : #'debug support' }
+SpurGenerationalGC >> okayOop: signedOop [
+	"Verify that the given oop is legitimate. Check address, header, and size but not class."
+
+	| oop classIndex fmt unusedBits unusedBitsInYoungObjects |
+	<var: #oop type: #usqInt>
+	<var: #unusedBits type: #usqLong>
+	oop := self cCoerce: signedOop to: #usqInt.
+
+	"address and size checks"
+	(self isImmediate: oop) ifTrue: [^true].
+	(self addressCouldBeObj: oop) ifFalse:
+		[self error: 'oop is not a valid address'. ^false].
+
+	(self oop: (self addressAfter: oop) isLessThanOrEqualTo: endOfMemory) ifFalse:
+		[self error: 'oop size would make it extend beyond the end of memory'. ^false].
+
+	"header type checks"
+	(classIndex := self classIndexOf: oop) >= self firstClassIndexPun ifFalse:
+		[self error: 'oop is a free chunk, or bridge, not an object'. ^false].
+	((self rawNumSlotsOf: oop) = self numSlotsMask
+	 and: [(self rawNumSlotsOf: oop - self baseHeaderSize) ~= self numSlotsMask]) ifTrue:
+		[self error: 'oop header has overflow header word, but overflow word does not have a saturated numSlots field'. ^false].
+
+	"format check"
+	fmt := self formatOf: oop.
+	(fmt = 6) | (fmt = 8) ifTrue:
+		[self error: 'oop has an unknown format type'. ^false].
+	(fmt = self forwardedFormat) ~= (classIndex = self isForwardedObjectClassIndexPun) ifTrue:
+		[self error: 'oop has mis-matched format/classIndex fields; only one of them is the isForwarded value'. ^false].
+
+	"specific header bit checks"
+	unusedBits := (1 << self classIndexFieldWidth)
+				   bitOr: (1 << (self identityHashFieldWidth + 32)).
+	((self long64At: oop) bitAnd: unusedBits) ~= 0 ifTrue:
+		[self error: 'some unused header bits are set; should be zero'. ^false].
+
+	unusedBitsInYoungObjects := ((1 << self greyBitShift)
+								   bitOr: (1 << self pinnedBitShift))
+								   bitOr: (1 << self rememberedBitShift).
+	((self longAt: oop) bitAnd: unusedBitsInYoungObjects) ~= 0 ifTrue:
+		[self error: 'some header bits unused in young objects are set; should be zero'. ^false].
+	^true
+
+]
+
 { #category : #'object enumeration' }
 SpurGenerationalGC >> oldSpaceObjectAfter: objOop [
 	<api>
@@ -3166,6 +3500,29 @@ SpurGenerationalGC >> pastSpaceStart [
 	^pastSpaceStart
 ]
 
+{ #category : #api }
+SpurGenerationalGC >> postSwizzleAction [
+
+	compactor postSwizzleAction
+]
+
+{ #category : #compaction }
+SpurGenerationalGC >> prepareObjStackForPlanningCompactor: objStack [
+	"SpurPlanningCompactor overwrites the first fields of all moved objects, and saves these
+	 fields in a data structure from which they can only be retrieved while scanning the heap.
+	 The first field of an objStack page is its stack index, and so to know how many fields in an
+	 objStack page to update it is necessary to save the ObjStackTopx field somewhere temporarily.
+	 We use the hash field."
+
+	| stackOrNil |
+	objStack = nilObj ifTrue:
+		[^self].
+	stackOrNil := objStack.
+	[self assert: (self numSlotsOfAny: stackOrNil) = ObjStackPageSlots.
+	 self setHashBitsOf: stackOrNil to: (self fetchPointer: ObjStackTopx ofObject: stackOrNil).
+	 (stackOrNil := self fetchPointer: ObjStackNextx ofObject: stackOrNil) ~= 0] whileTrue
+]
+
 { #category : #compaction }
 SpurGenerationalGC >> prepareObjStacksForPlanningCompactor [
 	"SpurPlanningCompactor overwrites the first fields of all moved objects, and saves these
@@ -3178,6 +3535,24 @@ SpurGenerationalGC >> prepareObjStacksForPlanningCompactor [
 		prepareObjStackForPlanningCompactor: markStack;
 		prepareObjStackForPlanningCompactor: weaklingStack;
 		prepareObjStackForPlanningCompactor: mournQueue
+]
+
+{ #category : #'debug support' }
+SpurGenerationalGC >> printAdjacentFreeChunks [
+	"self printAdjacentFreeChunks"
+	<doNotGenerate>
+	| uncoalesced |
+	uncoalesced := OrderedCollection new.
+	self allOldSpaceEntitiesDo:
+		[:e| | s |
+		((self isFreeObject: e)
+		 and: [(s := self objectAfter: e limit: endOfMemory) < endOfMemory
+		 and: [self isFreeObject: s]]) ifTrue:
+			[uncoalesced addLast: e]].
+	uncoalesced do:
+		[:f|
+		self printFreeChunk: f. coInterpreter printHexnp: (self objectAfter: f limit: endOfMemory); cr] 
+
 ]
 
 { #category : #'debug printing' }
@@ -3287,6 +3662,41 @@ SpurGenerationalGC >> queueMourner: anEphemeronOrWeakArray [
 ]
 
 { #category : #compaction }
+SpurGenerationalGC >> relocateObjStackForPlanningCompactor: objStack [
+	"Relocate all objStack pages that comprise objStack."
+	| stackOrNil freeList next relocated result |
+	objStack = nilObj ifTrue:
+		[^objStack].
+	stackOrNil := objStack.
+	freeList := self fetchPointer: ObjStackFreex ofObject: objStack.
+	[self assert: (self numSlotsOfAny: stackOrNil) = ObjStackPageSlots.
+	 "There are four fixed slots in an obj stack, and a Topx of 0 indicates empty, so
+	   if there were 5 slots in an oop stack, full would be 2, and the last 0-rel index is 4.
+	   Hence the last index is topx + fixed slots - 1, or topx + ObjStackNextx"
+	 next := self fetchPointer: ObjStackNextx ofObject: stackOrNil.
+	 relocated := gc compactor
+					relocateObjectsInHeapEntity: stackOrNil
+					from: ObjStackFreex
+					to: ObjStackNextx + (self rawHashBitsOf: stackOrNil).
+	 stackOrNil = objStack ifTrue:
+		[result := relocated].
+	 self setHashBitsOf: stackOrNil to: 0.
+	 next ~= 0]
+		whileTrue:
+			[stackOrNil := next].
+	[freeList ~= 0] whileTrue:
+		[self assert: (self numSlotsOfAny: freeList) = ObjStackPageSlots.
+		 next := self fetchPointer: ObjStackFreex ofObject: freeList.
+		 compactor
+			relocateObjectsInHeapEntity: freeList
+			from: ObjStackFreex
+			to: ObjStackFreex.
+		 freeList := next].
+	
+	^ result
+]
+
+{ #category : #compaction }
 SpurGenerationalGC >> relocateObjStacksForPlanningCompactor [
 	"Relocate all non-empty objStack pages, following the objStacks from the roots."
 
@@ -3295,10 +3705,27 @@ SpurGenerationalGC >> relocateObjStacksForPlanningCompactor [
 	mournQueue := objectRepresentation relocateObjStackForPlanningCompactor: mournQueue
 ]
 
+{ #category : #'gc - global' }
+SpurGenerationalGC >> remap: oop [
+	self shouldNotImplement
+]
+
 { #category : #accessing }
 SpurGenerationalGC >> remapBufferCount [
 	<cmacro: '() GIV(remapBufferCount)'>
 	^remapBufferCount
+]
+
+{ #category : #'gc - scavenge/compact' }
+SpurGenerationalGC >> remapObj: objOop [
+	"Scavenge or simply follow objOop.  Answer the new location of objOop.
+	 The send should have been guarded by a send of shouldRemapOop:.
+	 The method is called remapObj: for compatibility with ObjectMemory.
+	 Defer to the compactor to choose the actual method, there being a
+	 difference between the vanilla method and that used with a sliding
+	 compactor where objects are not marked as forwarded."
+	<doNotGenerate>
+	^gc compactor remapObj: objOop
 ]
 
 { #category : #scavenger }
@@ -3347,6 +3774,26 @@ SpurGenerationalGC >> resetFreeListHeads [
 { #category : #snapshot }
 SpurGenerationalGC >> reverseBytesInMemory [
 	self reverseBytesFrom: oldSpaceStart to: endOfMemory
+]
+
+{ #category : #scavenger }
+SpurGenerationalGC >> rootTableCapacity [
+	<cmacro: '() GIV(rememberedSetLimit)'>
+	^scavenger rememberedSetLimit
+]
+
+{ #category : #'gc - scavenging' }
+SpurGenerationalGC >> rtRefCountOf: obj [
+	"Answer the rt reference count of obj; this is the three bit field comprised
+	 of isGrey,isPinned,isRemembered.  See computeRefCountToShrinkRT."
+	^(self longAt: obj) >> self rememberedBitShift bitAnd: MaxRTRefCount
+]
+
+{ #category : #'gc - scavenging' }
+SpurGenerationalGC >> rtRefCountOf: obj put: refCount [
+	"Set the rt reference count of obj; this is the three bit field comprised
+	 of isGrey,isPinned,isRemembered.  See computeRefCountToShrinkRT."
+	self subclassResponsibility
 ]
 
 { #category : #'debug support' }
@@ -3400,6 +3847,13 @@ SpurGenerationalGC >> scavengerDenominator [
 ]
 
 { #category : #'gc - scavenging' }
+SpurGenerationalGC >> scavengingGC [
+	"Run the scavenger."
+
+	self scavengingGCTenuringIf: TenureByAge
+]
+
+{ #category : #'gc - scavenging' }
 SpurGenerationalGC >> scavengingGCTenuringIf: tenuringCriterion [
 	"Run the scavenger."
 	<inline: false>
@@ -3444,6 +3898,29 @@ SpurGenerationalGC >> scheduleScavenge [
 	objectRepresentation coInterpreter forceInterruptCheck
 ]
 
+{ #category : #'spur bootstrap' }
+SpurGenerationalGC >> setCheckForLeaks: integerFlags [
+	" 0 = do nothing.
+	  1 = check for leaks on fullGC (GCModeFull).
+	  2 = check for leaks on scavenger (GCModeNewSpace).
+	  4 = check for leaks on incremental (GCModeIncremental)
+	  8 = check for leaks on become (GCModeBecome)
+	 16 = check for leaks on image segments (GCModeImageSegment)"
+	checkForLeaks := integerFlags
+]
+
+{ #category : #'allocation accounting' }
+SpurGenerationalGC >> setCurrentAllocatedBytesTo: n [
+	"Reset the allocation count to n (n will typically be zero).  Since we wish to
+	 discount the current use we must set statAllocatedBytes to n and update
+	 oldSpaceUsePriorToScavenge to discount the current allocated bytes."
+	| delta |
+	delta := self currentAllocatedBytes - statAllocatedBytes.
+	statAllocatedBytes := n.
+	oldSpaceUsePriorToScavenge := oldSpaceUsePriorToScavenge + delta.
+	self assert: self currentAllocatedBytes = n
+]
+
 { #category : #snapshot }
 SpurGenerationalGC >> setEndOfMemory: newEndOfMemory [
 	"Set by the segment manager after swizzling the image,
@@ -3451,6 +3928,19 @@ SpurGenerationalGC >> setEndOfMemory: newEndOfMemory [
 	endOfMemory := newEndOfMemory.
 	freeOldSpaceStart > newEndOfMemory ifTrue:
 		[freeOldSpaceStart := newEndOfMemory]
+]
+
+{ #category : #'free space' }
+SpurGenerationalGC >> setFree: objOop [
+	<inline: true>
+	"turn the object into a free chunk, zeroing classIndex, format, isGrey,isPinned,isRemembered,isImmutable & ?."
+	self long32At: objOop put: 0
+]
+
+{ #category : #snapshot }
+SpurGenerationalGC >> setFreeOldSpaceStart: newFreeOldSpaceStart [
+	"Set by the segment manager on parsing the image."
+	freeOldSpaceStart := newFreeOldSpaceStart
 ]
 
 { #category : #snapshot }
@@ -3482,6 +3972,13 @@ SpurGenerationalGC >> setHeapBase: baseOfHeap memoryLimit: memLimit endOfMemory:
 	^baseOfHeap
 ]
 
+{ #category : #accessing }
+SpurGenerationalGC >> setHeapGrowthToSizeGCRatio: aDouble [
+	<var: #aDouble type: #double>
+	heapGrowthToSizeGCRatio := aDouble.
+	^0
+]
+
 { #category : #'allocation accounting' }
 SpurGenerationalGC >> setHeapSizeAtPreviousGC [
 	"heapSizeAtPreviousGC is used to invoke full GC when lots of oldSpace objects are created.
@@ -3503,6 +4000,14 @@ SpurGenerationalGC >> setLastSegment: segInfo [
 		[endOfMemory := currentEnd.
 		 freeOldSpaceStart > currentEnd ifTrue:
 			[freeOldSpaceStart :=currentEnd]]
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> setMaxOldSpaceSize: limit [
+	<api>
+	<var: #limit type: #usqInt>
+	maxOldSpaceSize := limit.
+	^0
 ]
 
 { #category : #'free space' }
@@ -3540,6 +4045,26 @@ SpurGenerationalGC >> setObjectFree: objOop [
 	(self rawNumSlotsOf: objOop) = 0 ifTrue:
 		[self rawNumSlotsOf: objOop put: 1].
 	self setFree: objOop
+]
+
+{ #category : #'gc - scavenge/compact' }
+SpurGenerationalGC >> shouldRemapObj: objOop [
+	"Answer if the obj should be scavenged (or simply followed). The method is called
+	 shouldRemapObj: for compatibility with ObjectMemory.  Defer to the compactor
+	 to choose the actual test, there being a difference between the vanilla test and
+	 that used with a sliding compactor where objects are not marked as forwarded."
+	<doNotGenerate>
+	^gc compactor shouldRemapObj: objOop
+]
+
+{ #category : #'gc - scavenge/compact' }
+SpurGenerationalGC >> shouldRemapOop: oop [
+	<api>
+	"Answer if the oop should be scavenged.. The method is called
+	 shouldRemapOop: for compatibility with ObjectMemory."
+	<inline: true>
+	^(self isNonImmediate: oop)
+	   and: [self shouldRemapObj: oop]
 ]
 
 { #category : #'free space' }
@@ -3630,6 +4155,129 @@ SpurGenerationalGC >> slidingCompactionShouldRemapObj: objOop [
 					ifFalse: [compactor isMobile: objOop]]]
 ]
 
+{ #category : #accessing }
+SpurGenerationalGC >> statCompMoveCount [
+	"Spur never compacts by moving; but it does make compaction passes."
+	^statCompactPassCount
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statCompactPassCount [
+	^statCompactPassCount
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statCompactPassCount: anInteger [
+	^statCompactPassCount := anInteger
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statCompactionUsecs [
+	^statCompactionUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statFGCDeltaUsecs [
+	^statFGCDeltaUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statFullGCUsecs [
+	^statFullGCUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statFullGCs [
+	^statFullGCs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statGCEndUsecs [
+	^statGCEndUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statGrowMemory [
+	^statGrowMemory
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statIGCDeltaUsecs [
+	^statIGCDeltaUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statIncrGCUsecs [
+	^statIncrGCUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statIncrGCs [
+	^statIncrGCs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statMarkCount [
+	^statMarkCount
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statMarkUsecs [
+	^statMarkUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statMaxAllocSegmentTime [
+	^statMaxAllocSegmentTime
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statMaxAllocSegmentTime: aValue [
+	statMaxAllocSegmentTime := aValue
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statNumGCs [
+	"Part of InterpreterProxy's 1.14 API"
+	<export: true>
+	^statScavenges + statIncrGCs + statFullGCs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statRootTableCount [
+	^statRootTableCount
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statRootTableOverflows [
+	^statRootTableOverflows
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statSGCDeltaUsecs [
+	^statSGCDeltaUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statScavengeGCUsecs [
+	^statScavengeGCUsecs
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statScavenges [
+	^statScavenges
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statShrinkMemory [
+	^statShrinkMemory
+]
+
+{ #category : #accessing }
+SpurGenerationalGC >> statSweepUsecs [
+	^statSweepUsecs
+]
+
 { #category : #'heap management' }
 SpurGenerationalGC >> storePointer: fieldIndex ofFreeChunk: objOop withValue: valuePointer [
 
@@ -3717,6 +4365,14 @@ SpurGenerationalGC >> totalFreeOldSpace [
 { #category : #accessing }
 SpurGenerationalGC >> totalFreeOldSpace: anInteger [
 	totalFreeOldSpace := anInteger
+]
+
+{ #category : #'gc - global' }
+SpurGenerationalGC >> traceImmediatelySlotLimit [
+	"Arbitrary level at which to defer tracing large objects until later.
+	 The average slot size of Smalltalk objects is typically near 8.
+	 We do require traceImmediatelySlotLimit to be < numSlotsMask."
+	^64
 ]
 
 { #category : #'free space' }
@@ -3873,6 +4529,14 @@ SpurGenerationalGC >> unlinkSolitaryFreeTreeNode: freeTreeNode [
 						[self addFreeSubTree: larger]]]
 ]
 
+{ #category : #compaction }
+SpurGenerationalGC >> unmarkSurvivingObjectsForCompact [
+	self gc allPastSpaceObjectsDo:
+		[:objOop|
+		(self isMarked: objOop) ifTrue:
+			[self setIsMarkedOf: objOop to: false]]
+]
+
 { #category : #accessing }
 SpurGenerationalGC >> unscannedEphemeronsQueueInitialSize: anInteger [ 
 	
@@ -3935,6 +4599,11 @@ SpurGenerationalGC >> updateRootOfObjStackAt: objStackRootIndex with: newRootPag
 	^newRootPage
 ]
 
+{ #category : #accessing }
+SpurGenerationalGC >> updateSweepEndUsecs [
+	gcSweepEndUsecs := coInterpreter ioUTCMicrosecondsNow.
+]
+
 { #category : #'free space' }
 SpurGenerationalGC >> validFreeTree [
 	<api>
@@ -3976,6 +4645,40 @@ SpurGenerationalGC >> validObjStacks [
 	^(markStack = objectRepresentation nilObject or: [objectRepresentation isValidObjStack: markStack])
 	  and: [(weaklingStack = objectRepresentation nilObject or: [objectRepresentation isValidObjStack: weaklingStack])
 	  and: [mournQueue = objectRepresentation nilObject or: [objectRepresentation isValidObjStack: mournQueue]]]
+]
+
+{ #category : #'gc - scavenge/compact' }
+SpurGenerationalGC >> vanillaRemapObj: objOop [
+	"Scavenge or simply follow objOop.  Answer the new location of objOop.
+	 The send should have been guarded by a send of shouldRemapOop:.
+	 The method is called remapObj: for compatibility with ObjectMemory."
+	<inline: true>
+	| resolvedObj |
+	self assert: (self shouldRemapOop: objOop).
+	(self isForwarded: objOop)
+		ifTrue:
+			[resolvedObj := self followForwarded: objOop]
+		ifFalse:
+			[self deny: (self isInFutureSpace: objOop).
+			 resolvedObj := objOop].
+	(self scavengeInProgress
+	 and: [(self isReallyYoung: resolvedObj) "don't scavenge immediate, old, or CogMethod objects."
+	 and: [(self isInFutureSpace: resolvedObj) not]]) ifTrue: 
+		[^scavenger copyAndForward: resolvedObj].
+	^resolvedObj
+]
+
+{ #category : #'gc - scavenge/compact' }
+SpurGenerationalGC >> vanillaShouldRemapObj: objOop [
+	<inline: true>
+	"Answer if the obj should be scavenged, or simply followed. Sent via the compactor
+	 from shouldRemapObj:.  We test for being already scavenged because mapStackPages
+	 via mapInterpreterOops may be applied twice in the context of a global GC where a
+	 scavenge, followed by a scan-mark-free, and final compaction passes may result in
+	 scavenged fields being visited twice."
+	^(self isForwarded: objOop)
+	  or: [(self isReallyYoungObject: objOop)
+		 and: [(self isInFutureSpace: objOop) not]]
 ]
 
 { #category : #'spur bootstrap' }
