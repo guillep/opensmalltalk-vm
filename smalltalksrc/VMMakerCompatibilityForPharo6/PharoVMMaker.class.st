@@ -43,6 +43,12 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager [
 { #category : #generation }
 PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass [
 
+	self generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: #()
+]
+
+{ #category : #generation }
+PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compilerClass: compilerClass options: options [
+
 	| platformDirectory |
 	
 	Author useAuthor: 'vmMaker' during: [
@@ -60,7 +66,7 @@ PharoVMMaker >> generate: interpreterClass memoryManager: memoryManager compiler
 			with: {#COGMTVM. false.
 					#ObjectMemory. memoryManager name.
 					#MULTIPLEBYTECODESETS. true.
-					#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid}
+					#bytecodeTableInitializer. #initializeBytecodeTableForSqueakV3PlusClosuresSistaV1Hybrid} , options
 			to: platformDirectory
 			platformDir:platformDirectory
 			including: #()
@@ -82,8 +88,16 @@ PharoVMMaker >> generateCoInterpreter [
 { #category : #generation }
 PharoVMMaker >> generateSistaVM [
 
-	self generate: CoInterpreter memoryManager: Spur64BitCoMemoryManager compilerClass: SistaCogit.
-	self generate: CoInterpreter memoryManager: Spur32BitCoMemoryManager compilerClass: SistaCogit.
+	self
+		generate: CoInterpreter
+		memoryManager: Spur64BitCoMemoryManager
+		compilerClass: SistaCogit
+		options: #( SistaVM true ).
+	self
+		generate: CoInterpreter
+		memoryManager: Spur32BitCoMemoryManager
+		compilerClass: SistaCogit
+		options: #( SistaVM true )
 ]
 
 { #category : #generation }

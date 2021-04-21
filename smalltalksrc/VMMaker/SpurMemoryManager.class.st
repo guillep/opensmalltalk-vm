@@ -12549,6 +12549,7 @@ SpurMemoryManager >> storePointer: fieldIndex ofObjStack: objStackPage withValue
 
 { #category : #'object access' }
 SpurMemoryManager >> storePointer: fieldIndex ofObject: objOop withValue: valuePointer [
+	<api>
 	"Note must check here for stores of young objects into old ones."
 	self assert: (self isForwarded: objOop) not.
 
