@@ -4110,9 +4110,10 @@ StackToRegisterMappingCogit >> scanMethod [
 			 self maybeCountFixup: descriptor.
 			 (self isBackwardBranch: descriptor at: pc exts: nExts in: methodObj)
 				ifTrue: [self initializeFixupAt: targetPC]
-				ifFalse:
-					[latestContinuation := latestContinuation max: targetPC.
-					 self maybeCountCounter]].
+				ifFalse: [
+					latestContinuation := latestContinuation max: targetPC.
+					descriptor isConditionalBranch ifTrue: [
+						self maybeCountCounter ] ] ].
 			
 		 latestContinuation := self 
 			maybeDealWithUnsafeJumpForDescriptor: descriptor 

@@ -5,6 +5,16 @@ Class {
 }
 
 { #category : #'tests-counterarray' }
+VMSistaJITCounterTest >> assertAllocatedCountersOf: aNativeMethod equals: aNumber [
+
+	"In 64 bits, counters still take 32 bits.
+	So an odd number of counters still allocate an even number of counters"
+	self
+		assert: (cogit objectRepresentation numCountersFor: aNativeMethod counters)
+		equals: ((aNumber * 4 "bytes taken per counter") roundUpTo: memory wordSize) / 4
+]
+
+{ #category : #'tests-counterarray' }
 VMSistaJITCounterTest >> createMethodOopFromPharoMethod: aPharoCompiledMethod [
 
 	| methodOop |
@@ -54,6 +64,18 @@ VMSistaJITCounterTest >> methodWithAndAndJump: a [
 
 	(a and: [ a ]) ifTrue: [ ^ 5 ].
 	^ 12
+]
+
+{ #category : #'as yet unclassified' }
+VMSistaJITCounterTest >> methodWithNonConditionalFollowedByConditional: a [
+
+	| result |
+	result := a
+		ifTrue: [ 5 ]
+		ifFalse: [ 17 ].
+	
+	a ifTrue: [ ^ result ].
+	^ nil
 ]
 
 { #category : #'as yet unclassified' }
@@ -146,6 +168,86 @@ VMSistaJITCounterTest >> testCounterOfMethodWithAndAndJumpIncrementsReachedOfJum
 ]
 
 { #category : #'tests-counterincrement' }
+VMSistaJITCounterTest >> testCounterOfMethodWithNonConditionalFollowedByConditionalIncrementsNonTakenOfFirst [
+	
+	| nativeMethod picData lastJumpCounter |
+	self setArrayClassIntoClassTable.
+	nativeMethod := self jitMethod: (self class>>#methodWithNonConditionalFollowedByConditional:).
+	
+	self 
+		callCogMethod: nativeMethod
+		receiver: memory nilObject 
+		arguments:  { memory trueObject }
+		returnAddress: callerAddress.
+	
+	picData := interpreter picDataFor: nativeMethod.
+	self assert: (memory numSlotsOf: picData) equals: 2.
+	
+	lastJumpCounter := memory fetchPointer: 0 ofObject: picData.
+	self assert: (memory integerValueOf: (memory fetchPointer: 0 ofObject: lastJumpCounter)) equals: 1
+]
+
+{ #category : #'tests-counterincrement' }
+VMSistaJITCounterTest >> testCounterOfMethodWithNonConditionalFollowedByConditionalIncrementsNonTakenOfLast [
+	
+	| nativeMethod picData lastJumpCounter |
+	self setArrayClassIntoClassTable.
+	nativeMethod := self jitMethod: (self class>>#methodWithNonConditionalFollowedByConditional:).
+	
+	self 
+		callCogMethod: nativeMethod
+		receiver: memory nilObject 
+		arguments:  { memory trueObject }
+		returnAddress: callerAddress.
+	
+	picData := interpreter picDataFor: nativeMethod.
+	self assert: (memory numSlotsOf: picData) equals: 2.
+	
+	lastJumpCounter := memory fetchPointer: 1 ofObject: picData.
+	self assert: (memory integerValueOf: (memory fetchPointer: 0 ofObject: lastJumpCounter)) equals: 1
+]
+
+{ #category : #'tests-counterincrement' }
+VMSistaJITCounterTest >> testCounterOfMethodWithNonConditionalFollowedByConditionalIncrementsReachedOfFirst [
+	
+	| nativeMethod picData lastJumpCounter |
+	self setArrayClassIntoClassTable.
+	nativeMethod := self jitMethod: (self class>>#methodWithNonConditionalFollowedByConditional:).
+	
+	self 
+		callCogMethod: nativeMethod
+		receiver: memory nilObject 
+		arguments:  { memory trueObject }
+		returnAddress: callerAddress.
+	
+	picData := interpreter picDataFor: nativeMethod.
+	self assert: (memory numSlotsOf: picData) equals: 2.
+	
+	lastJumpCounter := memory fetchPointer: 0 ofObject: picData.
+	self assert: (memory integerValueOf: (memory fetchPointer: 1 ofObject: lastJumpCounter)) equals: 1
+]
+
+{ #category : #'tests-counterincrement' }
+VMSistaJITCounterTest >> testCounterOfMethodWithNonConditionalFollowedByConditionalIncrementsReachedOfLast [
+	
+	| nativeMethod picData lastJumpCounter |
+	self setArrayClassIntoClassTable.
+	nativeMethod := self jitMethod: (self class>>#methodWithNonConditionalFollowedByConditional:).
+	
+	self 
+		callCogMethod: nativeMethod
+		receiver: memory nilObject 
+		arguments:  { memory trueObject }
+		returnAddress: callerAddress.
+	
+	picData := interpreter picDataFor: nativeMethod.
+	self assert: (memory numSlotsOf: picData) equals: 2.
+	
+	lastJumpCounter := memory fetchPointer: 1 ofObject: picData.
+	self assert: (memory integerValueOf: (memory fetchPointer: 1 ofObject: lastJumpCounter)) equals: 1
+]
+
+{ #category : #'tests-counterincrement' }
 VMSistaJITCounterTest >> testCounterOfMethodWithOneJumpDoesNotIncrementNonTaken [
 	
 	| nativeMethod picData jumpCounter |
@@ -226,9 +328,20 @@ VMSistaJITCounterTest >> testMethodWithAndHasNoCounters [
 
 	self deny: nativeMethod counters equals: memory nilObject.
 
+	self assertAllocatedCountersOf: nativeMethod equals: 1
+]
+
+{ #category : #'tests-counterarray' }
+VMSistaJITCounterTest >> testMethodWithNonConditionalFollowedByConditional [
+	
+	| nativeMethod |
+	nativeMethod := self jitMethod: (self class>>#methodWithNonConditionalFollowedByConditional:).
+
+	self deny: nativeMethod counters equals: memory nilObject.
+
 	self
 		assert: (cogit objectRepresentation numCountersFor: nativeMethod counters)
-		equals: 0
+		equals: 2
 ]
 
 { #category : #'tests-counterarray' }
@@ -241,7 +354,7 @@ VMSistaJITCounterTest >> testMethodWithOneJumpHasOneCounters [
 
 	self
 		assert: (cogit objectRepresentation numCountersFor: nativeMethod counters)
-		equals: 1
+		equals: ((1 * 4 "bytes taken per counter") roundUpTo: memory wordSize) / 4
 ]
 
 { #category : #'tests-counterarray' }
@@ -252,9 +365,7 @@ VMSistaJITCounterTest >> testMethodWithOrHasNoCounters [
 
 	self deny: nativeMethod counters equals: memory nilObject.
 
-	self
-		assert: (cogit objectRepresentation numCountersFor: nativeMethod counters)
-		equals: 0
+	self assertAllocatedCountersOf: nativeMethod equals: 1
 ]
 
 { #category : #'tests-counterarray' }
@@ -313,6 +424,18 @@ VMSistaJITCounterTest >> testPicDataForMethodWithNoCounters [
 	picData := interpreter picDataFor: nativeMethod.
 	
 	self assert: picData equals: 0
+]
+
+{ #category : #'tests-picdata' }
+VMSistaJITCounterTest >> testPicDataForMethodWithNonConditionalFollowedByConditional [
+	
+	| nativeMethod picData |
+	self setArrayClassIntoClassTable.
+	nativeMethod := self jitMethod: (self class>>#methodWithNonConditionalFollowedByConditional:).
+	
+	picData := interpreter picDataFor: nativeMethod.
+	
+	self assert: (memory numSlotsOf: picData) equals: 2
 ]
 
 { #category : #'tests-picdata' }
