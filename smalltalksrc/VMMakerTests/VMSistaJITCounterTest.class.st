@@ -184,7 +184,7 @@ VMSistaJITCounterTest >> testCounterOfMethodWithNonConditionalFollowedByConditio
 	self assert: (memory numSlotsOf: picData) equals: 2.
 	
 	lastJumpCounter := memory fetchPointer: 0 ofObject: picData.
-	self assert: (memory integerValueOf: (memory fetchPointer: 0 ofObject: lastJumpCounter)) equals: 1
+	self assert: (memory integerValueOf: (memory fetchPointer: 2 ofObject: lastJumpCounter)) equals: 1
 ]
 
 { #category : #'tests-counterincrement' }
@@ -204,7 +204,7 @@ VMSistaJITCounterTest >> testCounterOfMethodWithNonConditionalFollowedByConditio
 	self assert: (memory numSlotsOf: picData) equals: 2.
 	
 	lastJumpCounter := memory fetchPointer: 1 ofObject: picData.
-	self assert: (memory integerValueOf: (memory fetchPointer: 0 ofObject: lastJumpCounter)) equals: 1
+	self assert: (memory integerValueOf: (memory fetchPointer: 2 ofObject: lastJumpCounter)) equals: 1
 ]
 
 { #category : #'tests-counterincrement' }
@@ -399,11 +399,11 @@ VMSistaJITCounterTest >> testPicDataForMethodWithAnd [
 	
 	picData := interpreter picDataFor: nativeMethod.
 	
-	self assert: (memory numSlotsOf: picData) equals: 0
+	self assert: (memory numSlotsOf: picData) equals: 1 "unused counter"
 ]
 
 { #category : #'tests-picdata' }
-VMSistaJITCounterTest >> testPicDataForMethodWithAndAndJumpHasOneCounters [
+VMSistaJITCounterTest >> testPicDataForMethodWithAndAndJumpHasOneCounterPerConditionalJump [
 	
 	| nativeMethod picData |
 	self setArrayClassIntoClassTable.
@@ -411,7 +411,7 @@ VMSistaJITCounterTest >> testPicDataForMethodWithAndAndJumpHasOneCounters [
 
 	picData := interpreter picDataFor: nativeMethod.
 	
-	self assert: (memory numSlotsOf: picData) equals: 1
+	self assert: (memory numSlotsOf: picData) equals: 2
 ]
 
 { #category : #'tests-picdata' }
@@ -459,7 +459,7 @@ VMSistaJITCounterTest >> testPicDataForMethodWithOr [
 	
 	picData := interpreter picDataFor: nativeMethod.
 	
-	self assert: (memory numSlotsOf: picData) equals: 0
+	self assert: (memory numSlotsOf: picData) equals: 1 "unused counter"
 ]
 
 { #category : #'tests-picdata' }
