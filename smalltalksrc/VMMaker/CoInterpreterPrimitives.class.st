@@ -190,7 +190,10 @@ CoInterpreterPrimitives >> picDataFor: cogMethod [
 	| cm nSlots nEntries data |
 	cm := cogMethod methodObject.
 	nSlots := (objectMemory byteSizeOf: cm) - (self startPCOfMethod: cm) + objectMemory minSlotsForShortening.
-	data := objectMemory instantiateClass: (objectMemory splObj: ClassArray) indexableSize: nSlots.
+	data := objectMemory 
+		eeInstantiateClassIndex: ClassArrayCompactIndex
+		format: objectMemory arrayFormat
+		numSlots: nSlots.
 	data ifNil: [^-1].
 	nEntries := cogit picDataFor: cogMethod into: data.
 	nEntries = 0 ifTrue:

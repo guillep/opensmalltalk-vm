@@ -425,6 +425,12 @@ VMSimpleStackBasedCogitAbstractTest >> jitCompilerClass [
 ]
 
 { #category : #helpers }
+VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod [ 
+
+	^ self jitMethod: aPharoCompiledMethod selector: memory nilObject
+]
+
+{ #category : #helpers }
 VMSimpleStackBasedCogitAbstractTest >> jitMethod: aPharoCompiledMethod selector: aSelectorOop [
 
 	| methodOop |

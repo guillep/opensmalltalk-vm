@@ -17,19 +17,6 @@ Class {
 }
 
 { #category : #tests }
-VMLookUpTest >> setArrayClassIntoClassTable [
-	| aClass |
-	aClass := self
-		newClassInOldSpaceWithSlots: 0
-		instSpec: Array instSpec.
-	memory setHashBitsOf: aClass to: ClassArrayCompactIndex.
-	memory
-		storePointer: ClassArrayCompactIndex
-		ofObject: memory classTableFirstPage
-		withValue: aClass
-]
-
-{ #category : #tests }
 VMLookUpTest >> setMessageClassIntoClassTable [
 	| aClass |
 	aClass := self

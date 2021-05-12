@@ -49,7 +49,7 @@ UnicornI386Simulator >> createUnicorn [
 { #category : #disassembling }
 UnicornI386Simulator >> disassembler [
 	
-	^ LLVMDisassembler i386
+	^ LLVMX86Disassembler i386
 ]
 
 { #category : #'as yet unclassified' }

@@ -70,12 +70,6 @@ VMPrimitiveCallAbstractTest >> jitCompilerClass [
 	^ StackToRegisterMappingCogit 
 ]
 
-{ #category : #helpers }
-VMPrimitiveCallAbstractTest >> jitMethod: aPharoCompiledMethod [ 
-
-	^ self jitMethod: aPharoCompiledMethod selector: memory nilObject
-]
-
 { #category : #'methods under test' }
 VMPrimitiveCallAbstractTest >> jitOptions [
 

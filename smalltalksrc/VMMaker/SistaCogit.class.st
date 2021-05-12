@@ -1474,12 +1474,11 @@ SistaCogit >> genJumpIf: boolean to: targetBytecodePC [
 	 decrements the lower half.  N.B. We *do not* eliminate dead branches (true ifTrue:/true ifFalse:)
 	 so that scanning for send and branch data is simplified and that branch data is correct."
 	<inline: false>
-	| ok counterAddress countTripped retry nextPC nextDescriptor desc eventualTarget |
+	| ok counterAddress countTripped retry desc eventualTarget |
 	<var: #ok type: #'AbstractInstruction *'>
 	<var: #desc type: #'CogSimStackEntry *'>
 	<var: #retry type: #'AbstractInstruction *'>
 	<var: #countTripped type: #'AbstractInstruction *'>
-	<var: #nextDescriptor type: #'BytecodeDescriptor *'>
 
 	"In optimized code we don't generate counters to improve performance"
 	(coInterpreter isOptimizedMethod: methodObj) ifTrue: [ ^ super genJumpIf: boolean to: targetBytecodePC ].
@@ -1492,12 +1491,15 @@ SistaCogit >> genJumpIf: boolean to: targetBytecodePC [
 		^ self genCounterTripOnlyJumpIf: boolean to: targetBytecodePC ].
 	
 	"We detect and: / or:, if found, we don't generate the counters to avoid pathological counter slow down"
-	boolean = objectMemory falseObject ifTrue:
-		[ nextPC := bytecodePC + (self generatorAt: byte0) numBytes.
-		  nextDescriptor := self generatorForPC: nextPC.
-		  nextDescriptor generator ==  #genPushConstantTrueBytecode ifTrue: [ ^ super genJumpIf: boolean to: targetBytecodePC ].
-		  nextDescriptor := self generatorForPC: targetBytecodePC.
-		  nextDescriptor generator == #genPushConstantFalseBytecode ifTrue: [ ^ super genJumpIf: boolean to: targetBytecodePC ].  ].
+	(self isAndOrOrBytecodeSequenceAt: byte0 targetPC: targetBytecodePC) ifTrue: [
+		"The compiler allocates as many counters as jumps are there in the method
+		regardless if they are and: or or:s.
+		When reading the map to read the counters, all jumps should be aligned with their counter,
+		wether they are incremented or not.
+		
+		Increment the counter index to assign this counter entry to the and/or even if unused"
+		counterIndex := counterIndex + 1.
+		^ super genJumpIf: boolean to: targetBytecodePC ].
 
 	extA := 0. "We ignore the noMustBeBoolean flag. It should not be present in methods with counters, and if it is we don't care."
 
@@ -2389,8 +2391,36 @@ SistaCogit >> initialize [
 
 { #category : #initialization }
 SistaCogit >> initializeCodeZoneFrom: startAddress upTo: endAddress [
-	initialCounterValue := MaxCounterValue.
+
+	self initializeInitialCounterValue.
 	super initializeCodeZoneFrom: startAddress upTo: endAddress
+]
+
+{ #category : #initialization }
+SistaCogit >> initializeInitialCounterValue [
+
+	initialCounterValue := MaxCounterValue
+]
+
+{ #category : #'bytecode generator support' }
+SistaCogit >> isAndOrOrBytecodeSequenceAt: aByte targetPC: targetBytecodePC [
+
+	<var: #nextDescriptor type: #'BytecodeDescriptor *'>
+	| currentGenerator nextPC nextDescriptor |
+	currentGenerator := self generatorAt: aByte.
+	currentGenerator isBranchFalse ifFalse: [ ^ false ].
+
+	nextPC := bytecodePC + (self generatorAt: aByte) numBytes.
+	
+	nextDescriptor := self generatorForPC: nextPC.
+	nextDescriptor generator ==  #genPushConstantTrueBytecode
+		ifTrue: [ ^ true ].
+	
+	nextDescriptor := self generatorForPC: targetBytecodePC.
+	nextDescriptor generator == #genPushConstantFalseBytecode
+		ifTrue: [ ^ true ].
+	
+	^ false
 ]
 
 { #category : #'simulation only' }
@@ -2553,7 +2583,7 @@ SistaCogit >> picDataFor: descriptor Annotation: isBackwardBranchAndAnnotation M
 							cCoerce: ((self
 											cCoerceSimple: cogMethodArg
 											to: #'CogMethod *') counters)
-							to: #'usqInt *')
+							to: #'unsigned int *')
 								at: counterIndex.
 			 tuple := self picDataForCounter: counter at: bcpc + 1.
 			 tuple = 0 ifTrue: [^PrimErrNoMemory].
@@ -2641,8 +2671,8 @@ SistaCogit >> picDataForCounter: counter at: bcpc [
 				numSlots: 3.
 	tuple = 0 ifTrue:
 		[^0].
-	self assert: CounterBytes = 4.
-	executedCount := initialCounterValue - (counter >> 16).
+
+	executedCount := initialCounterValue - ((counter >> 16) bitAnd: 16rFFFF).
 	untakenCount := initialCounterValue - (counter bitAnd: 16rFFFF).
 	objectMemory
 		storePointerUnchecked: 0 ofObject: tuple withValue: (objectMemory integerObjectOf: bcpc);

@@ -9,7 +9,8 @@ Class {
 		'isSmall',
 		'isPrimitive',
 		'method',
-		'slotSize'
+		'slotSize',
+		'signFlag'
 	],
 	#category : #'VMMakerTests-Builders'
 }
@@ -24,11 +25,17 @@ VMMethodBuilder >> buildMethod [
 { #category : #building }
 VMMethodBuilder >> buildMethodHeader [
 
-	^ (numberOfArguments bitShift: 24)
+
+	| header |
+	header := (numberOfArguments bitShift: 24)
 		+ (numberOfTemporaries bitShift: 18) 
 		+ (isSmall ifTrue: [ 0 ] ifFalse: [ 1 bitShift: 17 ])
 		+ literals size 
-		+ (isPrimitive asBit << 16)
+		+ (isPrimitive asBit << 16).
+
+	^ 	signFlag
+			ifTrue: [ (header negated twoComplementOfBitSize: 60) negated ]
+			ifFalse: [ header ]
 ]
 
 { #category : #helper }
@@ -60,6 +67,7 @@ VMMethodBuilder >> compiledMethodClassIndex [
 VMMethodBuilder >> fillFromPharoMethod: aCompiledMethod [ 
 
 	self newMethod.
+	signFlag := aCompiledMethod signFlag.
 	self numberOfTemporaries: aCompiledMethod numTemps.
 	self numberOfArguments: aCompiledMethod numArgs.
 	self bytecodes: aCompiledMethod bytecode.

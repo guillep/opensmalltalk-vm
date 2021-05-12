@@ -420,6 +420,19 @@ VMSpurMemoryManagerTest >> roundToPageSize: anInteger [
 	^ anInteger + (pageSize - remainder)
 ]
 
+{ #category : #tests }
+VMSpurMemoryManagerTest >> setArrayClassIntoClassTable [
+	| aClass |
+	aClass := self
+		newClassInOldSpaceWithSlots: 0
+		instSpec: Array instSpec.
+	memory setHashBitsOf: aClass to: ClassArrayCompactIndex.
+	memory
+		storePointer: ClassArrayCompactIndex
+		ofObject: memory classTableFirstPage
+		withValue: aClass
+]
+
 { #category : #running }
 VMSpurMemoryManagerTest >> setContextClassIntoClassTable [
 	| aClass |

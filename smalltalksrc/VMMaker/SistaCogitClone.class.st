@@ -2256,7 +2256,7 @@ SistaCogitClone >> picDataForCounter: counter at: bcpc [
 				numSlots: 3.
 	tuple = 0 ifTrue:
 		[^0].
-	self assert: CounterBytes = 4.
+
 	executedCount := initialCounterValue - (counter >> 16).
 	untakenCount := initialCounterValue - (counter bitAnd: 16rFFFF).
 	objectMemory
