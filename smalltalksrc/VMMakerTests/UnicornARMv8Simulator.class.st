@@ -46,6 +46,14 @@ UnicornARMv8Simulator >> carry [
 	^ (self nzcv bitAnd: (1<<29))~= 0
 ]
 
+{ #category : #'as yet unclassified' }
+UnicornARMv8Simulator >> carry: aBoolean [
+
+	| cleared |
+	cleared := self nzcv bitClear: (1 <<29).
+	^ self nzcv: (cleared bitOr: (aBoolean asBit <<29))
+]
+
 { #category : #registers }
 UnicornARMv8Simulator >> classRegister [
 	
@@ -195,6 +203,12 @@ UnicornARMv8Simulator >> negative [
 UnicornARMv8Simulator >> nzcv [
 
 	^ self readRegister: UcARM64Registers nzcv 
+]
+
+{ #category : #'as yet unclassified' }
+UnicornARMv8Simulator >> nzcv: aValue [
+
+	^ self writeRegister: UcARM64Registers nzcv value: aValue
 ]
 
 { #category : #'as yet unclassified' }
