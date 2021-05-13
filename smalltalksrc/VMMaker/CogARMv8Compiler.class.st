@@ -2760,14 +2760,11 @@ CogARMv8Compiler >> concretizePrefetchAw [
 						sourceRegister: ConcreteVarBaseReg
 						offset: addressOperand - cogit varBaseAddress).
 			^ machineCodeSize := 4 ].
-	
-	self notYetImplemented.
-	
+
 	instrOffset := self moveCw: addressOperand intoR: ConcreteIPReg.
-	"pld	[ConcreteIPReg]"
 	self
 		machineCodeAt: instrOffset
-		put: (self pld: ConcreteIPReg plus: 1 offset: 0).
+		put: (	self prefetchMemory: 0 sourceRegister: ConcreteIPReg offset: 0).
 	^ machineCodeSize := instrOffset + 4
 ]
 
