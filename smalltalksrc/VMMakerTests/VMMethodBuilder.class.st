@@ -34,7 +34,7 @@ VMMethodBuilder >> buildMethodHeader [
 		+ (isPrimitive asBit << 16).
 
 	^ 	signFlag
-			ifTrue: [ (header negated twoComplementOfBitSize: 60) negated ]
+			ifTrue: [ (header negated twoComplementOfBitSize: memory numSmallIntegerBits - 1 "without sign") negated ]
 			ifFalse: [ header ]
 ]
 
