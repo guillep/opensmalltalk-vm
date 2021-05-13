@@ -513,6 +513,8 @@ CogOutOfLineLiteralsARMv8Compiler >> usesOutOfLineLiteral [
 		"Data Movement"						
 		[MoveCqR]		-> [^ self shiftable16bitImmediate: (operands at: 0) abs
 								ifTrue: [ :s :v | false ] ifFalse: [ true ]].
+		[MoveA32R]	-> [ ^ (self isAddressRelativeToVarBase: (operands at: 0)) ifTrue: [false] ifFalse: [true]].
+		[MoveRA32]	-> [ ^ (self isAddressRelativeToVarBase: (operands at: 1)) ifTrue: [false] ifFalse: [true]].
 		[MoveC32R]  -> [ ^ self shiftable16bitImmediate: (operands at: 0) abs
 			ifTrue: [ :s :v | false ] ifFalse: [ true ] ].
 

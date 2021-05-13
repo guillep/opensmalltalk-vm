@@ -1099,6 +1099,21 @@ CogARMv8Compiler >> computeMaximumSize [
 												ifFalse: [self literalLoadInstructionBytes]]].
 		[MoveRR]				-> [^4].
 		[MoveRdRd]			-> [^4].
+		[MoveA32R]				-> [
+			"if register is SP we need an extra move"
+			^(self isAddressRelativeToVarBase: (operands at: 0))
+					ifTrue: [(operands at: 1) = SP
+						ifTrue: [ 8 ]
+						ifFalse: [ 4 ]  ]
+					ifFalse: [self literalLoadInstructionBytes + 8 ]].
+		[MoveRA32]				-> [^(self isAddressRelativeToVarBase: (operands at: 1))
+													ifTrue: [(operands at: 0) = SP
+														ifTrue: [ 8 ]
+														ifFalse: [ 4 ]]
+													ifFalse: [
+													 	(operands at: 0) = SP
+															ifTrue: [ 4 + self literalLoadInstructionBytes + 4 ]
+															ifFalse: [ self literalLoadInstructionBytes + 4 ]]].
 		[MoveAwR]				-> [
 			"if register is SP we need an extra move"
 			^(self isAddressRelativeToVarBase: (operands at: 0))
@@ -2003,6 +2018,46 @@ CogARMv8Compiler >> concretizeMUL [
 	^ machineCodeSize := 4
 ]
 
+{ #category : #concretize }
+CogARMv8Compiler >> concretizeMoveA32R [
+
+	| srcAddr destReg instrOffset |
+	srcAddr := operands at: 0.
+	destReg := operands at: 1.
+	(self isAddressRelativeToVarBase: srcAddr) ifTrue: [ | actualDestination |
+		actualDestination := destReg = SP
+			ifTrue: [ ConcreteIPReg ]
+			ifFalse: [ destReg ].
+		self
+			machineCodeAt: 0
+			put: (self
+				ldrSize: 0 "32 bits"
+				baseRegister: ConcreteVarBaseReg
+				unsignedOffset: srcAddr - cogit varBaseAddress
+				destinationRegister: actualDestination).
+		machineCodeSize := 4.
+			
+		destReg = SP ifTrue: [ 
+			self machineCodeAt: 4 put: (self movToFromSP: SP rn: actualDestination).
+			machineCodeSize := machineCodeSize + 4.
+		].
+
+		^ machineCodeSize ].
+	
+	"load the address into ConcreteIPReg"
+	instrOffset := self moveCw: srcAddr intoR: ConcreteIPReg.
+	self
+		machineCodeAt: instrOffset
+		put: (self ldurSize: 0 "32 bits"
+			baseRegister: ConcreteIPReg
+			signedOffset: 0
+			destinationRegister: ConcreteIPReg).
+	self
+		machineCodeAt: instrOffset + 4
+		put: (self movSize: 0 "32 bits" sourceRegisterMaybeSP: ConcreteIPReg destinationRegisterMaybeSP: destReg).
+	^ machineCodeSize := instrOffset + 8
+]
+
 { #category : #'generate machine code - concretize' }
 CogARMv8Compiler >> concretizeMoveAbR [
 	"Will get inlined into concretizeAt: switch."
@@ -2281,6 +2336,53 @@ CogARMv8Compiler >> concretizeMoveMwrR [
 			^ machineCodeSize := instrOffset + 4 ].
 		
 	^ 0	"to keep Slang happy"
+]
+
+{ #category : #concretize }
+CogARMv8Compiler >> concretizeMoveRA32 [
+	"Will get inlined into concretizeAt: switch."
+
+	<inline: true>
+	| srcReg destAddr instrOffset actualSourceRegister |
+	srcReg := operands at: 0.
+	destAddr := operands at: 1.
+	(self isAddressRelativeToVarBase: destAddr) ifTrue: [ | actualSourceRegister2 |
+		machineCodeSize := 0.
+		actualSourceRegister2 := srcReg = SP
+			ifTrue: [ 
+				self
+					machineCodeAt: 0
+					put: (self movToFromSP: ConcreteIPReg rn: SP).
+				machineCodeSize := 4.
+				ConcreteIPReg ]
+			ifFalse: [ srcReg ].
+
+		self
+			machineCodeAt: machineCodeSize
+			put:
+				(self
+					strSize: 0 "32 bits"
+					baseRegister: ConcreteVarBaseReg
+					positiveOffset: destAddr - cogit varBaseAddress
+					destinationRegister: actualSourceRegister2).
+		^ machineCodeSize := machineCodeSize + 4 ].
+
+	"load the address into ConcreteIPReg"
+	instrOffset := self moveCw: destAddr intoR: ConcreteIPReg.
+	
+	actualSourceRegister := srcReg = SP
+		ifTrue: [ 
+				self
+					machineCodeAt: instrOffset
+					put: (self movToFromSP: ConcreteIPReg2 rn: SP).
+				instrOffset := instrOffset + 4.
+				ConcreteIPReg2 ]
+		ifFalse: [ srcReg ].
+	
+	self
+		machineCodeAt: instrOffset
+		put: (self strSize: 0 "32 bits" baseRegister: ConcreteIPReg positiveOffset: 0 destinationRegister: actualSourceRegister).
+	^ machineCodeSize := instrOffset + 4
 ]
 
 { #category : #'generate machine code - concretize' }
@@ -3254,6 +3356,8 @@ CogARMv8Compiler >> dispatchConcretize [
 		[MoveCwR]			-> [^self concretizeMoveCwR].
 		[MoveC32R]		-> [^self concretizeMoveC32R].
 		[MoveRR]			-> [^self concretizeMoveRR].
+		[MoveA32R]		-> [^self concretizeMoveA32R].
+		[MoveRA32]		-> [^self concretizeMoveRA32].
 		[MoveAwR]			-> [^self concretizeMoveAwR].
 		[MoveRAw]			-> [^self concretizeMoveRAw].
 		[MoveAbR] 			 -> [^self concretizeMoveAbR].
