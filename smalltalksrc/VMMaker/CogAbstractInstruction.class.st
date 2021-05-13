@@ -813,6 +813,14 @@ CogAbstractInstruction >> genJumpMultiplyOverflow: jumpTarget [
 	^cogit JumpOverflow: jumpTarget
 ]
 
+{ #category : #'abstract instructions' }
+CogAbstractInstruction >> genJumpSubstractionCarry: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	^cogit JumpCarry: jumpTarget
+]
+
 { #category : #'smalltalk calling convention' }
 CogAbstractInstruction >> genLoadCStackPointer [
 	"Load the stack pointer register with that of the C stack, effecting

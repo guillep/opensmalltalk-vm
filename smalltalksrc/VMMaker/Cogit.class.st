@@ -2067,6 +2067,15 @@ Cogit >> JumpR: reg [
 ]
 
 { #category : #'abstract instructions' }
+Cogit >> JumpSubstractionCarry: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	
+	^ backEnd genJumpSubstractionCarry: jumpTarget
+]
+
+{ #category : #'abstract instructions' }
 Cogit >> JumpZero: jumpTarget [
 	<inline: true>
 	<returnTypeC: #'AbstractInstruction *'>

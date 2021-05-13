@@ -1208,7 +1208,7 @@ SistaCogitClone >> genExecutionCountLogicInto: binaryBlock counterReg: counterRe
 	self SubCq: 16r10000 R: counterReg. "Count executed"
 	"If counter trips simply abort the comparison continuing to the following
 	 branch *without* writing back.  A double decrement will not trip the second time."
-	countTripped := self JumpCarry: 0.
+	countTripped := self JumpSubstractionCarry: 0.
 	self MoveR: counterReg A32: counterAddress. "write back"
 	binaryBlock value: counterAddress value: countTripped
 ]

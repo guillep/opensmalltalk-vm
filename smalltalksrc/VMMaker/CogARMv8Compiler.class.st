@@ -3862,6 +3862,17 @@ CogARMv8Compiler >> genJumpMultiplyOverflow: jumpTarget [
 	^cogit JumpNonZero: jumpTarget
 ]
 
+{ #category : #'abstract instructions' }
+CogARMv8Compiler >> genJumpSubstractionCarry: jumpTarget [
+	<inline: true>
+	<returnTypeC: #'AbstractInstruction *'>
+	<var: #jumpTarget type: #'void *'>
+	"ARM uses an inverted carry flag for borrow (i.e. subtraction). 
+	For a subtraction, [...] C is set to 0 if the subtraction produced a borrow (that is, an unsigned underflow), and to 1 otherwise."
+	
+	^cogit JumpNoCarry: jumpTarget
+]
+
 { #category : #'smalltalk calling convention' }
 CogARMv8Compiler >> genLoadCStackPointer [
 	"Load the stack pointer register with that of the C stack, effecting
