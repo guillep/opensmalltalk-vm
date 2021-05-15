@@ -314,18 +314,11 @@ Class {
 	#name : #StackInterpreter,
 	#superclass : #InterpreterPrimitives,
 	#instVars : [
-		'currentBytecode',
 		'bytecodeSetSelector',
-		'localFP',
-		'localIP',
-		'localSP',
 		'stackLimit',
 		'stackPage',
 		'stackPages',
 		'method',
-		'instructionPointer',
-		'stackPointer',
-		'framePointer',
 		'localReturnValue',
 		'localAbsentReceiver',
 		'localAbsentReceiverOrZero',
@@ -433,7 +426,6 @@ Class {
 		'AtCacheTotalSize',
 		'AtPutBase',
 		'BytecodeEncoderClassName',
-		'BytecodeTable',
 		'CacheProbeMax',
 		'DirBadPath',
 		'DirEntryFound',
@@ -8580,14 +8572,6 @@ StackInterpreter >> internalStackValue: offset [
 StackInterpreter >> internalStackValue: offset put: aValue [
 	"In the StackInterpreter stacks grow down."
 	^stackPages longAtPointer: localSP + (offset * objectMemory bytesPerOop) put: aValue
-]
-
-{ #category : #utilities }
-StackInterpreter >> internalizeIPandSP [
-	"Copy the instruction, stack and frame pointers to local variables for rapid access within the interpret loop."
-	localIP := self pointerForOop: instructionPointer.
-	localSP := self pointerForOop: stackPointer.
-	localFP := self pointerForOop: framePointer.
 ]
 
 { #category : #'interpreter shell' }
