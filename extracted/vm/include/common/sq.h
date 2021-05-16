@@ -33,25 +33,6 @@
 
 #include "pharovm/semaphores/platformSemaphore.h"
 
-
-#if !defined(IMAGE_DIALECT_NAME)
-# if NewspeakVM
-#	define IMAGE_DIALECT_NAME "Newspeak"
-#	define DEFAULT_IMAGE_NAME "newspeak.image"
-#	define IMAGE_ENV_NAME "NEWSPEAK_IMAGE"
-# elif PharoVM
-#	define IMAGE_DIALECT_NAME "Pharo"
-#	if !defined(DEFAULT_IMAGE_NAME)
-#		define DEFAULT_IMAGE_NAME "Pharo.image"
-#	endif
-#	define IMAGE_ENV_NAME "PHARO_IMAGE"
-# else
-#	define IMAGE_DIALECT_NAME "Squeak"
-#	define DEFAULT_IMAGE_NAME "squeak.image"
-#	define IMAGE_ENV_NAME "SQUEAK_IMAGE"
-# endif
-#endif
-
 #if SPURVM
 /* Allocate a region of memory of al least sz bytes, at or above minAddr.
  * If the attempt fails, answer null.  If the attempt succeeds, answer the
