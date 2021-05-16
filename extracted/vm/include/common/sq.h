@@ -168,7 +168,7 @@ sqInt checkedByteAt(sqInt byteAddress);
 sqInt checkedByteAtput(sqInt byteAddress, sqInt byte);
 sqInt checkedLongAt(sqInt byteAddress);
 sqInt checkedLongAtput(sqInt byteAddress, sqInt a32BitInteger);
-sqInt interpret(void);
+static sqInt interpret(void);
 sqInt primitiveFail(void);
 sqInt signalSemaphoreWithIndex(sqInt semaIndex);
 sqInt doSignalExternalSemaphores(sqInt);
