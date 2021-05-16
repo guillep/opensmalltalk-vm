@@ -985,6 +985,13 @@ StackInterpreter class >> initializeDirectoryLookupResultCodes [
 ]
 
 { #category : #initialization }
+StackInterpreter class >> initializeForPlugins: optionsDictionaryOrArray [
+	"Do a default initialization, suitable for generating plugin sources."
+	StackInterpreterSimulator
+		initializeWithOptions: optionsDictionaryOrArray
+]
+
+{ #category : #initialization }
 StackInterpreter class >> initializeFrameIndices [
 	"Format of a stack frame.  Word-sized indices relative to the frame pointer.
 	 Terminology
@@ -1111,8 +1118,7 @@ StackInterpreter class >> initializeMiscConstants [
 	 VM they must not conflct with the VM's tag bits."
 	DisownVMLockOutFullGC := 8.
 	DisownVMForFFICall := 16.
-	DisownVMForThreading := 32
-
+	DisownVMForThreading := 32.
 ]
 
 { #category : #initialization }
@@ -1606,11 +1612,6 @@ StackInterpreter class >> interpreterVersion [
 ]
 
 { #category : #translation }
-StackInterpreter class >> isInterpreterClass [
-	^true
-]
-
-{ #category : #translation }
 StackInterpreter class >> isNonArgumentImplicitReceiverVariableName: aString [
 	^(#('self' 'stackPages' 'interpreter' 'coInterpreter' 'objectMemory') includes: aString)
 	  or: [self objectMemoryClass isNonArgumentImplicitReceiverVariableName: aString]
@@ -1886,34 +1887,6 @@ StackInterpreter class >> sourceFileName [
 	^'interp.c'
 ]
 
-{ #category : #initialization }
-StackInterpreter class >> table: anArray from: specArray [ 
-	"SpecArray is an array of one of (index selector) or (index1 
-	 index2 selector) or (index nil) or (index1 index2 nil).  If selector
-	 then the entry is the selector, but if nil the entry is the index."
-	| contiguous |
-	contiguous := 0.
-	specArray do:
-		[:spec | 
-		(spec at: 1) = contiguous ifFalse:
-			[self error: 'Non-contiguous table entry'].
-		spec size = 2
-			ifTrue:
-				[anArray
-					at: (spec at: 1) + 1
-					put: ((spec at: 2) ifNil: [spec at: 1] ifNotNil: [:sym| sym]).
-				 contiguous := contiguous + 1]
-			ifFalse:
-				[(spec at: 1) to: (spec at: 2) do:
-					[:i | anArray at: i + 1 put: ((spec at: 3) ifNil: [i] ifNotNil: [:sym| sym])].
-				 contiguous := contiguous + ((spec at: 2) - (spec at: 1)) + 1]].
-	anArray doWithIndex:
-		[:entry :index|
-		entry isSymbol ifTrue:
-			[(self shouldIncludeMethodForSelector: entry) ifFalse:
-				[anArray at: index put: 0]]]
-]
-
 { #category : #translation }
 StackInterpreter class >> translationClass [
 	"Return te class to use as the interpreterCLass when translating.  For the all-in-one
@@ -1958,6 +1931,36 @@ StackInterpreter class >> wantsLabels [
 { #category : #translation }
 StackInterpreter class >> writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator [
 	super writeVMHeaderTo: aStream bytesPerWord: bytesPerWord generator: aCCodeGenerator.
+	
+	"Generate the contents of interp.h on aStream.  Specific Interpreter subclasses
+	 override to add more stuff."
+	aCCodeGenerator
+		putDefineOf: 'VM_PROXY_MAJOR' as: self vmProxyMajorVersion on: aStream;
+		putDefineOf: 'VM_PROXY_MINOR' as: self vmProxyMinorVersion on: aStream.
+	aStream newLine.
+	aCCodeGenerator
+		putDefineOf: 'SQ_VI_BYTES_PER_WORD' as: bytesPerWord on: aStream.
+	aStream newLine.
+
+	"The most basic constants must be defined here, not in e.g. the plugin sources, to allow those
+	 other sources to be shared between different builds (Spur vs SqueakV3, 32-bit vs 64-bit, etc)"
+	self constantClass mostBasicConstantNames asSet sorted do:
+		[:constName|
+		(self constantClass classPool at: constName ifAbsent: []) ifNotNil:
+			[:const| aCCodeGenerator putDefineOf: constName as: const on: aStream]].
+	aStream newLine.
+
+	((self constantClass classPool associations select: [:a| a key beginsWith: 'PrimErr'])
+		sorted: [:a1 :a2| a1 value <= a2 value])
+		do: [:a| aCCodeGenerator putDefineOf: a key as: a value on: aStream].
+	aStream newLine.
+
+	aCCodeGenerator
+		putDefineOf: 'MinSmallInteger' as: self objectMemoryClass minSmallInteger on: aStream;
+		putDefineOf: 'MaxSmallInteger' as: self objectMemoryClass maxSmallInteger on: aStream;
+		putDefineOf: 'NumSmallIntegerTagBits' as: self objectMemoryClass numSmallIntegerTagBits on: aStream.
+	aStream newLine.
+	
 	SistaVM ifTrue:
 		[aCCodeGenerator putDefineOf: #SistaVM as: 1 on: aStream].
 	MULTIPLEBYTECODESETS ifTrue:
@@ -6332,13 +6335,6 @@ StackInterpreter >> fetchArray: fieldIndex ofObject: objectPointer [
 	arrayOop := objectMemory fetchPointer: fieldIndex ofObject: objectPointer.
 	^ self arrayValueOf: arrayOop
 
-]
-
-{ #category : #'interpreter shell' }
-StackInterpreter >> fetchByte [
-	"This method uses the preIncrement builtin function which has no Smalltalk equivalent. Thus, it must be overridden in the simulator."
-
-	^objectMemory byteAtPointer: localIP preIncrement
 ]
 
 { #category : #utilities }

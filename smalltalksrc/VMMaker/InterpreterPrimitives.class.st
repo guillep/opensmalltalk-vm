@@ -62,7 +62,7 @@ secHasEnvironmentAccess
 "
 Class {
 	#name : #InterpreterPrimitives,
-	#superclass : #AbstractInterpreter,
+	#superclass : #MLAbstractInterpreter,
 	#instVars : [
 		'messageSelector',
 		'argumentCount',

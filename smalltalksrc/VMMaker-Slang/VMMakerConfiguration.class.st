@@ -258,12 +258,6 @@ VMMakerConfiguration class >> initializeForPharo [
 		at: #sourceDir put: 'src'
 ]
 
-{ #category : #initialize }
-VMMakerConfiguration class >> initializeForPlugins: options [ 
-	
-	VMClass initializeForPlugins: options 
-]
-
 { #category : #accessing }
 VMMakerConfiguration class >> interpreterPluginClass [
 

@@ -701,7 +701,7 @@ CogVMSimulator >> codeGeneratorToComputeAccessorDepth [
 			includeAPIMethods: false
 			initializeClasses: false)
 				logger: self transcript;
-				yourself]
+				yourself ]
 ]
 
 { #category : #'as yet unclassified' }

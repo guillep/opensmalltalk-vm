@@ -240,7 +240,7 @@ VMMaker class >> makerFor: interpreterClass and: cogitClassOrNil with: optionsPa
 		
 	(self environment at: (options at: #ObjectMemory)) initializeWithOptions: options.
 		
-	vmmakerConfiguration initializeForPlugins: options.
+	interpreterClass initializeForPlugins: options.
 	
 	^(self forPlatform: 'Cross')
 		vmmakerConfiguration: vmmakerConfiguration;
@@ -310,18 +310,10 @@ VMMaker >> availablePlugins [
 VMMaker >> buildCodeGeneratorForCogit [
 	"Answer the code generator for translating the cogit."
 
-	^(Smalltalk classNamed: #CurrentReadOnlySourceFiles)
-		ifNil: [self
-				buildCodeGeneratorForCogit: self interpreterClass cogitClass
-				includeAPIMethods: true
-				initializeClasses: true]
-		ifNotNil:
-			[:crosf|
-			 crosf cacheDuring:
-				[self
-					buildCodeGeneratorForCogit: self interpreterClass cogitClass
-					includeAPIMethods: true
-					initializeClasses: true]]
+	^ self
+		buildCodeGeneratorForCogit: self interpreterClass cogitClass
+		includeAPIMethods: true
+		initializeClasses: true
 ]
 
 { #category : #'generate sources' }
@@ -365,18 +357,10 @@ VMMaker >> buildCodeGeneratorForCogit: cogitClass includeAPIMethods: getAPIMetho
 VMMaker >> buildCodeGeneratorForInterpreter [
 	"Answer the code generator for translating the interpreter."
 
-	^(Smalltalk classNamed: #CurrentReadOnlySourceFiles)
-		ifNil: [self
-				buildCodeGeneratorForInterpreter: self interpreterClass
-				includeAPIMethods: true
-				initializeClasses: true]
-		ifNotNil:
-			[:crosf|
-			 crosf cacheDuring:
-				[self
-					buildCodeGeneratorForInterpreter: self interpreterClass
-					includeAPIMethods: true
-					initializeClasses: true]]
+	^ self
+		buildCodeGeneratorForInterpreter: self interpreterClass
+		includeAPIMethods: true
+		initializeClasses: true
 ]
 
 { #category : #'generate sources' }
@@ -746,8 +730,7 @@ VMMaker >> generateExternalPlugin: pluginName [
 		do: [:ex|
 			logger show: 'external plugin ' , plugin name , ' failed to validate: ' , ex messageText; cr.
 			^self].
-
-	vmmakerConfiguration initializeForPlugins: optionsDictionary.
+	self interpreterClass initializeForPlugins: optionsDictionary.
 	[exports := plugin
 					translateInDirectory: (self externalPluginsDirectoryFor: plugin)
 					doInlining: inline]

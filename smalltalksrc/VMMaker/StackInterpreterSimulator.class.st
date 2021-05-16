@@ -403,7 +403,7 @@ StackInterpreterSimulator >> close [  "close any files that ST may have opened, 
 StackInterpreterSimulator >> codeGeneratorToComputeAccessorDepth [
 
 	^ codeGeneratorToComputeAccessorDepth ifNil: [
-		^(VMMaker new
+		(VMMaker new
 			vmmakerConfiguration: VMMakerConfiguration;
 			buildCodeGeneratorForInterpreter: self class primitivesClass
 			includeAPIMethods: false
