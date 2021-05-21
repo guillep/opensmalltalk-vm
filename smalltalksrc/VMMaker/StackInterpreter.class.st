@@ -1216,8 +1216,8 @@ StackInterpreter class >> initializePrimitiveTable [
 		(63 primitiveStringAt)
 		(64 primitiveStringAtPut)
 		"The stream primitives no longer pay their way; normal Smalltalk code is faster."
-		(65 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called")"was primitiveNext"
-		(66 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveNextPut"
+		(65 primitiveStartProfiling)
+		(66 primitiveStopProfiling)
 		(67 0 "a.k.a. primitiveFail but faster because primitiveFail won't even be called") "was primitiveAtEnd"
 
 		"StorageManagement Primitives (68-79)"
@@ -8399,6 +8399,9 @@ StackInterpreter >> internalAboutToReturn: resultOop through: aContext [
 StackInterpreter >> internalActivateNewMethod [
 	| methodHeader numTemps rcvr |
 	<inline: true>
+	
+	"For exact profiler"
+	self recordMethodActivation.
 
 	methodHeader := objectMemory methodHeaderOf: newMethod.
 	numTemps := self temporaryCountOfMethodHeader: methodHeader.
@@ -11737,6 +11740,43 @@ StackInterpreter >> primitiveObject: actualReceiver perform: selector withArgume
 	^nil
 ]
 
+{ #category : #'primitive support' }
+StackInterpreter >> primitiveStartProfiling [
+
+	| profilingLinkedList profileListRoot |
+	profilingLinkedList := objectMemory splObj: 31.
+	objectMemory nilObject = profilingLinkedList
+		ifFalse: [ ^ self primitiveFailed ].
+	
+	"Create the linked list head.
+	The profiling list is a linked list of arrays.
+	Each array has two elements:
+	  - method
+	  - next link
+	This first root has no method"
+	profileListRoot := objectMemory
+		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
+		format: objectMemory arrayFormat
+		numSlots: 2.
+		
+	objectMemory splObj: 31 put: profileListRoot.
+	
+	"Primitive is success, return self"
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> primitiveStopProfiling [
+
+	| profilingLinkedList |
+	profilingLinkedList := objectMemory splObj: 31.
+	objectMemory nilObject = profilingLinkedList
+		ifTrue: [ ^ self primitiveFailed ].
+	
+	objectMemory splObj: 31 put: objectMemory nilObject.
+	
+	self pop: 1 thenPush: profilingLinkedList
+]
+
 { #category : #'as yet unclassified' }
 StackInterpreter >> primitiveTable [
 	<doNotGenerate>
@@ -13587,6 +13627,33 @@ StackInterpreter >> reapAndResetErrorCodeTo: theSP header: methodHeader [
 StackInterpreter >> receiver [
 	<inline: true>
 	^stackPages longAt: localFP + FoxReceiver
+]
+
+{ #category : #'primitive support' }
+StackInterpreter >> recordMethodActivation [
+	
+	<inline: true>
+	"Record a method activation if we are in exact profiling mode"
+	| profilingLinkedList newProfileListRoot |
+	profilingLinkedList := objectMemory splObj: 31.
+	objectMemory nilObject = profilingLinkedList
+		ifTrue: [ "Do nothing" ^ self ].
+	
+	"Create a linked list link.
+	The profiling list is a linked list of arrays.
+	Each array has two elements:
+	  - method
+	  - next link
+	Push the link as the new head of the list"
+	newProfileListRoot := objectMemory
+		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
+		format: objectMemory arrayFormat
+		numSlots: 2.
+		
+	objectMemory storePointerUnchecked: 0 ofObject: newProfileListRoot withValue: newMethod.
+	objectMemory storePointerUnchecked: 1 ofObject: newProfileListRoot withValue: profilingLinkedList.
+		
+	objectMemory splObj: 31 put: newProfileListRoot.
 ]
 
 { #category : #'callback support' }
