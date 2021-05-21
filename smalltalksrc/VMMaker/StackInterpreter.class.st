@@ -11746,7 +11746,7 @@ StackInterpreter >> primitiveStartProfiling [
 	| profilingLinkedList profileListRoot |
 	profilingLinkedList := objectMemory splObj: 31.
 	objectMemory nilObject = profilingLinkedList
-		ifFalse: [ ^ self primitiveFailed ].
+		ifFalse: [ ^ self primitiveFail ].
 	
 	"Create the linked list head.
 	The profiling list is a linked list of arrays.
@@ -11770,7 +11770,7 @@ StackInterpreter >> primitiveStopProfiling [
 	| profilingLinkedList |
 	profilingLinkedList := objectMemory splObj: 31.
 	objectMemory nilObject = profilingLinkedList
-		ifTrue: [ ^ self primitiveFailed ].
+		ifTrue: [ ^ self primitiveFail ].
 	
 	objectMemory splObj: 31 put: objectMemory nilObject.
 	
