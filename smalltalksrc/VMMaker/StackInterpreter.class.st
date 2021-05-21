@@ -11758,7 +11758,9 @@ StackInterpreter >> primitiveStartProfiling [
 		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
 		format: objectMemory arrayFormat
 		numSlots: 2.
-		
+	objectMemory storePointer: 0 ofObject: profileListRoot withValue: objectMemory nilObject.
+	objectMemory storePointer: 1 ofObject: profileListRoot withValue: objectMemory nilObject.
+	
 	objectMemory splObj: 31 put: profileListRoot.
 	
 	"Primitive is success, return self"
