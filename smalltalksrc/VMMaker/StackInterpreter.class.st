@@ -9250,6 +9250,7 @@ StackInterpreter >> jumpUnaryInlinePrimitive: primIndex [
 { #category : #'jump bytecodes' }
 StackInterpreter >> jumplfFalseBy: offset [ 
 	| boolean |
+	<inline:true>
 	boolean := self internalStackTop.
 	implicitJumpCountFound := implicitJumpCountFound + 1.
 	boolean = objectMemory falseObject
@@ -9265,6 +9266,7 @@ StackInterpreter >> jumplfFalseBy: offset [
 { #category : #'jump bytecodes' }
 StackInterpreter >> jumplfTrueBy: offset [ 
 	| boolean |
+	<inline:true>
 	boolean := self internalStackTop.
 	implicitJumpCountFound := implicitJumpCountFound + 1.
 	boolean = objectMemory trueObject
