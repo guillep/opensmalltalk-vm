@@ -414,7 +414,9 @@ Class {
 		'maxStacksToPrint',
 		'maxStackMessagePrinted',
 		'libFFI',
-		'codeGeneratorToComputeAccessorDepth'
+		'codeGeneratorToComputeAccessorDepth',
+		'implicitJumpCountTaken',
+		'implicitJumpCountFound'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -617,6 +619,12 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #reenterInterpreter
 		declareC: 'jmp_buf reenterInterpreter; /* private export */'.
+	aCCodeGenerator
+		var: #implicitJumpCountTaken 
+		declareC: 'uint64_t implicitJumpCountTaken = 0;'.
+	aCCodeGenerator
+		var: #implicitJumpCountFound
+		declareC: 'uint64_t implicitJumpCountFound = 0;'.
 		
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
@@ -2930,6 +2938,7 @@ StackInterpreter >> bytecodePrimAdd [
 	| rcvr arg result |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [result := (objectMemory integerValueOf: rcvr) + (objectMemory integerValueOf: arg).
 				(objectMemory isIntegerValue: result) ifTrue:
@@ -2940,7 +2949,8 @@ StackInterpreter >> bytecodePrimAdd [
 				self primitiveFloatAdd: rcvr toArg: arg.
 				self internalizeIPandSP.
 				self successful ifTrue: [^ self fetchNextBytecode "success"]].
-
+	
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 0.
 	argumentCount := 1.
 	self normalSend
@@ -3042,6 +3052,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 	| rcvr arg |
 	arg := self internalStackTop.
 	rcvr := self internalStackValue: 1.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	((objectMemory isIntegerObject: arg)
 	 and: [objectMemory isIntegerObject: rcvr]) ifTrue:
 		[self internalPop: 2 thenPush: (arg bitAnd: rcvr).
@@ -3054,6 +3065,7 @@ StackInterpreter >> bytecodePrimBitAnd [
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 14.
 	argumentCount := 1.
 	self normalSend
@@ -3064,6 +3076,7 @@ StackInterpreter >> bytecodePrimBitOr [
 	| rcvr arg |
 	arg := self internalStackTop.
 	rcvr := self internalStackValue: 1.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	((objectMemory isIntegerObject: arg)
 	 and: [objectMemory isIntegerObject: rcvr]) ifTrue:
 		[self internalPop: 2 thenPush: (arg bitOr: rcvr).
@@ -3076,6 +3089,7 @@ StackInterpreter >> bytecodePrimBitOr [
 	self successful ifTrue:
 		[^self fetchNextBytecode "success"].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 15.
 	argumentCount := 1.
 	self normalSend
@@ -3173,12 +3187,14 @@ StackInterpreter >> bytecodePrimEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg) ifTrue: [^self booleanCheatSistaV1: rcvr = arg].
 
 	self initPrimCall.
 	aBool := self primitiveFloatEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 6.
 	argumentCount := 1.
 	self normalSend
@@ -3225,6 +3241,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg) ifTrue:
 		["The C code can avoid detagging since tagged integers are still signed.
 		 But this means the simulator must override to do detagging."
@@ -3235,6 +3252,7 @@ StackInterpreter >> bytecodePrimGreaterOrEqualSistaV1 [
 	aBool := self primitiveFloatGreaterOrEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 5.
 	argumentCount := 1.
 	self normalSend
@@ -3285,6 +3303,7 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg) ifTrue:
 		["The C code can avoid detagging since tagged integers are still signed.
 		 But this means the simulator must override to do detagging."
@@ -3295,6 +3314,7 @@ StackInterpreter >> bytecodePrimGreaterThanSistaV1 [
 	aBool := self primitiveFloatGreater: rcvr thanArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 3.
 	argumentCount := 1.
 	self normalSend
@@ -3381,6 +3401,7 @@ StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg) ifTrue:
 		["The C code can avoid detagging since tagged integers are still signed.
 		 But this means the simulator must override to do detagging."
@@ -3391,6 +3412,7 @@ StackInterpreter >> bytecodePrimLessOrEqualSistaV1 [
 	aBool := self primitiveFloatLessOrEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 4.
 	argumentCount := 1.
 	self normalSend
@@ -3441,6 +3463,7 @@ StackInterpreter >> bytecodePrimLessThanSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg) ifTrue:
 		["The C code can avoid detagging since tagged integers are still signed.
 		 But this means the simulator must override to do detagging."
@@ -3451,6 +3474,7 @@ StackInterpreter >> bytecodePrimLessThanSistaV1 [
 	aBool := self primitiveFloatLess: rcvr thanArg: arg.
 	self successful ifTrue: [^ self booleanCheatSistaV1: aBool].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 2.
 	argumentCount := 1.
 	self normalSend
@@ -3597,12 +3621,14 @@ StackInterpreter >> bytecodePrimNotEqualSistaV1 [
 	| rcvr arg aBool |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg) ifTrue: [^self booleanCheatSistaV1: rcvr ~= arg].
 
 	self initPrimCall.
 	aBool := self primitiveFloatEqual: rcvr toArg: arg.
 	self successful ifTrue: [^self booleanCheatSistaV1: aBool not].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 7.
 	argumentCount := 1.
 	self normalSend
@@ -3732,6 +3758,7 @@ StackInterpreter >> bytecodePrimSubtract [
 	| rcvr arg result |
 	rcvr := self internalStackValue: 1.
 	arg := self internalStackValue: 0.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	(objectMemory areIntegers: rcvr and: arg)
 		ifTrue: [result := (objectMemory integerValueOf: rcvr) - (objectMemory integerValueOf: arg).
 				(objectMemory isIntegerValue: result) ifTrue:
@@ -3743,6 +3770,7 @@ StackInterpreter >> bytecodePrimSubtract [
 				self internalizeIPandSP.
 				self successful ifTrue: [^self fetchNextBytecode "success"]].
 
+	implicitJumpCountTaken := implicitJumpCountTaken + 1.
 	messageSelector := self specialSelector: 1.
 	argumentCount := 1.
 	self normalSend
@@ -9223,11 +9251,13 @@ StackInterpreter >> jumpUnaryInlinePrimitive: primIndex [
 StackInterpreter >> jumplfFalseBy: offset [ 
 	| boolean |
 	boolean := self internalStackTop.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	boolean = objectMemory falseObject
 		ifTrue: [self jump: offset]
 		ifFalse:
-			[boolean = objectMemory trueObject ifFalse:
-				[^self internalMustBeBoolean].
+			[boolean = objectMemory trueObject ifFalse: [
+				implicitJumpCountTaken := implicitJumpCountTaken + 1.
+				^self internalMustBeBoolean].
 			self fetchNextBytecode].
 	self internalPop: 1
 ]
@@ -9236,11 +9266,13 @@ StackInterpreter >> jumplfFalseBy: offset [
 StackInterpreter >> jumplfTrueBy: offset [ 
 	| boolean |
 	boolean := self internalStackTop.
+	implicitJumpCountFound := implicitJumpCountFound + 1.
 	boolean = objectMemory trueObject
 		ifTrue: [self jump: offset]
 		ifFalse:
-			[boolean = objectMemory falseObject ifFalse:
-				[^self internalMustBeBoolean].
+			[boolean = objectMemory falseObject ifFalse: [
+				implicitJumpCountTaken := implicitJumpCountTaken + 1.
+				^self internalMustBeBoolean].
 			self fetchNextBytecode].
 	self internalPop: 1
 ]
@@ -11747,6 +11779,9 @@ StackInterpreter >> primitiveStartProfiling [
 	profilingLinkedList := objectMemory splObj: 31.
 	objectMemory nilObject = profilingLinkedList
 		ifFalse: [ ^ self primitiveFail ].
+		
+	implicitJumpCountFound := 0.
+	implicitJumpCountTaken := 0.
 	
 	"Create the linked list head.
 	The profiling list is a linked list of arrays.
@@ -11769,14 +11804,30 @@ StackInterpreter >> primitiveStartProfiling [
 { #category : #'primitive support' }
 StackInterpreter >> primitiveStopProfiling [
 
-	| profilingLinkedList |
+	| profilingLinkedList returnArray |
 	profilingLinkedList := objectMemory splObj: 31.
 	objectMemory nilObject = profilingLinkedList
 		ifTrue: [ ^ self primitiveFail ].
 	
 	objectMemory splObj: 31 put: objectMemory nilObject.
 	
-	self pop: 1 thenPush: profilingLinkedList
+	"Return an array with:
+	 - the number of implicit jumps found.
+	 - the number of implicit jumps taken.
+	 - the linked list of found method"
+	returnArray := objectMemory
+		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
+		format: objectMemory arrayFormat
+		numSlots: 2.
+	objectMemory storePointer: 0
+		ofObject: returnArray
+		withValue: (objectMemory integerObjectOf: implicitJumpCountFound).
+	objectMemory storePointer: 1
+		ofObject: returnArray
+		withValue: (objectMemory integerObjectOf: implicitJumpCountTaken).
+	objectMemory storePointer: 2 ofObject: returnArray withValue: profilingLinkedList.
+	
+	self pop: 1 thenPush: returnArray
 ]
 
 { #category : #'as yet unclassified' }
