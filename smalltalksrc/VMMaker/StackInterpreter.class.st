@@ -11820,7 +11820,7 @@ StackInterpreter >> primitiveStopProfiling [
 	returnArray := objectMemory
 		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
 		format: objectMemory arrayFormat
-		numSlots: 2.
+		numSlots: 3.
 	objectMemory storePointer: 0
 		ofObject: returnArray
 		withValue: (objectMemory integerObjectOf: implicitJumpCountFound).
