@@ -416,7 +416,8 @@ Class {
 		'libFFI',
 		'codeGeneratorToComputeAccessorDepth',
 		'implicitJumpCountTaken',
-		'implicitJumpCountFound'
+		'implicitJumpCountFound',
+		'totalBytecodeCount'
 	],
 	#classVars : [
 		'AccessModifierPrivate',
@@ -625,7 +626,9 @@ If ffi is put as a separate header, slang will sort the header and put it outsid
 	aCCodeGenerator
 		var: #implicitJumpCountFound
 		declareC: 'uint64_t implicitJumpCountFound = 0;'.
-		
+	aCCodeGenerator
+		var: #totalBytecodeCount
+		declareC: 'uint64_t totalBytecodeCount = 0;'.
 	aCCodeGenerator removeVariable: #'libFFI'.
 	LibFFIConstants classVariables do: [ :e | aCCodeGenerator removeConstant: e name ].
 ]
@@ -11784,6 +11787,7 @@ StackInterpreter >> primitiveStartProfiling [
 		
 	implicitJumpCountFound := 0.
 	implicitJumpCountTaken := 0.
+	totalBytecodeCount := 0.
 	
 	"Create the linked list head.
 	The profiling list is a linked list of arrays.
@@ -11816,11 +11820,12 @@ StackInterpreter >> primitiveStopProfiling [
 	"Return an array with:
 	 - the number of implicit jumps found.
 	 - the number of implicit jumps taken.
-	 - the linked list of found method"
+	 - the linked list of found method
+	 - total number of bytecodes executed"
 	returnArray := objectMemory
 		eeInstantiateSmallClassIndex: ClassArrayCompactIndex
 		format: objectMemory arrayFormat
-		numSlots: 3.
+		numSlots: 4.
 	objectMemory storePointer: 0
 		ofObject: returnArray
 		withValue: (objectMemory integerObjectOf: implicitJumpCountFound).
@@ -11828,7 +11833,10 @@ StackInterpreter >> primitiveStopProfiling [
 		ofObject: returnArray
 		withValue: (objectMemory integerObjectOf: implicitJumpCountTaken).
 	objectMemory storePointer: 2 ofObject: returnArray withValue: profilingLinkedList.
-	
+	objectMemory
+		storePointer: 3
+		ofObject: returnArray
+		withValue:  (objectMemory integerObjectOf: totalBytecodeCount).	
 	self pop: 1 thenPush: returnArray
 ]
 
