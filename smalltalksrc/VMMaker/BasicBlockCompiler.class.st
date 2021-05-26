@@ -2003,7 +2003,6 @@ BasicBlockCompiler >> genJumpBackTo: targetBytecodePC [
 		genConditionalBranch: JumpAboveOrEqual
 		operand: (self fixupAt: targetBytecodePC)
 		withFallthroughWeight: 0.
-	backJump jumpWeight: self defaultJumpWeight * 2.
 
 	"New basic block, managing stack overflow and calling trampoline"
 	self currentBasicBlock isPushDownBlock: true.
@@ -4357,6 +4356,12 @@ BasicBlockCompiler >> sortBasicBlocks [
 	basicBlocks removeFirst.
 	self flag: #deallocate "the linked list!".
 	basicBlocks := sorter sort: basicBlocks.
+	
+	(preambleBlock isJumpingConditionallyOnTrueBranchToBlock: basicBlocks first)
+		ifTrue: [ preambleBlock invertConditionalJump ].
+					
+	(preambleBlock isFallingThroughBlock: basicBlocks first)
+		ifTrue: [ preambleBlock removeEndingJump ].
 	
 	basicBlocks addFirst: preambleBlock
 ]

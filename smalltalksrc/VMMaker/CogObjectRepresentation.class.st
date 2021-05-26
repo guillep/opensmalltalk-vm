@@ -1119,13 +1119,11 @@ CogObjectRepresentation >> genPrimitiveMod [
 	"If remainder is zero we're done."
 	cogit CmpCq: 0 R: ClassReg.
 	jumpExact := cogit JumpZero: 0.
-	jumpExact jumpWeight: 0.
 	"If arg and remainder signs are different we must reflect around zero."
 	cogit XorR: ClassReg R: Arg1Reg.
 	(cogit lastOpcode setsConditionCodesFor: JumpZero) ifFalse:
 		[cogit CmpCq: 0 R: Arg1Reg].
 	jumpSameSign := cogit JumpGreaterOrEqual: 0.
-	jumpSameSign jumpWeight: 0.
 	cogit XorR: ClassReg R: Arg1Reg.
 	cogit AddR: Arg1Reg R: ClassReg.
 	jumpSameSign jmpTarget: (jumpExact jmpTarget: cogit Label).

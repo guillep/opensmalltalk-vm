@@ -2065,7 +2065,6 @@ Cogit >> JumpMultiplyOverflow: jumpTarget [
 	<var: #jumpTarget type: #'void *'>
 	| jump |
 	jump :=  backEnd genJumpMultiplyOverflow: jumpTarget.
-	jump jumpWeight: 0.
 	^ jump
 ]
 
@@ -2116,7 +2115,6 @@ Cogit >> JumpOverflow: jumpTarget [
 	<var: #jumpTarget type: #'void *'>
 	| jump |
 	jump := self genConditionalBranch: JumpOverflow operand: jumpTarget asInteger.
-	jump jumpWeight: 0.
 	^ jump
 ]
 

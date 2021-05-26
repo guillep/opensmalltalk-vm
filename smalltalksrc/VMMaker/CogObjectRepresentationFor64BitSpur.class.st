@@ -857,9 +857,6 @@ CogObjectRepresentationFor64BitSpur >> genJumpNotSmallInteger: reg [
 	| jump |
 	cogit TstCq: objectMemory smallIntegerTag R: reg.
 	jump := cogit JumpZero: 0.
-	
-	"If it is not a small integer, this is very probably for a slow case"
-	jump jumpWeight: 0.
 	^ jump
 ]
 
